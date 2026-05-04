@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+dist
+.DS_Store
+*.log
+*.tsbuildinfo
+.env*.local
+.vercel
+.turbo
+public/r/*.json
+!public/r/.gitkeep

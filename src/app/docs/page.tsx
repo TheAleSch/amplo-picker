@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Docs · Enhanced Color Picker",
+  title: "Docs · Amplo Color Picker",
   description:
-    "Installation, API reference, and color-space primer for the Enhanced Color Picker shadcn component.",
+    "Installation, API reference, and color-space primer for the Amplo Color Picker shadcn component.",
 };
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
@@ -113,7 +113,7 @@ export default function DocsPage() {
           shadcn CLI:
         </p>
         <Pre>
-          npx shadcn@latest add https://enhanced-color-picker.vercel.app/r/color-picker.json
+          npx shadcn@latest add https://amplo.ale.design/r/color-picker.json
         </Pre>
         <p className="text-sm text-muted-foreground">
           Replace the URL with your deployed origin if you forked. The CLI

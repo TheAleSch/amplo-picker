@@ -1,12 +1,12 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
-  "name": "enhanced-color-picker",
-  "homepage": "https://enhanced-color-picker.vercel.app",
+  "name": "amplo-color-picker",
+  "homepage": "https://amplo.ale.design",
   "items": [
     {
       "name": "color-picker",
       "type": "registry:component",
-      "title": "Enhanced Color Picker",
+      "title": "Amplo Color Picker",
       "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
       "dependencies": ["culori", "lucide-react"],
       "registryDependencies": [],

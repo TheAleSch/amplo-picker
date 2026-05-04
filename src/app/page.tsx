@@ -13,7 +13,7 @@ export default function Home() {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           shadcn registry · v0.1
         </p>
-        <h1 className="text-4xl font-semibold tracking-tight">Enhanced Color Picker</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">Amplo Color Picker</h1>
         <p className="max-w-2xl text-muted-foreground">
           OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware.
           Drop into any Next.js + Tailwind v4 app with one CLI command.

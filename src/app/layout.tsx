@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Enhanced Color Picker",
+  title: "Amplo Color Picker",
   description:
     "OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware.",
 };

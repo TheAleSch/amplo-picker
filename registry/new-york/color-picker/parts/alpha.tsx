@@ -83,26 +83,30 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
       onPointerMove={onPointerMove}
       onKeyDown={onKeyDown}
       className={cn(
-        "relative cursor-pointer rounded-full outline-none touch-none overflow-hidden",
+        "relative cursor-pointer rounded-full outline-none touch-none",
         isVertical ? "h-32 w-3" : "h-3 w-full",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover",
         className,
       )}
-      style={{
-        backgroundImage: `${CHECKERBOARD}`,
-        backgroundSize: "12px 12px",
-      }}
       {...rest}
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0"
+        className="absolute inset-0 overflow-hidden rounded-full"
         style={{
-          background: isVertical
-            ? `linear-gradient(to bottom, ${transparent}, ${opaque})`
-            : `linear-gradient(to right, ${transparent}, ${opaque})`,
+          backgroundImage: `${CHECKERBOARD}`,
+          backgroundSize: "12px 12px",
         }}
-      />
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background: isVertical
+              ? `linear-gradient(to bottom, ${transparent}, ${opaque})`
+              : `linear-gradient(to right, ${transparent}, ${opaque})`,
+          }}
+        />
+      </div>
       <div
         className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]"
         style={

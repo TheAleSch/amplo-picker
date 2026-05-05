@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Moon, Sun } from "lucide-react";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import { parseColor, formatAll } from "@/registry/new-york/color-picker/lib/color";
@@ -25,6 +26,18 @@ export default function Home() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-4xl font-semibold tracking-tight">Amplo Picker</h1>
           <div className="flex items-center gap-3">
+            <Link
+              href="/docs"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Docs
+            </Link>
+            <Link
+              href="/playground"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Playground
+            </Link>
             <ThemeToggle />
             <a
               href="https://github.com/TheAleSch/amplo-picker"
@@ -197,11 +210,15 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-border pt-8 text-sm text-muted-foreground">
-        Built for shadcn registry distribution. See{" "}
-        <a href="/docs" className="underline">
+        Built for shadcn registry distribution. Read the{" "}
+        <Link href="/docs" className="underline">
           docs
-        </a>{" "}
-        for the API.
+        </Link>{" "}
+        or tinker in the{" "}
+        <Link href="/playground" className="underline">
+          playground
+        </Link>
+        .
       </footer>
     </main>
   );

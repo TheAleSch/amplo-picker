@@ -14,6 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Blocking script: runs before paint to apply .dark from localStorage
+            or system preference, preventing a light→dark flash on reload. */}
+        <script src="/theme-init.js" />
+      </head>
       <body className="bg-background text-foreground antialiased">
         {children}
       </body>

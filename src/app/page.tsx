@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { Moon, Sun } from "lucide-react";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import { parseColor, formatAll } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { InstallTabs } from "@/components/install-tabs";
 
 export default function Home() {
   // OKLCH is the lossless source of truth; hex is derived for display/fallback.
@@ -22,6 +25,7 @@ export default function Home() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-4xl font-semibold tracking-tight">Amplo Picker</h1>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <a
               href="https://github.com/TheAleSch/amplo-picker"
               target="_blank"
@@ -54,6 +58,11 @@ export default function Home() {
           Drop into any Next.js + Tailwind v4 app with one CLI command.
         </p>
       </header>
+
+      <InstallTabs
+        url="https://amplo.ale.design/r/color-picker.json"
+        className="max-w-2xl"
+      />
 
       <section className="grid gap-8 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
         <div className="flex flex-col gap-3">
@@ -198,6 +207,45 @@ export default function Home() {
   );
 }
 
+function ThemeToggle() {
+  // Tracks the .dark class set by the pre-hydration script in layout.tsx.
+  // We can't read it during SSR, so the icon resolves on mount.
+  const [theme, setTheme] = React.useState<"light" | "dark" | null>(null);
+
+  React.useEffect(() => {
+    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+  }, []);
+
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    document.documentElement.classList.toggle("dark", next === "dark");
+    try {
+      localStorage.setItem("theme", next);
+    } catch {}
+    setTheme(next);
+  };
+
+  const isDark = theme === "dark";
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="inline-flex size-8 items-center justify-center rounded-md border border-border bg-background outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {/* Pre-hydration: render nothing visible until effect resolves to avoid icon flash. */}
+      {theme === null ? (
+        <span aria-hidden className="size-4" />
+      ) : isDark ? (
+        <Sun className="size-4" />
+      ) : (
+        <Moon className="size-4" />
+      )}
+    </button>
+  );
+}
+
 function ColorTriggerDemo({
   color,
   setColor,
@@ -207,75 +255,53 @@ function ColorTriggerDemo({
   setColor: (c: OklchColor) => void;
   bg: string;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
   const display = formatAll(color);
 
-  React.useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
   return (
-    <div ref={containerRef} className="relative inline-block">
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-mono hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-mono hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span
+            aria-hidden
+            className="size-5 rounded-sm border border-border"
+            style={{ background: display.oklch }}
+          />
+          <span>{display.hex}</span>
+          <svg
+            aria-hidden
+            viewBox="0 0 12 12"
+            className="size-3 text-muted-foreground"
+          >
+            <path
+              d="M3 4.5l3 3 3-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </PopoverTrigger>
+      {/* Radix picks the best side automatically when the chosen one would
+          overflow (collisionPadding default 0). align="start" anchors to the
+          trigger's leading edge; w-auto lets the picker drive the width. */}
+      <PopoverContent
+        align="start"
+        sideOffset={8}
+        collisionPadding={8}
+        className="w-auto p-0 border-0 bg-transparent shadow-none"
       >
-        <span
-          aria-hidden
-          className="size-5 rounded-sm border border-border"
-          style={{ background: display.oklch }}
+        <ColorPicker
+          value={color}
+          onValueChange={(next) => setColor(next)}
+          backgroundColor={bg}
+          apca
         />
-        <span>{display.hex}</span>
-        <svg
-          aria-hidden
-          viewBox="0 0 12 12"
-          className="size-3 text-muted-foreground"
-        >
-          <path
-            d="M3 4.5l3 3 3-3"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-      {open && (
-        <div
-          role="dialog"
-          aria-label="Pick a color"
-          className="absolute left-0 top-full z-10 mt-2 w-70"
-        >
-          <ColorPicker
-            value={color}
-            onValueChange={(next) => setColor(next)}
-            backgroundColor={bg}
-            apca
-          />
-        </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 }

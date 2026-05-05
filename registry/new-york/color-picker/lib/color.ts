@@ -163,6 +163,29 @@ export function formatAll(color: OklchColor): Record<ColorFormat, string> {
   return out;
 }
 
+/**
+ * Continuous signed distance from the target gamut surface.
+ *  - 0 on the boundary
+ *  - <0 inside the gamut (any channel exceeds [0,1] by the most-negative amount)
+ *  - >0 outside the gamut (channels exceed by the most-positive amount)
+ *
+ * Drives the marching-squares boundary line. We sample culori's gamma-encoded
+ * RGB for the target — that has the same zero crossings as linear RGB, so the
+ * polyline lands on the real gamut surface (not an sRGB-padding approximation).
+ */
+export function gamutSignedDistance(color: OklchColor, gamut: Gamut): number {
+  const ok = { mode: "oklch" as const, ...oklchObj(color) };
+  const conv =
+    gamut === "srgb" ? toRgb(ok) : gamut === "p3" ? toP3(ok) : toRec2020(ok);
+  if (!conv) return 0;
+  const r = (conv as { r?: number }).r ?? 0;
+  const g = (conv as { g?: number }).g ?? 0;
+  const b = (conv as { b?: number }).b ?? 0;
+  const lo = -Math.min(r, g, b);
+  const hi = Math.max(r, g, b) - 1;
+  return Math.max(lo, hi);
+}
+
 export function gamutInfo(color: OklchColor): GamutInfo {
   const ok = { mode: "oklch" as const, ...oklchObj(color) };
   return {

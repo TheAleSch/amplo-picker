@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
-import { formatColor } from "../lib/color";
+import { formatColor, gamutSignedDistance } from "../lib/color";
 import type { ColorFormat, Gamut, OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
 
@@ -331,8 +331,10 @@ function computeGamutPaths(
     for (let i = 0; i <= N; i++) {
       const xn = i / N;
       const ok = sample(mode, base, chromaMax, xn, yn);
-      const rgb = oklchToLinearRgb(ok.l, ok.c, ok.h);
-      sd[j * stride + i] = signedGamutDistance(rgb, gamut);
+      sd[j * stride + i] = gamutSignedDistance(
+        { l: ok.l, c: ok.c, h: ok.h, alpha: 1 },
+        gamut,
+      );
     }
   }
 
@@ -459,18 +461,6 @@ function computeGamutPaths(
     if (closed) d += "Z";
     return d;
   });
-}
-
-/** >0 = outside gamut, <0 = inside, 0 = on boundary. */
-function signedGamutDistance(linRgb: { r: number; g: number; b: number }, gamut: Gamut): number {
-  // Distance from [0,1] cube; positive when any channel exceeds the bounds.
-  const lo = -Math.min(linRgb.r, linRgb.g, linRgb.b);
-  const hi = Math.max(linRgb.r, linRgb.g, linRgb.b) - 1;
-  const sd = Math.max(lo, hi);
-  if (gamut === "srgb") return sd;
-  // P3 / rec2020: rough relaxation; precise check uses target-space conversion at input layer.
-  const ext = gamut === "p3" ? 0.3 : 0.5;
-  return sd - ext;
 }
 
 function sample(mode: AreaMode, base: OklchColor, chromaMax: number, xn: number, yn: number): { l: number; c: number; h: number } {

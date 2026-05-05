@@ -4,6 +4,7 @@ import {
   formatColor,
   formatAll,
   gamutInfo,
+  gamutSignedDistance,
   toGamut,
   contrast,
   apcaContrast,
@@ -189,6 +190,34 @@ describe("formatAll", () => {
     expect(back.l).toBeCloseTo(c.l, 3);
     expect(back.c).toBeCloseTo(c.c, 3);
     expect(back.h).toBeCloseTo(c.h, 1);
+  });
+});
+
+describe("gamutSignedDistance", () => {
+  it("is negative for clearly in-gamut colors and positive for OOG ones", () => {
+    const safe = parseColor("oklch(0.7 0.05 30)")!; // muted, in sRGB
+    const wild = parseColor("oklch(0.7 0.4 30)")!; // way past Rec.2020
+    expect(gamutSignedDistance(safe, "srgb")).toBeLessThan(0);
+    expect(gamutSignedDistance(safe, "p3")).toBeLessThan(0);
+    expect(gamutSignedDistance(safe, "rec2020")).toBeLessThan(0);
+    expect(gamutSignedDistance(wild, "srgb")).toBeGreaterThan(0);
+    expect(gamutSignedDistance(wild, "p3")).toBeGreaterThan(0);
+    expect(gamutSignedDistance(wild, "rec2020")).toBeGreaterThan(0);
+  });
+
+  it("widens monotonically across sRGB → P3 → Rec.2020", () => {
+    // For any single OKLCH color, signed distance should never grow as we
+    // move to a wider gamut — the color can only get more interior (or stay
+    // on the boundary). Check across a sweep of chromas at red-ish hue.
+    const eps = 1e-2;
+    for (const c of [0.05, 0.15, 0.25, 0.35]) {
+      const ok = parseColor(`oklch(0.65 ${c} 30)`)!;
+      const dSrgb = gamutSignedDistance(ok, "srgb");
+      const dP3 = gamutSignedDistance(ok, "p3");
+      const dRec = gamutSignedDistance(ok, "rec2020");
+      expect(dP3).toBeLessThanOrEqual(dSrgb + eps);
+      expect(dRec).toBeLessThanOrEqual(dP3 + eps);
+    }
   });
 });
 

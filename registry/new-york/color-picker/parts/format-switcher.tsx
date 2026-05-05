@@ -23,6 +23,7 @@ export const FormatSwitcher = React.forwardRef<
 
   return (
     <div
+      data-slot="color-picker-format-switcher"
       className={cn(
         "relative inline-flex items-center",
         className,
@@ -30,6 +31,7 @@ export const FormatSwitcher = React.forwardRef<
     >
       <select
         ref={ref}
+        data-slot="color-picker-format-switcher-select"
         aria-label="Color format"
         value={format}
         onChange={(e) => setFormat(e.target.value as ColorFormat)}

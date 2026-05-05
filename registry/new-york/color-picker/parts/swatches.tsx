@@ -30,6 +30,7 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
   return (
     <div
       ref={ref}
+      data-slot="color-picker-swatches"
       role="listbox"
       aria-label="Color swatches"
       className={cn("grid grid-cols-10 gap-1", className)}

@@ -53,6 +53,7 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
       return (
         <button
           ref={ref as React.Ref<HTMLButtonElement>}
+          data-slot="color-picker-contrast-readout"
           type="button"
           onClick={cycle}
           aria-label={`Contrast (${active.toUpperCase()}). Click to switch.`}
@@ -72,6 +73,7 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
     return (
       <div
         ref={ref}
+        data-slot="color-picker-contrast-readout"
         role="group"
         aria-label="Contrast against background"
         className={cn(baseClass, className)}

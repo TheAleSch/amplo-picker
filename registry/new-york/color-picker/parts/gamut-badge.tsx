@@ -34,6 +34,7 @@ export const GamutBadge = React.forwardRef<HTMLDivElement, GamutBadgeProps>(func
   return (
     <div
       ref={ref}
+      data-slot="color-picker-gamut-badge"
       role="status"
       aria-live="polite"
       title={title}

@@ -71,6 +71,7 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
   return (
     <div
       ref={trackRef}
+      data-slot="color-picker-alpha"
       role="slider"
       aria-label="Opacity"
       aria-valuemin={0}

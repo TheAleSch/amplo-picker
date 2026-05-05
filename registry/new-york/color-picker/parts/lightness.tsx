@@ -84,6 +84,7 @@ export const Lightness = React.forwardRef<HTMLDivElement, LightnessProps>(
     return (
       <div
         ref={trackRef}
+        data-slot="color-picker-lightness"
         role="slider"
         aria-label="Lightness"
         aria-valuemin={0}

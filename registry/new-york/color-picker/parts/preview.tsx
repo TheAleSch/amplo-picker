@@ -20,6 +20,7 @@ export const Preview = React.forwardRef<HTMLDivElement, PreviewProps>(function P
   return (
     <div
       ref={ref}
+      data-slot="color-picker-preview"
       role="img"
       aria-label="Color preview over background"
       className={cn(

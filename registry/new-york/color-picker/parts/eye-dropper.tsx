@@ -43,6 +43,7 @@ export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(f
   return (
     <button
       ref={ref}
+      data-slot="color-picker-eye-dropper"
       type="button"
       aria-label="Pick color from screen"
       onClick={onClick}

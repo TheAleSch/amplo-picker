@@ -25,12 +25,18 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   // stays green.
   const commitHue = React.useCallback(
     (newH: number) => {
+      // setColor takes an arbitrary OklchColor and trusts the caller — unlike
+      // setComponent("h", ...) it does not wrap. Wrap here so keyboard Left at
+      // h=0 doesn't store -1° (visible as the bead leaking outside the track
+      // in OKLCH/OKLab/P3 modes, where serialize/parse preserves the negative
+      // hue. sRGB-family modes round-trip white through achromatic and hide it).
+      const wrapped = ((newH % 360) + 360) % 360;
       const gamut = gamutFromFormat(format);
       const oldMaxC = findMaxChroma(color.l, color.h, gamut);
-      const newMaxC = findMaxChroma(color.l, newH, gamut);
+      const newMaxC = findMaxChroma(color.l, wrapped, gamut);
       const saturation = oldMaxC > 1e-6 ? color.c / oldMaxC : 0;
       const nextC = saturation * newMaxC;
-      setColor({ ...color, h: newH, c: nextC });
+      setColor({ ...color, h: wrapped, c: nextC });
     },
     [color, format, setColor],
   );
@@ -93,6 +99,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   return (
     <div
       ref={trackRef}
+      data-slot="color-picker-hue"
       role="slider"
       aria-label="Hue"
       aria-valuemin={0}

@@ -28,6 +28,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
   return (
     <input
       ref={ref}
+      data-slot="color-picker-input"
       type="text"
       spellCheck={false}
       autoComplete="off"

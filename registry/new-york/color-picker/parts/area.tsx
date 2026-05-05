@@ -201,6 +201,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   return (
     <div
       ref={containerRef}
+      data-slot="color-picker-area"
       role="application"
       aria-label="Color area"
       aria-roledescription="2D color area, use arrow keys to adjust"

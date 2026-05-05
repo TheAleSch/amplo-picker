@@ -5,26 +5,16 @@
   "items": [
     {
       "name": "color-picker",
-      "type": "registry:component",
+      "type": "registry:ui",
       "title": "Amplo Color Picker",
       "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
       "dependencies": ["culori", "lucide-react"],
-      "registryDependencies": [],
+      "registryDependencies": ["utils"],
       "files": [
         {
-          "path": "registry/new-york/color-picker/color-picker.tsx",
-          "type": "registry:component",
-          "target": "components/ui/color-picker/color-picker.tsx"
-        },
-        {
-          "path": "registry/new-york/color-picker/context.tsx",
-          "type": "registry:component",
-          "target": "components/ui/color-picker/context.tsx"
-        },
-        {
-          "path": "registry/new-york/color-picker/hooks/use-color-picker.ts",
-          "type": "registry:hook",
-          "target": "components/ui/color-picker/hooks/use-color-picker.ts"
+          "path": "registry/new-york/color-picker/lib/types.ts",
+          "type": "registry:lib",
+          "target": "components/ui/color-picker/lib/types.ts"
         },
         {
           "path": "registry/new-york/color-picker/lib/color.ts",
@@ -32,64 +22,79 @@
           "target": "components/ui/color-picker/lib/color.ts"
         },
         {
-          "path": "registry/new-york/color-picker/lib/types.ts",
-          "type": "registry:lib",
-          "target": "components/ui/color-picker/lib/types.ts"
+          "path": "registry/new-york/color-picker/hooks/use-color-picker.ts",
+          "type": "registry:hook",
+          "target": "components/ui/color-picker/hooks/use-color-picker.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/context.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/color-picker/context.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/root.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/root.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/area.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/area.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/hue.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/hue.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/lightness.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/color-picker/parts/lightness.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/alpha.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/alpha.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/input.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/input.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/format-switcher.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/format-switcher.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/swatches.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/swatches.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/gamut-badge.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/gamut-badge.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/contrast-readout.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/contrast-readout.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/preview.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/preview.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/eye-dropper.tsx",
-          "type": "registry:component",
+          "type": "registry:ui",
           "target": "components/ui/color-picker/parts/eye-dropper.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/color-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/color-picker/color-picker.tsx"
         }
       ]
     }

@@ -107,6 +107,60 @@ export default function Home() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          Area mode — perceptual vs. OKHSV
+        </h2>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Same color, same render gamut, two layouts. <code className="font-mono">oklch-cl</code> puts
+          OKLCH lightness on the Y axis — the top row is white (perceptually correct, max-saturation
+          lives at mid-Y). <code className="font-mono">hsv-sv</code> uses HSV-style "value" anchored
+          to the gamut cusp — top-left is white, top-right is fully saturated, like Photoshop or Framer.
+        </p>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <code className="font-mono">mode="oklch-cl"</code>
+            </p>
+            <ColorPicker.Root
+              value={color}
+              onValueChange={(next) => setColor(next)}
+              backgroundColor={bg}
+            >
+              <ColorPicker.Area mode="oklch-cl" />
+              <div className="flex items-center gap-2">
+                <ColorPicker.Preview />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <ColorPicker.Hue />
+                  <ColorPicker.Alpha />
+                </div>
+              </div>
+              <ColorPicker.GamutBadge />
+            </ColorPicker.Root>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <code className="font-mono">mode="hsv-sv"</code>
+            </p>
+            <ColorPicker.Root
+              value={color}
+              onValueChange={(next) => setColor(next)}
+              backgroundColor={bg}
+            >
+              <ColorPicker.Area mode="hsv-sv" />
+              <div className="flex items-center gap-2">
+                <ColorPicker.Preview />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <ColorPicker.Hue />
+                  <ColorPicker.Alpha />
+                </div>
+              </div>
+              <ColorPicker.GamutBadge />
+            </ColorPicker.Root>
+          </div>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
           Trigger pattern
         </h2>
         <p className="max-w-2xl text-sm text-muted-foreground">

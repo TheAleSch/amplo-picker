@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
-import { formatColor, gamutSignedDistance, toGamut } from "../lib/color";
+import {
+  findCusp,
+  findMaxChroma,
+  formatColor,
+  gamutSignedDistance,
+  linSrgbToLinP3,
+  oklchToLinearSrgb,
+  toGamut,
+} from "../lib/color";
 import type { ColorFormat, Gamut, OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
 
@@ -12,21 +20,29 @@ export type AreaGamut = Gamut | "none";
 export interface AreaProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * What the 2D Area represents.
-   *  - oklch-cl: X=chroma, Y=lightness (hue from slider). Perceptually uniform.
-   *  - hsv-sv: X=saturation, Y=value (HSV). Classic.
-   *  - oklch-hc: X=hue, Y=chroma. Lightness picked separately.
+   *  - oklch-cl: Y = OKLCH lightness, X = chroma normalized to gamut. Perceptually uniform.
+   *    Top row is white-ish (max chroma at L=1 is 0). Most-saturated colors live at mid-Y.
+   *  - hsv-sv: Y = HSV-style "value", X = saturation. OKHSV-like — anchored to the gamut
+   *    cusp so top-right corner is fully saturated (Photoshop/Framer feel).
+   *  - oklch-hc: X = hue, Y = chroma normalized (lightness picked separately).
    */
   mode?: AreaMode;
-  /** Maximum chroma plotted on the X axis when mode === "oklch-cl" or Y axis when mode === "oklch-hc". */
+  /**
+   * Ignored when `gamut` is "srgb" / "p3" / "rec2020" — chroma fills the
+   * square up to the gamut surface. Only meaningful when `gamut === "none"`,
+   * where it bounds the absolute-chroma X axis.
+   */
   chromaMax?: number;
   /**
-   * Gamut whose boundary is traced as a white cutoff line on the canvas.
+   * Render gamut. The square is filled with in-gamut colors up to this
+   * gamut's surface, and warning lines mark narrower-gamut cutoffs inside.
    * Defaults to the gamut implied by the active output format
-   * (hex/rgb/hsl/hsb → srgb, p3 → p3, oklch/oklab → none).
-   * Pass "none" to suppress the line.
+   * (hex/rgb/hsl/hsb → srgb, p3 → p3, oklch/oklab → rec2020).
+   * Pass "none" to disable warping and paint the raw OKLCH plane up to
+   * `chromaMax` (no fill warp, no lines).
    */
   gamut?: AreaGamut;
-  /** Render resolution of the gradient canvas. Higher = sharper, slower. Default 200. */
+  /** Render resolution of the gradient canvas. Higher = sharper, slower. Default 160. */
   resolution?: number;
 }
 
@@ -41,7 +57,20 @@ function gamutFromFormat(f: ColorFormat): AreaGamut {
       return "p3";
     case "oklch":
     case "oklab":
-      return "none";
+      return "rec2020";
+  }
+}
+
+/** Which gamuts get a warning line drawn inside the active render gamut. */
+function warningGamuts(active: AreaGamut): Gamut[] {
+  switch (active) {
+    case "srgb":
+    case "none":
+      return [];
+    case "p3":
+      return ["srgb"];
+    case "rec2020":
+      return ["srgb", "p3"];
   }
 }
 
@@ -65,17 +94,15 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   const gamut: AreaGamut = gamutProp ?? gamutFromFormat(format);
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const [paths, setPaths] = React.useState<string[]>([]);
+  const [paths, setPaths] = React.useState<string[][]>([]);
 
   React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
 
-  // The gradient and gamut boundary only depend on the axis the mode keeps
+  // The gradient and warning lines depend only on the axis the mode keeps
   // *fixed* (hue for oklch-cl/hsv-sv, lightness for oklch-hc). Depending on
-  // every channel of `color` triggers a 25 600-pixel canvas repaint and a
-  // 128×128 marching-squares pass on every pointer tick — enough to stall
-  // the bead and give the impression that drags don't follow the mouse,
-  // especially when gamut="p3" (slightly heavier per-pixel work). Narrow
-  // the deps to the locked axis so dragging the live axes is free.
+  // every channel of `color` would trigger a 25 600-pixel canvas repaint plus
+  // a 128² marching-squares pass on every pointer tick — enough to stall the
+  // bead. Narrowing the dep to the locked axis keeps drags free.
   const fixedAxisValue = mode === "oklch-hc" ? color.l : color.h;
   React.useEffect(() => {
     const canvas = canvasRef.current;
@@ -92,48 +119,36 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const img = ctx.createImageData(w, h);
     paintGradient(img, w, h, mode, color, chromaMax, gamut, SUPPORTS_P3);
     ctx.putImageData(img, 0, 0);
-    setPaths(
-      gamut === "none"
-        ? []
-        : computeGamutPaths(mode, color, chromaMax, gamut as Gamut),
-    );
+    if (gamut === "none") {
+      setPaths([]);
+    } else {
+      setPaths(
+        warningGamuts(gamut).map((g) =>
+          computeGamutPaths(mode, color, chromaMax, g, gamut),
+        ),
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, fixedAxisValue, chromaMax, gamut, resolution]);
 
-  const [px, py] = positionFor(mode, color, chromaMax);
+  const [px, py] = positionFor(mode, color, chromaMax, gamut);
 
   const moveTo = React.useCallback(
     (x: number, y: number) => {
       const xn = clamp01(x);
       const yn = clamp01(y);
-      let next: OklchColor;
-      switch (mode) {
-        case "oklch-cl":
-          next = { ...color, c: xn * chromaMax, l: 1 - yn };
-          break;
-        case "hsv-sv": {
-          const v = 1 - yn;
-          next = { ...color, l: v, c: xn * v * chromaMax };
-          break;
-        }
-        case "oklch-hc":
-          next = { ...color, h: xn * 360, c: (1 - yn) * chromaMax };
-          break;
-      }
-      // When the picker is showing a bounded gamut, clamp the picked OKLCH to
-      // that gamut via CSS Color 4 chroma reduction. Without this the bead
-      // can slide into the transparent out-of-gamut region while state holds
-      // a color the user can't actually see.
-      //
-      // toGamut round-trips through the target RGB and back to OKLCH, which
-      // shaves ~0.5–1° off the hue at the gamut boundary. In a tight pointer-
-      // feedback loop those tiny drifts compound — pin the hue back to the
-      // value the user picked so chroma stays the only lossy axis.
+      const next = sampleAt(mode, color, chromaMax, gamut, xn, yn);
+      // With warping every (X, Y) is in-gamut by construction, so toGamut is
+      // defensive only — guards against drift at numerical boundaries. When
+      // gamut === "none" the user has explicitly opted out of warping and we
+      // skip clamping entirely (raw OKLCH plane).
       if (gamut !== "none") {
         const targetHue = next.h;
-        next = { ...toGamut(next, gamut as Gamut), h: targetHue };
+        const clamped = toGamut(next, gamut as Gamut);
+        setColor({ ...clamped, h: targetHue });
+      } else {
+        setColor(next);
       }
-      setColor(next);
     },
     [mode, chromaMax, color, setColor, gamut],
   );
@@ -195,7 +210,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     moveTo(nx, ny);
   };
 
-  const valueText = ariaValueTextFor(mode, color, chromaMax);
+  const valueText = ariaValueTextFor(mode, color, chromaMax, gamut);
 
   return (
     <div
@@ -227,28 +242,30 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
           viewBox="0 0 1 1"
           preserveAspectRatio="none"
         >
-          {paths.map((d, i) => (
-            <g key={i}>
-              <path
-                d={d}
-                fill="none"
-                stroke="rgba(0,0,0,0.55)"
-                strokeWidth={3}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-              <path
-                d={d}
-                fill="none"
-                stroke="white"
-                strokeWidth={1.5}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            </g>
-          ))}
+          {paths.map((groupPaths, gi) =>
+            groupPaths.map((d, i) => (
+              <g key={`${gi}-${i}`}>
+                <path
+                  d={d}
+                  fill="none"
+                  stroke="rgba(0,0,0,0.55)"
+                  strokeWidth={3}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <path
+                  d={d}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.6)"
+                  strokeWidth={1}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </g>
+            )),
+          )}
         </svg>
       )}
       <div
@@ -267,35 +284,138 @@ function clamp01(x: number) {
   return x < 0 ? 0 : x > 1 ? 1 : x;
 }
 
-function positionFor(mode: AreaMode, c: OklchColor, chromaMax: number): [number, number] {
-  switch (mode) {
-    case "oklch-cl":
-      return [clamp01(c.c / chromaMax), clamp01(1 - c.l)];
-    case "hsv-sv": {
-      const v = c.l;
-      const s = v > 0 ? c.c / Math.max(v * chromaMax, 1e-6) : 0;
-      return [clamp01(s), clamp01(1 - v)];
+function positionFor(
+  mode: AreaMode,
+  c: OklchColor,
+  chromaMax: number,
+  gamut: AreaGamut,
+): [number, number] {
+  if (gamut === "none") {
+    switch (mode) {
+      case "oklch-cl":
+        return [clamp01(c.c / chromaMax), clamp01(1 - c.l)];
+      case "hsv-sv": {
+        const v = c.l;
+        const s = v > 0 ? c.c / Math.max(v * chromaMax, 1e-6) : 0;
+        return [clamp01(s), clamp01(1 - v)];
+      }
+      case "oklch-hc":
+        return [
+          clamp01((((c.h % 360) + 360) % 360) / 360),
+          clamp01(1 - c.c / chromaMax),
+        ];
     }
-    case "oklch-hc":
-      return [clamp01(((c.h % 360) + 360) % 360 / 360), clamp01(1 - c.c / chromaMax)];
+  }
+  switch (mode) {
+    case "oklch-cl": {
+      const maxC = findMaxChroma(c.l, c.h, gamut as Gamut);
+      const safeMaxC = maxC > 1e-6 ? maxC : 1e-6;
+      return [clamp01(c.c / safeMaxC), clamp01(1 - c.l)];
+    }
+    case "hsv-sv": {
+      const cusp = findCusp(c.h, gamut as Gamut);
+      // L = V·(1 − S·(1 − Lc)), C = V·S·Cc → solve for V, S.
+      const V = clamp01(c.l + (c.c * (1 - cusp.l)) / Math.max(cusp.c, 1e-6));
+      const S = V > 1e-6 ? clamp01(c.c / (V * Math.max(cusp.c, 1e-6))) : 0;
+      return [S, clamp01(1 - V)];
+    }
+    case "oklch-hc": {
+      const maxC = findMaxChroma(c.l, c.h, gamut as Gamut);
+      const safeMaxC = maxC > 1e-6 ? maxC : 1e-6;
+      return [
+        clamp01((((c.h % 360) + 360) % 360) / 360),
+        clamp01(1 - c.c / safeMaxC),
+      ];
+    }
   }
 }
 
-function ariaValueTextFor(mode: AreaMode, c: OklchColor, chromaMax: number): string {
+/**
+ * Build the OKLCH color for a normalized (x, y) inside the area, given the
+ * locked axis on `base`. Mirror of `positionFor`.
+ */
+function sampleAt(
+  mode: AreaMode,
+  base: OklchColor,
+  chromaMax: number,
+  gamut: AreaGamut,
+  xn: number,
+  yn: number,
+): OklchColor {
+  if (gamut === "none") {
+    switch (mode) {
+      case "oklch-cl":
+        return { ...base, c: xn * chromaMax, l: 1 - yn };
+      case "hsv-sv": {
+        const v = 1 - yn;
+        return { ...base, l: v, c: xn * v * chromaMax };
+      }
+      case "oklch-hc":
+        return { ...base, h: xn * 360, c: (1 - yn) * chromaMax };
+    }
+  }
   switch (mode) {
-    case "oklch-cl":
-      return `Lightness ${(c.l * 100).toFixed(0)} percent, chroma ${(c.c).toFixed(2)} of ${chromaMax}, hue ${c.h.toFixed(0)} degrees`;
-    case "hsv-sv":
-      return `Saturation ${((c.c / Math.max(c.l * chromaMax, 1e-6)) * 100 || 0).toFixed(0)} percent, value ${(c.l * 100).toFixed(0)} percent, hue ${c.h.toFixed(0)} degrees`;
-    case "oklch-hc":
-      return `Hue ${c.h.toFixed(0)} degrees, chroma ${(c.c).toFixed(2)} of ${chromaMax}, lightness ${(c.l * 100).toFixed(0)} percent`;
+    case "oklch-cl": {
+      const l = 1 - yn;
+      const maxC = findMaxChroma(l, base.h, gamut as Gamut);
+      return { ...base, l, c: xn * maxC };
+    }
+    case "hsv-sv": {
+      const cusp = findCusp(base.h, gamut as Gamut);
+      const V = 1 - yn;
+      const S = xn;
+      const l = V * (1 - S * (1 - cusp.l));
+      const c = V * S * cusp.c;
+      return { ...base, l, c };
+    }
+    case "oklch-hc": {
+      const h = xn * 360;
+      const maxC = findMaxChroma(base.l, h, gamut as Gamut);
+      return { ...base, h, c: (1 - yn) * maxC };
+    }
+  }
+}
+
+function ariaValueTextFor(
+  mode: AreaMode,
+  c: OklchColor,
+  chromaMax: number,
+  gamut: AreaGamut,
+): string {
+  switch (mode) {
+    case "oklch-cl": {
+      const maxC =
+        gamut === "none"
+          ? chromaMax
+          : findMaxChroma(c.l, c.h, gamut as Gamut) || chromaMax;
+      return `Lightness ${(c.l * 100).toFixed(0)} percent, chroma ${c.c.toFixed(2)} of ${maxC.toFixed(2)}, hue ${c.h.toFixed(0)} degrees`;
+    }
+    case "hsv-sv": {
+      if (gamut === "none") {
+        const v = c.l;
+        const s = (c.c / Math.max(v * chromaMax, 1e-6)) * 100 || 0;
+        return `Saturation ${s.toFixed(0)} percent, value ${(v * 100).toFixed(0)} percent, hue ${c.h.toFixed(0)} degrees`;
+      }
+      const cusp = findCusp(c.h, gamut as Gamut);
+      const V = clamp01(c.l + (c.c * (1 - cusp.l)) / Math.max(cusp.c, 1e-6));
+      const S = V > 1e-6 ? clamp01(c.c / (V * Math.max(cusp.c, 1e-6))) : 0;
+      return `Saturation ${(S * 100).toFixed(0)} percent, value ${(V * 100).toFixed(0)} percent, hue ${c.h.toFixed(0)} degrees`;
+    }
+    case "oklch-hc": {
+      const maxC =
+        gamut === "none"
+          ? chromaMax
+          : findMaxChroma(c.l, c.h, gamut as Gamut) || chromaMax;
+      return `Hue ${c.h.toFixed(0)} degrees, chroma ${c.c.toFixed(2)} of ${maxC.toFixed(2)}, lightness ${(c.l * 100).toFixed(0)} percent`;
+    }
   }
 }
 
 /* ----------------------- gradient painting ----------------------- */
-/* Uses display-p3 canvas when supported; converts OKLCH per pixel via inline math.
- * For perf, we pre-resolve fixed components once, vary only the X/Y axes inside loops.
- */
+/* Per-paint LUT of max chroma for the moving axis. Each row (or column for
+ * oklch-hc) gets one bisection so the per-pixel cost stays a single multiply.
+ * When gamut === "none" we skip the LUT and paint absolute chroma up to
+ * chromaMax (the legacy unwrapped plane). */
 
 function paintGradient(
   img: ImageData,
@@ -307,89 +427,163 @@ function paintGradient(
   gamut: AreaGamut,
   canvasIsP3: boolean,
 ) {
-  // Per-pixel gamut mask: pixels whose OKLCH coords fall outside the active
-  // gamut are written as alpha=0 so the popover background shows through —
-  // matches the white boundary line and avoids the per-channel-clamp lie
-  // (clipping in linear sRGB picks the nearest gamut face, producing fake
-  // saturated colors that aren't real renderings of out-of-gamut points).
-  // When the canvas is in display-p3 mode we also emit P3-correct values
-  // so in-gamut P3 colors don't get squashed to sRGB.
   const data = img.data;
-  const eps = 1e-4;
+  const ctx = buildWarpContext(mode, base, gamut, w, h);
+
   for (let yPx = 0; yPx < h; yPx++) {
     const yn = yPx / (h - 1);
     for (let xPx = 0; xPx < w; xPx++) {
       const xn = xPx / (w - 1);
-      const ok = sample(mode, base, chromaMax, xn, yn);
-      const lrgb = oklchToLinearRgb(ok.l, ok.c, ok.h);
 
+      const [l, c, hue] = warpedSample(ctx, mode, base, chromaMax, xn, yn, xPx, yPx);
+
+      const lin = oklchToLinearSrgb(l, c, hue);
+      const targetLin = canvasIsP3 ? linSrgbToLinP3(lin) : lin;
       const idx = (yPx * w + xPx) * 4;
-
-      let outOfGamut = false;
-      if (gamut === "srgb") {
-        outOfGamut =
-          lrgb.r < -eps || lrgb.r > 1 + eps ||
-          lrgb.g < -eps || lrgb.g > 1 + eps ||
-          lrgb.b < -eps || lrgb.b > 1 + eps;
-      } else if (gamut === "p3") {
-        const p3 = linSrgbToLinP3(lrgb);
-        outOfGamut =
-          p3.r < -eps || p3.r > 1 + eps ||
-          p3.g < -eps || p3.g > 1 + eps ||
-          p3.b < -eps || p3.b > 1 + eps;
-      } else if (gamut === "rec2020") {
-        const r2020 = linSrgbToLinRec2020(lrgb);
-        outOfGamut =
-          r2020.r < -eps || r2020.r > 1 + eps ||
-          r2020.g < -eps || r2020.g > 1 + eps ||
-          r2020.b < -eps || r2020.b > 1 + eps;
-      }
-
-      if (outOfGamut) {
-        data[idx] = 0;
-        data[idx + 1] = 0;
-        data[idx + 2] = 0;
-        data[idx + 3] = 0;
-        continue;
-      }
-
-      // Pick the linear values matching the canvas color space, then encode
-      // with the sRGB transfer (display-p3 shares the sRGB TRC).
-      const lin = canvasIsP3 ? linSrgbToLinP3(lrgb) : lrgb;
-      const enc = linearToSrgb(lin);
-      data[idx] = clampByte(enc.r * 255);
-      data[idx + 1] = clampByte(enc.g * 255);
-      data[idx + 2] = clampByte(enc.b * 255);
+      data[idx] = clampByte(srgbEncode(targetLin.r) * 255);
+      data[idx + 1] = clampByte(srgbEncode(targetLin.g) * 255);
+      data[idx + 2] = clampByte(srgbEncode(targetLin.b) * 255);
       data[idx + 3] = 255;
     }
   }
 }
 
 /**
- * Compute the gamut boundary as SVG path strings in normalized 0..1 coords.
- * Marching squares + linear edge interpolation gives smooth crossings; segments
- * are then stitched into continuous polylines so the renderer can stroke each
- * with one path (no per-cell subpath caps → no beads). Output is consumed by an
- * SVG overlay with `vector-effect: non-scaling-stroke`, so quality is decoupled
- * from canvas resolution and DPR.
+ * Per-paint warp resources. For oklch-cl and oklch-hc we precompute a 1D
+ * max-chroma LUT keyed by the moving axis. For hsv-sv we precompute the
+ * (locked-hue) cusp once. For "none" we hold no resources — the legacy raw
+ * mapping uses chromaMax directly.
+ */
+type WarpContext =
+  | { kind: "none" }
+  | { kind: "lut-y"; lut: Float32Array }
+  | { kind: "lut-x"; lut: Float32Array }
+  | { kind: "cusp"; cusp: { l: number; c: number } };
+
+function buildWarpContext(
+  mode: AreaMode,
+  base: OklchColor,
+  gamut: AreaGamut,
+  w: number,
+  h: number,
+): WarpContext {
+  if (gamut === "none") return { kind: "none" };
+  switch (mode) {
+    case "oklch-cl": {
+      const lut = new Float32Array(h);
+      for (let j = 0; j < h; j++) {
+        const l = 1 - j / (h - 1);
+        lut[j] = findMaxChroma(l, base.h, gamut as Gamut);
+      }
+      return { kind: "lut-y", lut };
+    }
+    case "oklch-hc": {
+      const lut = new Float32Array(w);
+      for (let i = 0; i < w; i++) {
+        const hue = (i / (w - 1)) * 360;
+        lut[i] = findMaxChroma(base.l, hue, gamut as Gamut);
+      }
+      return { kind: "lut-x", lut };
+    }
+    case "hsv-sv":
+      return { kind: "cusp", cusp: findCusp(base.h, gamut as Gamut) };
+  }
+}
+
+/**
+ * Read (l, c, hue) for a normalized (xn, yn) using the precomputed warp
+ * context. `xPx`/`yPx` index into the LUT for oklch-cl/oklch-hc; hsv-sv and
+ * "none" don't use them.
+ */
+function warpedSample(
+  ctx: WarpContext,
+  mode: AreaMode,
+  base: OklchColor,
+  chromaMax: number,
+  xn: number,
+  yn: number,
+  xPx: number,
+  yPx: number,
+): [number, number, number] {
+  if (ctx.kind === "none") {
+    const ok = sampleRaw(mode, base, chromaMax, xn, yn);
+    return [ok.l, ok.c, ok.h];
+  }
+  switch (mode) {
+    case "oklch-cl": {
+      const l = 1 - yn;
+      const maxC = (ctx as { kind: "lut-y"; lut: Float32Array }).lut[yPx];
+      return [l, xn * maxC, base.h];
+    }
+    case "hsv-sv": {
+      const cusp = (ctx as { kind: "cusp"; cusp: { l: number; c: number } }).cusp;
+      const V = 1 - yn;
+      const S = xn;
+      const l = V * (1 - S * (1 - cusp.l));
+      const c = V * S * cusp.c;
+      return [l, c, base.h];
+    }
+    case "oklch-hc": {
+      const hue = xn * 360;
+      const maxC = (ctx as { kind: "lut-x"; lut: Float32Array }).lut[xPx];
+      return [base.l, (1 - yn) * maxC, hue];
+    }
+  }
+}
+
+function sampleRaw(
+  mode: AreaMode,
+  base: OklchColor,
+  chromaMax: number,
+  xn: number,
+  yn: number,
+): { l: number; c: number; h: number } {
+  switch (mode) {
+    case "oklch-cl":
+      return { l: 1 - yn, c: xn * chromaMax, h: base.h };
+    case "hsv-sv": {
+      const v = 1 - yn;
+      return { l: v, c: xn * v * chromaMax, h: base.h };
+    }
+    case "oklch-hc":
+      return { l: base.l, c: (1 - yn) * chromaMax, h: xn * 360 };
+  }
+}
+
+/**
+ * Compute a warning gamut's boundary inside the *active render gamut's* warped
+ * coordinate space, as SVG path strings in normalized 0..1 coords. Marching
+ * squares on a 128² grid where each cell samples gamutSignedDistance against
+ * the warning gamut, with sample positions warped through the active gamut's
+ * max-chroma so the line lands on the correct (X, Y) inside the filled square.
  */
 function computeGamutPaths(
   mode: AreaMode,
   base: OklchColor,
   chromaMax: number,
-  gamut: Gamut,
+  warningGamut: Gamut,
+  activeGamut: AreaGamut,
 ): string[] {
   const N = 128;
   const stride = N + 1;
   const sd = new Float32Array(stride * stride);
+  // Precompute hsv-sv's cusp once; without this the 16 384 grid samples would
+  // each rebuild it (52 findMaxChroma calls each → ~850 K total).
+  const cusp =
+    mode === "hsv-sv" && activeGamut !== "none"
+      ? findCusp(base.h, activeGamut as Gamut)
+      : null;
   for (let j = 0; j <= N; j++) {
     const yn = j / N;
     for (let i = 0; i <= N; i++) {
       const xn = i / N;
-      const ok = sample(mode, base, chromaMax, xn, yn);
+      const ok =
+        activeGamut === "none"
+          ? sampleRaw(mode, base, chromaMax, xn, yn)
+          : sampleWarpedForLine(mode, base, activeGamut as Gamut, xn, yn, cusp);
       sd[j * stride + i] = gamutSignedDistance(
         { l: ok.l, c: ok.c, h: ok.h, alpha: 1 },
-        gamut,
+        warningGamut,
       );
     }
   }
@@ -519,64 +713,42 @@ function computeGamutPaths(
   });
 }
 
-function sample(mode: AreaMode, base: OklchColor, chromaMax: number, xn: number, yn: number): { l: number; c: number; h: number } {
+/**
+ * Sample helper for the warning-line marching squares. Mirrors `sampleAt`
+ * but takes raw inputs (no `gamut === "none"` branch — callers handle it).
+ * `cusp` is required for hsv-sv mode; precomputed by the caller for speed.
+ */
+function sampleWarpedForLine(
+  mode: AreaMode,
+  base: OklchColor,
+  activeGamut: Gamut,
+  xn: number,
+  yn: number,
+  cusp: { l: number; c: number } | null,
+): { l: number; c: number; h: number } {
   switch (mode) {
-    case "oklch-cl":
-      return { l: 1 - yn, c: xn * chromaMax, h: base.h };
-    case "hsv-sv": {
-      const v = 1 - yn;
-      return { l: v, c: xn * v * chromaMax, h: base.h };
+    case "oklch-cl": {
+      const l = 1 - yn;
+      const maxC = findMaxChroma(l, base.h, activeGamut);
+      return { l, c: xn * maxC, h: base.h };
     }
-    case "oklch-hc":
-      return { l: base.l, c: (1 - yn) * chromaMax, h: xn * 360 };
+    case "hsv-sv": {
+      const k = cusp ?? findCusp(base.h, activeGamut);
+      const V = 1 - yn;
+      const S = xn;
+      const l = V * (1 - S * (1 - k.l));
+      const c = V * S * k.c;
+      return { l, c, h: base.h };
+    }
+    case "oklch-hc": {
+      const h = xn * 360;
+      const maxC = findMaxChroma(base.l, h, activeGamut);
+      return { l: base.l, c: (1 - yn) * maxC, h };
+    }
   }
 }
 
-/* OKLCH → linear sRGB matrix conversion (Björn Ottosson's OKLab) */
-function oklchToLinearRgb(l: number, c: number, hDeg: number): { r: number; g: number; b: number } {
-  const h = (hDeg * Math.PI) / 180;
-  const a = c * Math.cos(h);
-  const b = c * Math.sin(h);
-
-  // OKLab → LMS'
-  const lp = l + 0.3963377774 * a + 0.2158037573 * b;
-  const mp = l - 0.1055613458 * a - 0.0638541728 * b;
-  const sp = l - 0.0894841775 * a - 1.291485548 * b;
-
-  // LMS' → LMS (cube)
-  const L = lp * lp * lp;
-  const M = mp * mp * mp;
-  const S = sp * sp * sp;
-
-  return {
-    r: 4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S,
-    g: -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S,
-    b: -0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S,
-  };
-}
-
-function linearToSrgb(c: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
-  return { r: lin2srgb(c.r), g: lin2srgb(c.g), b: lin2srgb(c.b) };
-}
-
-/* Linear sRGB → linear Display-P3 (CSS Color 4 reference matrix). */
-function linSrgbToLinP3(c: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
-  return {
-    r: 0.8224621 * c.r + 0.1775380 * c.g + 0.0000000 * c.b,
-    g: 0.0331942 * c.r + 0.9668058 * c.g + 0.0000000 * c.b,
-    b: 0.0170828 * c.r + 0.0723976 * c.g + 0.9105196 * c.b,
-  };
-}
-
-/* Linear sRGB → linear Rec.2020 (CSS Color 4 reference matrix). */
-function linSrgbToLinRec2020(c: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
-  return {
-    r: 0.6274039 * c.r + 0.3292830 * c.g + 0.0433131 * c.b,
-    g: 0.0690973 * c.r + 0.9195404 * c.g + 0.0113623 * c.b,
-    b: 0.0163914 * c.r + 0.0880133 * c.g + 0.8955953 * c.b,
-  };
-}
-function lin2srgb(v: number) {
+function srgbEncode(v: number) {
   const x = v < 0 ? 0 : v > 1 ? 1 : v;
   return x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
 }

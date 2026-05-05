@@ -16,7 +16,7 @@ Most color pickers in the React ecosystem are sRGB-only. They can't represent th
 
 - **OKLCH-canonical** — all color state is stored as OKLCH so format toggles (hex / rgb / hsl / hsb / oklch / oklab / display-p3) are lossless round-trips.
 - **Display-P3 rendering** — when the device reports `(color-gamut: p3)`, the saturation canvas is painted in `display-p3` color space.
-- **Gamut detection + cutoff line** — live badge shows whether the color is in sRGB / P3 / Rec.2020. The 2D Area draws a crisp vector cutoff line tracing the boundary of the active gamut so you can see at a glance what falls outside it. The active gamut tracks the output format (hex/rgb/hsl/hsb → sRGB, p3 → P3, oklch/oklab → no cutoff) but is overridable per `<ColorPicker.Area gamut="..." />`.
+- **Stretched-gamut fill + warning lines** — the 2D Area always fills with in-gamut color: the active render gamut is stretched to the square's edges, and narrower-gamut cutoffs are drawn as thin warning lines *inside* the fill. Render gamut tracks the output format (hex/rgb/hsl/hsb → sRGB, p3 → P3, oklch/oklab → Rec.2020) and is overridable per `<ColorPicker.Area gamut="..." />`. P3 mode draws an sRGB cutoff line; OKLCH/OKLab mode draws both sRGB and P3 cutoffs. Live `<GamutBadge>` confirms where the picked color lands.
 - **Live contrast metrics** — WCAG 2.1 ratio + AA/AAA badges and APCA Lc, surfaced one at a time. When more than one is enabled the readout becomes a clickable toggle so the user can flip between them.
 - **Composable** — Radix-style compound API. Use `<ColorPicker />` as-is or rebuild from named parts.
 - **Accessible** — full keyboard control (arrow keys with shift modifier, Home/End, PageUp/Down), proper `aria-valuetext`, focus rings, touch-friendly pointer capture.
@@ -97,7 +97,7 @@ Composes all parts in the canonical layout. Inherits all `ColorPicker.Root` prop
 
 | Part                          | Notes |
 | ----------------------------- | ----- |
-| `<ColorPicker.Area>`          | 2D canvas. `mode`: `"oklch-cl"` (chroma×lightness, perceptually uniform), `"hsv-sv"` (classic), `"oklch-hc"` (hue×chroma). `chromaMax` clamps the X axis (default `0.4`). `gamut` traces the boundary of the given gamut (`"srgb" \| "p3" \| "rec2020" \| "none"`); defaults to the gamut implied by the active output format. Boundary is rendered as a vector SVG overlay so it stays crisp at any DPR. Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PgUp/PgDn. |
+| `<ColorPicker.Area>`          | 2D canvas. `mode`: `"oklch-cl"` perceptually-uniform (Y = OKLCH lightness, top row is white, max-saturation lives at mid-Y where the gamut cusp is), `"hsv-sv"` OKHSV-feeling (Y = HSV-style "value", top-left = white, top-right = fully saturated, bottom = black — anchored to the gamut cusp like Photoshop/Framer), `"oklch-hc"` hue×chroma (X = hue, Y = chroma; pair with `<ColorPicker.Lightness>`). All three modes always fill the square with in-gamut color. `gamut` controls the render gamut and which warning lines appear: `"srgb"` no lines, `"p3"` an sRGB cutoff line, `"rec2020"` both sRGB and P3 lines, `"none"` raw OKLCH plane up to `chromaMax` (no warp, no lines). Defaults to the gamut implied by the active output format. Lines are vector SVG overlays so they stay crisp at any DPR. Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PgUp/PgDn. |
 | `<ColorPicker.Hue>`           | Hue slider. `orientation`: `"horizontal"` \| `"vertical"`. |
 | `<ColorPicker.Alpha>`         | Opacity slider with checkerboard. |
 | `<ColorPicker.Preview>`       | 40px swatch composited over `backgroundColor`. |
@@ -158,7 +158,7 @@ import {
 - **OKLCH** — perceptually uniform polar space. The same chroma value looks equally vivid across all hues, and the same lightness looks equally bright. This is why all picker state is stored here — sliders feel intuitive and conversions don't drift. CSS Color 4: `oklch(L C H)`.
 - **OKLab** — same color space as OKLCH but in cartesian (a/b) form. Good for color-difference math, less good for UIs.
 
-When you author a P3 color and the user's display is sRGB, the browser falls back. Our `<GamutBadge>` and the cutoff line drawn on `<Area>` warn you so you can choose: ship the wide color and accept the fallback, or pull it back into sRGB. The cutoff is format-driven: pick `hex`/`rgb`/`hsl`/`hsb` and the line traces the sRGB boundary; pick `p3` and it traces P3; pick `oklch`/`oklab` and the line is hidden because those spaces are unbounded.
+When you author a P3 or wider color and the user's display can't render it, the browser falls back. Our `<GamutBadge>` and the warning lines on `<Area>` keep you informed: in `p3` mode the area fills with P3 colors and a single thin line marks the sRGB cutoff; in `oklch`/`oklab` mode the area fills up to Rec.2020 and *two* thin lines mark the sRGB and P3 cutoffs. In sRGB-targeted formats (`hex`/`rgb`/`hsl`/`hsb`) the area fills with sRGB only — no warning line is needed because every visible pixel is also an sRGB color.
 
 ---
 

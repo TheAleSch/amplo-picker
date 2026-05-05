@@ -169,21 +169,170 @@ export function formatAll(color: OklchColor): Record<ColorFormat, string> {
  *  - <0 inside the gamut (any channel exceeds [0,1] by the most-negative amount)
  *  - >0 outside the gamut (channels exceed by the most-positive amount)
  *
- * Drives the marching-squares boundary line. We sample culori's gamma-encoded
- * RGB for the target — that has the same zero crossings as linear RGB, so the
- * polyline lands on the real gamut surface (not an sRGB-padding approximation).
+ * Drives the marching-squares boundary line. We use inline OKLab → linear RGB
+ * math (zero crossings unchanged from gamma-encoded RGB) so the per-grid-point
+ * cost stays under a microsecond — at 128² × 2 lines per OKLCH-mode repaint
+ * the culori path was the new perf hot spot.
  */
 export function gamutSignedDistance(color: OklchColor, gamut: Gamut): number {
-  const ok = { mode: "oklch" as const, ...oklchObj(color) };
-  const conv =
-    gamut === "srgb" ? toRgb(ok) : gamut === "p3" ? toP3(ok) : toRec2020(ok);
-  if (!conv) return 0;
-  const r = (conv as { r?: number }).r ?? 0;
-  const g = (conv as { g?: number }).g ?? 0;
-  const b = (conv as { b?: number }).b ?? 0;
-  const lo = -Math.min(r, g, b);
-  const hi = Math.max(r, g, b) - 1;
+  const lin = oklchToLinearSrgb(color.l, color.c, color.h);
+  const target =
+    gamut === "srgb"
+      ? lin
+      : gamut === "p3"
+        ? linSrgbToLinP3(lin)
+        : linSrgbToLinRec2020(lin);
+  const lo = -Math.min(target.r, target.g, target.b);
+  const hi = Math.max(target.r, target.g, target.b) - 1;
   return Math.max(lo, hi);
+}
+
+/**
+ * OKLCH → linear sRGB via Björn Ottosson's OKLab matrix. Output channels can
+ * be negative or >1 for colors outside sRGB; that's the point — wider gamuts
+ * are just `linSrgbToLinP3` / `linSrgbToLinRec2020` away.
+ */
+export function oklchToLinearSrgb(
+  l: number,
+  c: number,
+  hDeg: number,
+): { r: number; g: number; b: number } {
+  const h = (hDeg * Math.PI) / 180;
+  const a = c * Math.cos(h);
+  const b = c * Math.sin(h);
+
+  const lp = l + 0.3963377774 * a + 0.2158037573 * b;
+  const mp = l - 0.1055613458 * a - 0.0638541728 * b;
+  const sp = l - 0.0894841775 * a - 1.291485548 * b;
+
+  const L = lp * lp * lp;
+  const M = mp * mp * mp;
+  const S = sp * sp * sp;
+
+  return {
+    r: 4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S,
+    g: -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S,
+    b: -0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S,
+  };
+}
+
+/* Linear sRGB → linear Display-P3 (CSS Color 4 reference matrix). */
+export function linSrgbToLinP3(c: {
+  r: number;
+  g: number;
+  b: number;
+}): { r: number; g: number; b: number } {
+  return {
+    r: 0.8224621 * c.r + 0.1775380 * c.g + 0.0 * c.b,
+    g: 0.0331942 * c.r + 0.9668058 * c.g + 0.0 * c.b,
+    b: 0.0170828 * c.r + 0.0723976 * c.g + 0.9105196 * c.b,
+  };
+}
+
+/* Linear sRGB → linear Rec.2020 (CSS Color 4 reference matrix). */
+export function linSrgbToLinRec2020(c: {
+  r: number;
+  g: number;
+  b: number;
+}): { r: number; g: number; b: number } {
+  return {
+    r: 0.6274039 * c.r + 0.3292830 * c.g + 0.0433131 * c.b,
+    g: 0.0690973 * c.r + 0.9195404 * c.g + 0.0113623 * c.b,
+    b: 0.0163914 * c.r + 0.0880133 * c.g + 0.8955953 * c.b,
+  };
+}
+
+/**
+ * Bisect for the maximum OKLCH chroma at this lightness and hue that still
+ * fits inside the target gamut. Returns 0 at L=0 or L=1 (those are achromatic
+ * by definition). Cost: ~12 iterations × 3 matrix-mults per call.
+ *
+ * `epsilon` controls the bisection's strictness — a positive value relaxes
+ * the in-gamut check (allows channels out by `epsilon`); zero is strict; a
+ * negative value shrinks the gamut. Default 0 is strict so the returned
+ * chroma is *guaranteed* in-gamut; the area's bead-clamp re-pin and
+ * culori-based `gamutInfo` (which use their own `GAMUT_EPSILON` tolerance)
+ * will then never tip the picked color out.
+ *
+ * The `marginalChroma` knob trims an absolute amount off the final result
+ * to absorb bisection precision (~5e-5) plus OKLab matrix drift. Without it,
+ * the result can sit on the strict surface where the round-trip via culori's
+ * `toGamut` and the area's hue re-pin can push it out by float ULPs.
+ */
+export function findMaxChroma(
+  l: number,
+  hDeg: number,
+  gamut: Gamut,
+  options: { iterations?: number; epsilon?: number; marginalChroma?: number } = {},
+): number {
+  if (l <= 0 || l >= 1) return 0;
+  const iterations = options.iterations ?? 14;
+  const eps = options.epsilon ?? 0;
+  const marginalChroma = options.marginalChroma ?? 1e-3;
+
+  const inGamut = (c: number): boolean => {
+    const lin = oklchToLinearSrgb(l, c, hDeg);
+    const target =
+      gamut === "srgb"
+        ? lin
+        : gamut === "p3"
+          ? linSrgbToLinP3(lin)
+          : linSrgbToLinRec2020(lin);
+    return (
+      target.r >= -eps && target.r <= 1 + eps &&
+      target.g >= -eps && target.g <= 1 + eps &&
+      target.b >= -eps && target.b <= 1 + eps
+    );
+  };
+
+  // Find an upper bound that is definitely outside. 0.5 covers Rec.2020 reds
+  // (max chroma ≈ 0.4 in OKLCH); double until out, capped at 2.0 for safety.
+  let hi = 0.5;
+  while (inGamut(hi) && hi < 2) hi *= 2;
+  let lo = 0;
+  for (let i = 0; i < iterations; i++) {
+    const mid = (lo + hi) / 2;
+    if (inGamut(mid)) lo = mid;
+    else hi = mid;
+  }
+  return Math.max(0, lo - marginalChroma);
+}
+
+/**
+ * Find the OKLCH "cusp" for a given hue and gamut — the (L, C) point of
+ * maximum chroma. Used by the `hsv-sv` Area mode to map (S, V) onto a fully
+ * gamut-filling square: V=1, S=1 lands on the cusp; V=1, S=0 is white;
+ * V=0 is black.
+ *
+ * Two-stage search: a 32-step coarse sweep over L, then a 20-step fine sweep
+ * around the best candidate. ~52 `findMaxChroma` calls per cusp lookup,
+ * which is cheap enough to call once per repaint per active hue.
+ */
+export function findCusp(
+  hDeg: number,
+  gamut: Gamut,
+): { l: number; c: number } {
+  let bestL = 0.5;
+  let bestC = 0;
+  for (let i = 1; i < 32; i++) {
+    const l = i / 32;
+    const c = findMaxChroma(l, hDeg, gamut);
+    if (c > bestC) {
+      bestC = c;
+      bestL = l;
+    }
+  }
+  const lo = Math.max(0.001, bestL - 1 / 32);
+  const hi = Math.min(0.999, bestL + 1 / 32);
+  for (let i = 0; i <= 20; i++) {
+    const l = lo + ((hi - lo) * i) / 20;
+    const c = findMaxChroma(l, hDeg, gamut);
+    if (c > bestC) {
+      bestC = c;
+      bestL = l;
+    }
+  }
+  return { l: bestL, c: bestC };
 }
 
 export function gamutInfo(color: OklchColor): GamutInfo {

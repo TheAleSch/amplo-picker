@@ -9,6 +9,8 @@ import {
   contrast,
   apcaContrast,
   isValidColor,
+  findMaxChroma,
+  findCusp,
 } from "./color";
 
 describe("parseColor", () => {
@@ -217,6 +219,99 @@ describe("gamutSignedDistance", () => {
       const dRec = gamutSignedDistance(ok, "rec2020");
       expect(dP3).toBeLessThanOrEqual(dSrgb + eps);
       expect(dRec).toBeLessThanOrEqual(dP3 + eps);
+    }
+  });
+});
+
+describe("findMaxChroma", () => {
+  it("returns 0 at the lightness extremes (black and white have no chroma)", () => {
+    expect(findMaxChroma(0, 30, "srgb")).toBe(0);
+    expect(findMaxChroma(1, 30, "srgb")).toBe(0);
+    expect(findMaxChroma(0, 30, "p3")).toBe(0);
+    expect(findMaxChroma(1, 30, "rec2020")).toBe(0);
+  });
+
+  it("widens roughly monotonically across sRGB → P3 → Rec.2020", () => {
+    // Strict ordering (P3 ⊂ Rec.2020 chromaticity-wise) holds in 2D, but at
+    // narrow OKLCH hue slices near a primary corner the per-hue boundaries
+    // can flip by ~1% due to differing primary placements in OKLab. eps is
+    // sized to absorb that without losing the macro signal.
+    const eps = 5e-3;
+    for (const l of [0.3, 0.5, 0.7]) {
+      for (const h of [0, 30, 120, 220, 320]) {
+        const cSrgb = findMaxChroma(l, h, "srgb");
+        const cP3 = findMaxChroma(l, h, "p3");
+        const cRec = findMaxChroma(l, h, "rec2020");
+        expect(cP3).toBeGreaterThanOrEqual(cSrgb - eps);
+        expect(cRec).toBeGreaterThanOrEqual(cP3 - eps);
+      }
+    }
+  });
+
+  it("lands on the gamut boundary — signed distance ≈ 0 at the result", () => {
+    for (const gamut of ["srgb", "p3", "rec2020"] as const) {
+      const c = findMaxChroma(0.6, 30, gamut);
+      expect(c).toBeGreaterThan(0);
+      const sd = gamutSignedDistance({ l: 0.6, c, h: 30, alpha: 1 }, gamut);
+      // Bisection epsilon allows a small tolerance on each side.
+      expect(Math.abs(sd)).toBeLessThan(5e-3);
+    }
+  });
+
+  it("matches the empirical sRGB max chroma for fully-saturated red", () => {
+    // sRGB pure red is roughly oklch(0.628 0.258 29.23). Max chroma at that
+    // (L, H) should be at least the value culori reports.
+    const c = findMaxChroma(0.628, 29.23, "srgb");
+    expect(c).toBeGreaterThan(0.24);
+    expect(c).toBeLessThan(0.27);
+  });
+
+  it("returns chroma values that culori-based gamutInfo confirms are in-gamut", () => {
+    // Regression: with eps=1e-4 + epsilon-overshoot, the bead landing at X=1
+    // in OKLCH/Rec.2020 mode could sit ~1e-3 outside Rec.2020 by culori's
+    // own check, lighting the OUT OF GAMUT badge. The marginal-chroma trim
+    // keeps the result safely inside whichever gamut culori reports.
+    for (const gamut of ["srgb", "p3", "rec2020"] as const) {
+      for (const l of [0.15, 0.3, 0.5, 0.7, 0.85]) {
+        for (const h of [0, 30, 60, 120, 180, 220, 280, 320]) {
+          const c = findMaxChroma(l, h, gamut);
+          if (c <= 0) continue;
+          const info = gamutInfo({ l, c, h, alpha: 1 });
+          if (gamut === "srgb") expect(info.inSrgb, `srgb (${l},${h})`).toBe(true);
+          if (gamut === "p3") expect(info.inP3, `p3 (${l},${h})`).toBe(true);
+          if (gamut === "rec2020") expect(info.inRec2020, `rec2020 (${l},${h})`).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+describe("findCusp", () => {
+  it("returns the L of max chroma for sRGB red near the published value", () => {
+    // sRGB red's OKLCH cusp is around L ≈ 0.628, C ≈ 0.258.
+    const cusp = findCusp(29.23, "srgb");
+    expect(cusp.l).toBeGreaterThan(0.6);
+    expect(cusp.l).toBeLessThan(0.66);
+    expect(cusp.c).toBeGreaterThan(0.24);
+    expect(cusp.c).toBeLessThan(0.27);
+  });
+
+  it("widens the cusp chroma as the gamut grows", () => {
+    for (const h of [0, 60, 120, 220, 320]) {
+      const cuspS = findCusp(h, "srgb");
+      const cuspP = findCusp(h, "p3");
+      const cuspR = findCusp(h, "rec2020");
+      // 5e-3 absorbs the per-hue OKLab/primary mismatch noted in findMaxChroma.
+      expect(cuspP.c).toBeGreaterThanOrEqual(cuspS.c - 5e-3);
+      expect(cuspR.c).toBeGreaterThanOrEqual(cuspP.c - 5e-3);
+    }
+  });
+
+  it("cusp lightness sits well inside (0,1) — never at the achromatic ends", () => {
+    for (const h of [0, 30, 60, 120, 180, 220, 280, 320]) {
+      const cusp = findCusp(h, "p3");
+      expect(cusp.l).toBeGreaterThan(0.3);
+      expect(cusp.l).toBeLessThan(0.95);
     }
   });
 });

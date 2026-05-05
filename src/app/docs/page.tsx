@@ -265,7 +265,7 @@ export function Example() {
             {
               name: "<ColorPicker.Area>",
               type: "mode, chromaMax, gamut, resolution",
-              desc: "2D canvas. mode picks the axes (oklch-cl = chroma×lightness perceptually uniform, hsv-sv = classic, oklch-hc = hue×chroma). chromaMax clamps the X axis (default 0.4). gamut traces the boundary of the given gamut as a vector SVG cutoff line — accepts \"srgb\" | \"p3\" | \"rec2020\" | \"none\". Defaults to the gamut implied by the active output format (hex/rgb/hsl/hsb → srgb, p3 → p3, oklch/oklab → none). Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PageUp/Down.",
+              desc: "2D canvas. mode picks the axes: oklch-cl (Y = OKLCH lightness, top row is white, max-saturation at mid-Y — perceptually uniform), hsv-sv (Y = HSV-style \"value\", top-left = white, top-right = fully saturated, bottom = black — OKHSV-feeling like Photoshop/Framer), oklch-hc (X = hue, Y = chroma — pair with ColorPicker.Lightness). All three modes always fill the square with in-gamut color. gamut controls the render gamut and warning lines: \"srgb\" no lines, \"p3\" sRGB cutoff, \"rec2020\" sRGB + P3 cutoffs, \"none\" raw OKLCH plane up to chromaMax. Defaults to the gamut implied by the active output format (hex/rgb/hsl/hsb → srgb, p3 → p3, oklch/oklab → rec2020). chromaMax is ignored unless gamut === \"none\". Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PageUp/Down.",
             },
             {
               name: "<ColorPicker.Hue>",
@@ -386,15 +386,17 @@ export function Example() {
           color-difference math, less good for UIs.
         </p>
         <p className="text-sm text-muted-foreground">
-          When you author a P3 color and the user's display is sRGB, the
-          browser falls back. The <Code>{"<GamutBadge>"}</Code> and the cutoff
-          line drawn on <Code>{"<Area>"}</Code> warn you so you can choose: ship
-          the wide color and accept the fallback, or pull it back into sRGB.
-          The cutoff is format-driven: pick <Code>hex</Code>/<Code>rgb</Code>/
-          <Code>hsl</Code>/<Code>hsb</Code> and the line traces the sRGB
-          boundary; pick <Code>p3</Code> and it traces P3; pick{" "}
-          <Code>oklch</Code>/<Code>oklab</Code> and the line is hidden because
-          those spaces are unbounded.
+          When you author a P3 or wider color and the user's display can't
+          render it, the browser falls back. The <Code>{"<GamutBadge>"}</Code>{" "}
+          and the warning lines on <Code>{"<Area>"}</Code> keep you informed.
+          The Area always fills with in-gamut color for the active render gamut;
+          warning lines mark the cutoffs of narrower gamuts <em>inside</em> the
+          fill. Pick <Code>hex</Code>/<Code>rgb</Code>/<Code>hsl</Code>/
+          <Code>hsb</Code> and the area fills with sRGB only — no warning line.
+          Pick <Code>p3</Code> and a single thin line marks the sRGB cutoff
+          inside the P3 fill. Pick <Code>oklch</Code>/<Code>oklab</Code> and{" "}
+          <em>two</em> thin lines mark the sRGB and P3 cutoffs inside the
+          Rec.2020 fill.
         </p>
 
         <H2 id="accessibility">Accessibility</H2>

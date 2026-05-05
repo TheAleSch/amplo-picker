@@ -10,3 +10,4 @@ dist
 .turbo
 public/r/*.json
 !public/r/.gitkeep
+.superpowers/

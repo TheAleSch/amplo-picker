@@ -270,7 +270,12 @@ export function Example() {
             {
               name: "<ColorPicker.Hue>",
               type: "orientation",
-              desc: 'Hue slider. orientation = "horizontal" | "vertical".',
+              desc: 'Hue slider. orientation = "horizontal" | "vertical". Pair with Area mode "oklch-cl" or "hsv-sv" — those modes hold hue fixed, so this slider drives the missing axis.',
+            },
+            {
+              name: "<ColorPicker.Lightness>",
+              type: "orientation",
+              desc: 'Lightness slider (OKLCH `l` 0→1). orientation = "horizontal" | "vertical". Gradient is sampled at the current hue+chroma so users see how lightness affects _their_ color, not a generic black→white ramp. Pair with Area mode "oklch-hc" — that mode holds lightness fixed.',
             },
             {
               name: "<ColorPicker.Alpha>",

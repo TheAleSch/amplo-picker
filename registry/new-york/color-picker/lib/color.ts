@@ -142,6 +142,27 @@ function oklchObj(c: OklchColor) {
   return { l: c.l, c: c.c, h: c.h, alpha: c.alpha };
 }
 
+const ALL_FORMATS: ColorFormat[] = [
+  "hex",
+  "rgb",
+  "hsl",
+  "hsb",
+  "oklch",
+  "oklab",
+  "p3",
+];
+
+/**
+ * Serialize an OKLCH color to every supported output format at once.
+ * Useful when consumers need both the canonical lossless form (oklch) and
+ * a fallback string (hex) without re-running format selection.
+ */
+export function formatAll(color: OklchColor): Record<ColorFormat, string> {
+  const out = {} as Record<ColorFormat, string>;
+  for (const f of ALL_FORMATS) out[f] = formatColor(color, f);
+  return out;
+}
+
 export function gamutInfo(color: OklchColor): GamutInfo {
   const ok = { mode: "oklch" as const, ...oklchObj(color) };
   return {

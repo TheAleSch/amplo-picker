@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseColor,
   formatColor,
+  formatAll,
   gamutInfo,
   toGamut,
   contrast,
@@ -165,6 +166,29 @@ describe("apcaContrast", () => {
     const bg = parseColor("#fff")!;
     const lc = apcaContrast(fg, bg);
     expect(lc).toBeGreaterThan(100);
+  });
+});
+
+describe("formatAll", () => {
+  it("returns a string for every supported format", () => {
+    const c = parseColor("oklch(0.7 0.18 30)")!;
+    const out = formatAll(c);
+    expect(Object.keys(out).sort()).toEqual(
+      ["hex", "hsb", "hsl", "oklab", "oklch", "p3", "rgb"].sort(),
+    );
+    for (const v of Object.values(out)) {
+      expect(typeof v).toBe("string");
+      expect(v.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("oklch round-trips losslessly even when sRGB-targeted formats are gamut-clipped", () => {
+    const c = parseColor("oklch(0.5 0.3 250)")!; // out of sRGB
+    const out = formatAll(c);
+    const back = parseColor(out.oklch)!;
+    expect(back.l).toBeCloseTo(c.l, 3);
+    expect(back.c).toBeCloseTo(c.c, 3);
+    expect(back.h).toBeCloseTo(c.h, 1);
   });
 });
 

@@ -94,7 +94,7 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
         aria-hidden="true"
         className="absolute inset-0 overflow-hidden rounded-full"
         style={{
-          backgroundImage: `${CHECKERBOARD}`,
+          backgroundImage: CHECKERBOARD,
           backgroundSize: "12px 12px",
         }}
       >

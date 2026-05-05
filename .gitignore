@@ -11,3 +11,4 @@ dist
 public/r/*.json
 !public/r/.gitkeep
 .superpowers/
+.claude/

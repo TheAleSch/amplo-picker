@@ -107,6 +107,17 @@ export default function Home() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          Trigger pattern
+        </h2>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Wrap the picker in a button-driven popover when screen real estate
+          matters. Click outside or press Escape to dismiss.
+        </p>
+        <ColorTriggerDemo color={color} setColor={setColor} bg={bg} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
           Background for contrast
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -146,5 +157,87 @@ export default function Home() {
         for the API.
       </footer>
     </main>
+  );
+}
+
+function ColorTriggerDemo({
+  color,
+  setColor,
+  bg,
+}: {
+  color: OklchColor;
+  setColor: (c: OklchColor) => void;
+  bg: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const display = formatAll(color);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative inline-block">
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-mono hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span
+          aria-hidden
+          className="size-5 rounded-sm border border-border"
+          style={{ background: display.oklch }}
+        />
+        <span>{display.hex}</span>
+        <svg
+          aria-hidden
+          viewBox="0 0 12 12"
+          className="size-3 text-muted-foreground"
+        >
+          <path
+            d="M3 4.5l3 3 3-3"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Pick a color"
+          className="absolute left-0 top-full z-10 mt-2 w-70"
+        >
+          <ColorPicker
+            value={color}
+            onValueChange={(next) => setColor(next)}
+            backgroundColor={bg}
+            apca
+          />
+        </div>
+      )}
+    </div>
   );
 }

@@ -118,43 +118,27 @@ export default function Home() {
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              <code className="font-mono">mode="oklch-cl"</code>
+              <code className="font-mono">areaMode="oklch-cl"</code>
             </p>
-            <ColorPicker.Root
+            <ColorPicker
               value={color}
               onValueChange={(next) => setColor(next)}
               backgroundColor={bg}
-            >
-              <ColorPicker.Area mode="oklch-cl" />
-              <div className="flex items-center gap-2">
-                <ColorPicker.Preview />
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <ColorPicker.Hue />
-                  <ColorPicker.Alpha />
-                </div>
-              </div>
-              <ColorPicker.GamutBadge />
-            </ColorPicker.Root>
+              areaMode="oklch-cl"
+              apca
+            />
           </div>
           <div className="flex flex-col gap-2">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              <code className="font-mono">mode="hsv-sv"</code>
+              <code className="font-mono">areaMode="hsv-sv"</code>
             </p>
-            <ColorPicker.Root
+            <ColorPicker
               value={color}
               onValueChange={(next) => setColor(next)}
               backgroundColor={bg}
-            >
-              <ColorPicker.Area mode="hsv-sv" />
-              <div className="flex items-center gap-2">
-                <ColorPicker.Preview />
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <ColorPicker.Hue />
-                  <ColorPicker.Alpha />
-                </div>
-              </div>
-              <ColorPicker.GamutBadge />
-            </ColorPicker.Root>
+              areaMode="hsv-sv"
+              apca
+            />
           </div>
         </div>
       </section>

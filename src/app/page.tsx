@@ -14,7 +14,7 @@ export default function Home() {
           shadcn registry · v0.1
         </p>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-4xl font-semibold tracking-tight">Amplo Color Picker</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">Amplo Picker</h1>
           <div className="flex items-center gap-3">
             <a
               href="https://github.com/TheAleSch/amplo-picker"

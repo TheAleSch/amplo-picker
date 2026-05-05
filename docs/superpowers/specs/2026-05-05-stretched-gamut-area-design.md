@@ -48,6 +48,8 @@ For modes that have a chroma axis, that axis no longer represents absolute chrom
 
 After warping, `oklch-cl` and `hsv-sv` are mathematically equivalent — both have Y = L and X = saturation. `hsv-sv` is kept as a named mode for users who think in HSV terms; the implementation can share the same code path.
 
+> **Note on HSV semantics.** Classical HSV defines saturation in RGB (`(max − min) / max`). Our stretched `hsv-sv` defines saturation as `c / max_c(L, H, render_gamut)` — perceptual chroma normalized to the OKLCH gamut surface, the same definition used by OKHSL/OKHSV. The picker's "S" therefore does not match the `hsv()` numbers a user gets from CSS `getComputedStyle`. Document this in the API table for `<ColorPicker.Area>` so consumers don't expect a 1:1 mapping.
+
 The `chromaMax` prop becomes a non-op for the warped modes (the actual maximum is derived from `max_c`). Keep it on the public API to avoid a breaking change; document that it is ignored when the area is in stretched mode.
 
 The classical tradeoff applies: moving the hue slider rescales the X axis, so the bead's position in the square is hue-relative. Two areas at X = 0.7 with different hues are not the same chroma in OKLCH numbers — they are the same saturation %.

@@ -51,11 +51,15 @@ function DefaultColorPicker({
         </div>
         {!hideEyeDropper && <EyeDropper />}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <FormatSwitcher />
+      <div className="flex items-center justify-end">
         <GamutBadge />
       </div>
-      <Input />
+      <div className="flex items-stretch gap-2">
+        <FormatSwitcher />
+        <div className="flex-1">
+          <Input />
+        </div>
+      </div>
       <ContrastReadout metrics={apca ? ["wcag", "apca"] : ["wcag"]} />
       <Swatches />
     </Root>

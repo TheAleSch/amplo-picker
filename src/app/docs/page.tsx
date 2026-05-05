@@ -166,11 +166,13 @@ export function Example() {
     </div>
     <ColorPicker.EyeDropper />
   </div>
-  <div className="flex items-center justify-between">
-    <ColorPicker.FormatSwitcher />
+  <div className="flex justify-end">
     <ColorPicker.GamutBadge />
   </div>
-  <ColorPicker.Input />
+  <div className="flex items-stretch gap-2">
+    <ColorPicker.FormatSwitcher />
+    <div className="flex-1"><ColorPicker.Input /></div>
+  </div>
   <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
   <ColorPicker.Swatches presets={["#fff", "#000", "oklch(0.7 0.18 30)"]} />
 </ColorPicker.Root>`}</Pre>
@@ -241,7 +243,7 @@ export function Example() {
               name: "formats",
               type: "ColorFormat[]",
               default: "all 7 formats",
-              desc: "Restricts which output formats the picker exposes — both the FormatSwitcher tabs and the resolved default. If `defaultFormat` isn't in the list, the first allowed format is used instead.",
+              desc: "Restricts which output formats the picker exposes — both the FormatSwitcher options and the resolved default. If `defaultFormat` isn't in the list, the first allowed format is used instead.",
             },
             {
               name: "backgroundColor",
@@ -288,7 +290,7 @@ export function Example() {
             {
               name: "<ColorPicker.FormatSwitcher>",
               type: "formats",
-              desc: "Tablist of formats. By default reads the available list from <ColorPicker.Root formats={...}>; pass an explicit `formats` prop to override locally. Arrow-key navigable.",
+              desc: "Native <select> of formats. By default reads the available list from <ColorPicker.Root formats={...}>; pass an explicit `formats` prop to override locally. Keyboard-navigable via the browser's built-in select control.",
             },
             {
               name: "<ColorPicker.Swatches>",

@@ -122,14 +122,27 @@ export default function DocsPage() {
         </p>
 
         <H2 id="quick-start">Quick start</H2>
-        <Pre>{`import { ColorPicker } from "@/components/ui/color-picker/color-picker";
+        <p>
+          OKLCH is the lossless source of truth — pass an{" "}
+          <Code>OklchColor</Code> object as <Code>value</Code> for full fidelity,
+          or pass any CSS string when you only need hex/rgb input convenience.
+          Every change emits the canonical color plus a{" "}
+          <Code>formats</Code> record covering all output formats, so a
+          fallback (e.g. hex) is always one property access away.
+        </p>
+        <Pre>{`import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
 
 export function Example() {
-  const [color, setColor] = React.useState("oklch(0.7 0.18 30)");
+  // Store the canonical OklchColor; derive any string output from \`formats\`.
+  const [color, setColor] = React.useState(() => parseColor("oklch(0.7 0.18 30)")!);
+  const [hex, setHex] = React.useState("#cf6f4f");
   return (
     <ColorPicker
       value={color}
-      onValueChange={(_, formatted) => setColor(formatted)}
+      onValueChange={(next, _formatted, formats) => {
+        setColor(next);
+        setHex(formats.hex); // fallback always available
+      }}
       backgroundColor="#ffffff"
       apca
     />
@@ -143,7 +156,7 @@ export function Example() {
           subcomponents — every part reads from the same context, so you can
           omit, reorder, or duplicate them freely.
         </p>
-        <Pre>{`<ColorPicker.Root value={color} onValueChange={(_, str) => setColor(str)}>
+        <Pre>{`<ColorPicker.Root value={color} onValueChange={(next) => setColor(next)}>
   <ColorPicker.Area mode="oklch-cl" />
   <div className="flex items-center gap-2">
     <ColorPicker.Preview />
@@ -196,7 +209,7 @@ export function Example() {
             {
               name: "value",
               type: "string | OklchColor",
-              desc: "Controlled value. Any CSS Color 4 string or canonical OKLCH object.",
+              desc: "Controlled value. Pass an OklchColor object for lossless control (recommended); strings work too but lose hue when gamut-clipped to gray/black/white. The picker keeps a sticky-hue fallback for string inputs to mitigate that.",
             },
             {
               name: "defaultValue",
@@ -205,8 +218,8 @@ export function Example() {
             },
             {
               name: "onValueChange",
-              type: "(color, formatted) => void",
-              desc: "Fires on every change. Receives canonical OKLCH plus the formatted string.",
+              type: "(color, formatted, formats) => void",
+              desc: "Fires on every change. `color` is the canonical OklchColor (lossless source of truth). `formatted` is the active format's string. `formats` is a Record<ColorFormat, string> with every supported format pre-serialized — handy when you need both an oklch source and a hex fallback.",
             },
             {
               name: "format",
@@ -310,6 +323,7 @@ export function Example() {
   format,
   formatted,       // string in 'format'
   formats,         // ColorFormat[] — the list of allowed output formats
+  formatStrings,   // Record<ColorFormat, string> — every format pre-serialized; use formatStrings.hex for a fallback alongside formatStrings.oklch
   gamut,           // GamutInfo
   contrast,        // { wcag, wcagLevel, apca }
   setColor,        // accepts string | OklchColor
@@ -329,6 +343,7 @@ export function Example() {
         <Pre>{`import {
   parseColor,    // (string) => OklchColor | null
   formatColor,   // (OklchColor, ColorFormat) => string  (sRGB/P3 outputs are gamut-mapped first)
+  formatAll,     // (OklchColor) => Record<ColorFormat, string>  — same as the third arg of onValueChange
   gamutInfo,     // (OklchColor) => { inSrgb, inP3, inRec2020 }
   toGamut,       // (OklchColor, "srgb"|"p3"|"rec2020") => OklchColor
   contrast,      // (fg, bg) => { wcag, wcagLevel, apca }

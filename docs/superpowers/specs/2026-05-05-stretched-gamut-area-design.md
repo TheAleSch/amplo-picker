@@ -125,6 +125,15 @@ The bead's CSS background is `formatColor({ ...color, alpha: 1 }, "oklch")`. Bro
 - **`registry/new-york/color-picker/lib/color.test.ts`** — add coverage for `findMaxChroma`: zero at L=0 and L=1, monotonicity in L for fixed H, gamut nesting (max_c\_srgb ≤ max_c\_p3 ≤ max_c\_rec2020).
 - **`registry/new-york/color-picker/parts/area.test.tsx`** *(new)* — render the area, snapshot the produced canvas pixel histogram for two formats, assert no fully-transparent pixels exist when in stretched mode and that warning paths are present in OKLCH mode (count = 2) vs P3 mode (count = 1).
 
+### Documentation
+
+- **`README.md`**
+  - Replace the current "Gamut detection + cutoff line" bullet (line ~19) with the stretched-fill model: the area is always filled with in-gamut color, and 0/1/2 warning lines mark the sRGB and P3 cutoffs depending on output format.
+  - Update the `<ColorPicker.Area>` row in the API table (line ~100) to reflect that `chromaMax` is ignored in stretched modes and that `gamut` controls which cutoffs are drawn rather than which colors are visible.
+  - Rewrite the "pick oklch/oklab and the line is hidden" sentence (line ~161) — under the new model OKLCH/OKLab shows **two** lines (sRGB and P3), and only the sRGB-targeted formats hide the line.
+- **`src/app/docs/page.tsx`** — mirrors the README. Update the `<ColorPicker.Area>` row in the API table (around line 267) and the "cutoff is format-driven" paragraph (around line 393) to match the new model: stretched fill, 0/1/2 warning lines, `chromaMax` ignored in stretched modes.
+- **`src/app/page.tsx`** (demo) — confirm any copy that references "out of gamut" or "cutoff line" still matches the new behavior.
+
 ## Testing strategy
 
 - Unit tests for `findMaxChroma` (lib/color).

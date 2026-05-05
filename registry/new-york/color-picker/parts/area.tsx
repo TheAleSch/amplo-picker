@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
-import { formatColor, gamutSignedDistance } from "../lib/color";
+import { formatColor, gamutSignedDistance, toGamut } from "../lib/color";
 import type { ColorFormat, Gamut, OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
 
@@ -90,7 +90,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const ctx = canvas.getContext("2d", ctx2dOpts);
     if (!ctx) return;
     const img = ctx.createImageData(w, h);
-    paintGradient(img, w, h, mode, color, chromaMax);
+    paintGradient(img, w, h, mode, color, chromaMax, gamut, SUPPORTS_P3);
     ctx.putImageData(img, 0, 0);
     setPaths(
       gamut === "none"
@@ -120,9 +120,22 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
           next = { ...color, h: xn * 360, c: (1 - yn) * chromaMax };
           break;
       }
+      // When the picker is showing a bounded gamut, clamp the picked OKLCH to
+      // that gamut via CSS Color 4 chroma reduction. Without this the bead
+      // can slide into the transparent out-of-gamut region while state holds
+      // a color the user can't actually see.
+      //
+      // toGamut round-trips through the target RGB and back to OKLCH, which
+      // shaves ~0.5–1° off the hue at the gamut boundary. In a tight pointer-
+      // feedback loop those tiny drifts compound — pin the hue back to the
+      // value the user picked so chroma stays the only lossy axis.
+      if (gamut !== "none") {
+        const targetHue = next.h;
+        next = { ...toGamut(next, gamut as Gamut), h: targetHue };
+      }
       setColor(next);
     },
-    [mode, chromaMax, color, setColor],
+    [mode, chromaMax, color, setColor, gamut],
   );
 
   const handlePointer = React.useCallback(
@@ -291,19 +304,62 @@ function paintGradient(
   mode: AreaMode,
   base: OklchColor,
   chromaMax: number,
+  gamut: AreaGamut,
+  canvasIsP3: boolean,
 ) {
+  // Per-pixel gamut mask: pixels whose OKLCH coords fall outside the active
+  // gamut are written as alpha=0 so the popover background shows through —
+  // matches the white boundary line and avoids the per-channel-clamp lie
+  // (clipping in linear sRGB picks the nearest gamut face, producing fake
+  // saturated colors that aren't real renderings of out-of-gamut points).
+  // When the canvas is in display-p3 mode we also emit P3-correct values
+  // so in-gamut P3 colors don't get squashed to sRGB.
   const data = img.data;
+  const eps = 1e-4;
   for (let yPx = 0; yPx < h; yPx++) {
     const yn = yPx / (h - 1);
     for (let xPx = 0; xPx < w; xPx++) {
       const xn = xPx / (w - 1);
       const ok = sample(mode, base, chromaMax, xn, yn);
-      const rgb = oklchToLinearRgb(ok.l, ok.c, ok.h);
-      const srgb = linearToSrgb(rgb);
+      const lrgb = oklchToLinearRgb(ok.l, ok.c, ok.h);
+
       const idx = (yPx * w + xPx) * 4;
-      data[idx] = clampByte(srgb.r * 255);
-      data[idx + 1] = clampByte(srgb.g * 255);
-      data[idx + 2] = clampByte(srgb.b * 255);
+
+      let outOfGamut = false;
+      if (gamut === "srgb") {
+        outOfGamut =
+          lrgb.r < -eps || lrgb.r > 1 + eps ||
+          lrgb.g < -eps || lrgb.g > 1 + eps ||
+          lrgb.b < -eps || lrgb.b > 1 + eps;
+      } else if (gamut === "p3") {
+        const p3 = linSrgbToLinP3(lrgb);
+        outOfGamut =
+          p3.r < -eps || p3.r > 1 + eps ||
+          p3.g < -eps || p3.g > 1 + eps ||
+          p3.b < -eps || p3.b > 1 + eps;
+      } else if (gamut === "rec2020") {
+        const r2020 = linSrgbToLinRec2020(lrgb);
+        outOfGamut =
+          r2020.r < -eps || r2020.r > 1 + eps ||
+          r2020.g < -eps || r2020.g > 1 + eps ||
+          r2020.b < -eps || r2020.b > 1 + eps;
+      }
+
+      if (outOfGamut) {
+        data[idx] = 0;
+        data[idx + 1] = 0;
+        data[idx + 2] = 0;
+        data[idx + 3] = 0;
+        continue;
+      }
+
+      // Pick the linear values matching the canvas color space, then encode
+      // with the sRGB transfer (display-p3 shares the sRGB TRC).
+      const lin = canvasIsP3 ? linSrgbToLinP3(lrgb) : lrgb;
+      const enc = linearToSrgb(lin);
+      data[idx] = clampByte(enc.r * 255);
+      data[idx + 1] = clampByte(enc.g * 255);
+      data[idx + 2] = clampByte(enc.b * 255);
       data[idx + 3] = 255;
     }
   }
@@ -501,6 +557,24 @@ function oklchToLinearRgb(l: number, c: number, hDeg: number): { r: number; g: n
 
 function linearToSrgb(c: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
   return { r: lin2srgb(c.r), g: lin2srgb(c.g), b: lin2srgb(c.b) };
+}
+
+/* Linear sRGB → linear Display-P3 (CSS Color 4 reference matrix). */
+function linSrgbToLinP3(c: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
+  return {
+    r: 0.8224621 * c.r + 0.1775380 * c.g + 0.0000000 * c.b,
+    g: 0.0331942 * c.r + 0.9668058 * c.g + 0.0000000 * c.b,
+    b: 0.0170828 * c.r + 0.0723976 * c.g + 0.9105196 * c.b,
+  };
+}
+
+/* Linear sRGB → linear Rec.2020 (CSS Color 4 reference matrix). */
+function linSrgbToLinRec2020(c: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
+  return {
+    r: 0.6274039 * c.r + 0.3292830 * c.g + 0.0433131 * c.b,
+    g: 0.0690973 * c.r + 0.9195404 * c.g + 0.0113623 * c.b,
+    b: 0.0163914 * c.r + 0.0880133 * c.g + 0.8955953 * c.b,
+  };
 }
 function lin2srgb(v: number) {
   const x = v < 0 ? 0 : v > 1 ? 1 : v;

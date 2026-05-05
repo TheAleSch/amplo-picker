@@ -221,6 +221,34 @@ describe("gamutSignedDistance", () => {
   });
 });
 
+describe("toGamut + hue stability under drag feedback", () => {
+  it("documents that toGamut alone can drift hue at the gamut boundary", () => {
+    // Repeatedly take {chroma=0.4, hue=30} OOG sRGB → toGamut("srgb") →
+    // feed result back as the next chromatic input. Without the area's
+    // hue-pinning fix, h walks away from 30. This test pins the drift so
+    // anyone changing toGamut's internals sees the consequence.
+    let h = 30;
+    for (let i = 0; i < 20; i++) {
+      const mapped = toGamut({ l: 0.65, c: 0.4, h, alpha: 1 }, "srgb");
+      h = mapped.h;
+    }
+    // Drift is small per step but accumulates. We just want to know it's
+    // non-zero — the area picker compensates by re-pinning the user's hue.
+    expect(Math.abs(h - 30)).toBeGreaterThan(0);
+    // And not catastrophic.
+    expect(Math.abs(h - 30)).toBeLessThan(5);
+  });
+
+  it("hue can be preserved by re-pinning after toGamut (the area's strategy)", () => {
+    let next = { l: 0.65, c: 0.4, h: 30, alpha: 1 };
+    for (let i = 0; i < 100; i++) {
+      const targetHue = next.h;
+      next = { ...toGamut(next, "srgb"), h: targetHue };
+    }
+    expect(next.h).toBe(30);
+  });
+});
+
 describe("isValidColor", () => {
   it("accepts CSS Color 4 syntax", () => {
     expect(isValidColor("oklch(0.7 0.1 30)")).toBe(true);

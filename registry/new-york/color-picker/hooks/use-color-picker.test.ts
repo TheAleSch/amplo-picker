@@ -76,6 +76,35 @@ describe("useColorPicker", () => {
     expect(result.current.contrast.wcagLevel.aaaNormal).toBe(true);
   });
 
+  it("exposes formatStrings record with all formats", () => {
+    const { result } = renderHook(() => useColorPicker({ defaultValue: "oklch(0.7 0.18 30)" }));
+    const fs = result.current.formatStrings;
+    expect(Object.keys(fs).sort()).toEqual(
+      ["hex", "hsb", "hsl", "oklab", "oklch", "p3", "rgb"].sort(),
+    );
+    expect(fs.oklch).toMatch(/^oklch\(/);
+    expect(fs.hex).toMatch(/^#/);
+  });
+
+  it("onValueChange receives canonical color, active formatted, and full formats record", () => {
+    let captured: { color: any; formatted: string; formats: Record<string, string> } | null = null;
+    const { result } = renderHook(() =>
+      useColorPicker({
+        defaultValue: "#000",
+        defaultFormat: "hex",
+        onValueChange: (color, formatted, formats) => {
+          captured = { color, formatted, formats };
+        },
+      }),
+    );
+    act(() => result.current.setColor("oklch(0.7 0.15 30)"));
+    expect(captured).not.toBeNull();
+    expect(captured!.color.h).toBeCloseTo(30, 1);
+    expect(captured!.formatted).toMatch(/^#/); // active = hex
+    expect(captured!.formats.oklch).toMatch(/^oklch\(/);
+    expect(captured!.formats.hex).toMatch(/^#/);
+  });
+
   it("controlled mode: value prop overrides internal state", () => {
     const { result, rerender } = renderHook(
       ({ value }: { value: string }) => useColorPicker({ value }),

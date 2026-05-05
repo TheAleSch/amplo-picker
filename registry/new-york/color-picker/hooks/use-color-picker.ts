@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   parseColor,
   formatColor,
+  formatAll,
   gamutInfo,
   contrast,
 } from "../lib/color";
@@ -21,8 +22,18 @@ export interface UseColorPickerProps {
   value?: string | OklchColor;
   /** Initial color when uncontrolled. */
   defaultValue?: string | OklchColor;
-  /** Fires whenever the color changes. */
-  onValueChange?: (color: OklchColor, formatted: string) => void;
+  /**
+   * Fires whenever the color changes.
+   *  - `color`: canonical OKLCH form (lossless source of truth).
+   *  - `formatted`: the active output format string (governed by `format`).
+   *  - `formats`: every supported format pre-serialized — use `formats.hex`
+   *    when you need a fallback alongside the canonical `formats.oklch`.
+   */
+  onValueChange?: (
+    color: OklchColor,
+    formatted: string,
+    formats: Record<ColorFormat, string>,
+  ) => void;
   /** Active output format. */
   format?: ColorFormat;
   /** Initial format when uncontrolled. */
@@ -40,8 +51,12 @@ export interface UseColorPickerProps {
 export interface ColorPickerState {
   color: OklchColor;
   format: ColorFormat;
+  /** Active format string (mirrors `format`). */
   formatted: string;
+  /** Allowed output formats (the set restricting the FormatSwitcher). */
   formats: ColorFormat[];
+  /** Pre-serialized strings for every supported format. */
+  formatStrings: Record<ColorFormat, string>;
   setColor: (next: string | OklchColor) => void;
   setComponent: (key: ColorComponent, value: number) => void;
   adjustComponent: (key: ColorComponent, delta: number) => void;
@@ -117,7 +132,8 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
   const format = isControlledFormat ? controlledFormat! : internalFormat;
   const background = coerce(backgroundColor, WHITE);
 
-  const formatted = React.useMemo(() => formatColor(color, format), [color, format]);
+  const formatStrings = React.useMemo(() => formatAll(color), [color]);
+  const formatted = formatStrings[format];
   const gamut = React.useMemo(() => gamutInfo(color), [color]);
   const contrastResult = React.useMemo(
     () => contrast(color, background),
@@ -127,7 +143,10 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
   const commitColor = React.useCallback(
     (next: OklchColor) => {
       if (!isControlledColor) setInternalColor(next);
-      onValueChange?.(next, formatColor(next, format));
+      if (onValueChange) {
+        const all = formatAll(next);
+        onValueChange(next, all[format], all);
+      }
     },
     [format, isControlledColor, onValueChange],
   );
@@ -179,6 +198,7 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
     format,
     formatted,
     formats,
+    formatStrings,
     setColor,
     setComponent,
     adjustComponent,

@@ -91,7 +91,7 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <ColorPicker.Preview />
               <div className="flex flex-1 flex-col gap-1.5">
-                <ColorPicker.Hue />
+                <ColorPicker.Lightness />
                 <ColorPicker.Alpha />
               </div>
             </div>

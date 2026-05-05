@@ -4,6 +4,7 @@ import * as React from "react";
 import { Root, type RootProps } from "./parts/root";
 import { Area, type AreaProps } from "./parts/area";
 import { Hue } from "./parts/hue";
+import { Lightness } from "./parts/lightness";
 import { Alpha } from "./parts/alpha";
 import { Input } from "./parts/input";
 import { FormatSwitcher } from "./parts/format-switcher";
@@ -70,6 +71,7 @@ export const ColorPicker = Object.assign(DefaultColorPicker, {
   Root,
   Area,
   Hue,
+  Lightness,
   Alpha,
   Input,
   FormatSwitcher,

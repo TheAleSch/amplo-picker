@@ -2,19 +2,54 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
+import { findMaxChroma } from "../lib/color";
+import type { ColorFormat, Gamut } from "../lib/types";
 import { cn } from "@/lib/utils";
 
 export interface HueProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onKeyDown"> {
   orientation?: "horizontal" | "vertical";
 }
 
+function gamutFromFormat(f: ColorFormat): Gamut {
+  switch (f) {
+    case "hex":
+    case "rgb":
+    case "hsl":
+    case "hsb":
+      return "srgb";
+    case "p3":
+      return "p3";
+    case "oklch":
+    case "oklab":
+      return "rec2020";
+  }
+}
+
 export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   { orientation = "horizontal", className, ...rest },
   ref,
 ) {
-  const { color, setComponent } = useColorPickerContext();
+  const { color, format, setColor } = useColorPickerContext();
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement);
+
+  // When the hue changes, max chroma at (L, H, gamut) changes too. Preserving
+  // absolute chroma would push the color out of the active gamut as the user
+  // scrolls into a more constrained hue (e.g. green has less max chroma than
+  // red in P3). Preserve "saturation" — the bead's X position in the area —
+  // by rescaling chroma to the new hue's max. The bead stays put; the badge
+  // stays green.
+  const commitHue = React.useCallback(
+    (newH: number) => {
+      const gamut = gamutFromFormat(format);
+      const oldMaxC = findMaxChroma(color.l, color.h, gamut);
+      const newMaxC = findMaxChroma(color.l, newH, gamut);
+      const saturation = oldMaxC > 1e-6 ? color.c / oldMaxC : 0;
+      const nextC = saturation * newMaxC;
+      setColor({ ...color, h: newH, c: nextC });
+    },
+    [color, format, setColor],
+  );
 
   const moveTo = (clientCoord: number) => {
     const el = trackRef.current;
@@ -25,7 +60,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
         ? (clientCoord - rect.left) / rect.width
         : (clientCoord - rect.top) / rect.height;
     const clamped = Math.max(0, Math.min(1, ratio));
-    setComponent("h", clamped * 360);
+    commitHue(clamped * 360);
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -65,7 +100,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
         return;
     }
     e.preventDefault();
-    setComponent("h", next);
+    commitHue(next);
   };
 
   const pos = (color.h % 360) / 360;

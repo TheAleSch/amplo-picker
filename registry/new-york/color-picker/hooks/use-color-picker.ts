@@ -89,6 +89,11 @@ function wrapHue(h: number) {
   return m < 0 ? m + 360 : m;
 }
 
+const HUE_EPS = 1e-4;
+function isAchromatic(c: OklchColor): boolean {
+  return c.c <= HUE_EPS || c.l <= HUE_EPS || c.l >= 1 - HUE_EPS;
+}
+
 function applyComponent(c: OklchColor, key: ColorComponent, raw: number): OklchColor {
   switch (key) {
     case "l":
@@ -128,7 +133,26 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
   const isControlledColor = controlledValue !== undefined;
   const isControlledFormat = controlledFormat !== undefined;
 
-  const color = isControlledColor ? coerce(controlledValue, BLACK) : internalColor;
+  // Hue is undefined for achromatic colors (c=0, pure black, pure white) so
+  // any string round-trip through hex/rgb erases it. Remember the last hue
+  // observed on a chromatic, mid-lightness color and substitute it back when
+  // the resolved color lands on an achromatic edge — keeps the area picker
+  // from snapping the hue to 0 when the user drags toward gray/black/white.
+  const initialHue = coerce(defaultValue, BLACK).h || 0;
+  const lastGoodHueRef = React.useRef<number>(initialHue);
+
+  const isControlledStringInput =
+    isControlledColor && typeof controlledValue === "string";
+  const rawColor = isControlledColor ? coerce(controlledValue, BLACK) : internalColor;
+  if (!isAchromatic(rawColor)) lastGoodHueRef.current = rawColor.h;
+  // Only substitute on string-controlled inputs: those are the ones that
+  // round-trip through a CSS format and lose the hue. Object-controlled or
+  // uncontrolled state already carries the hue verbatim, including explicit
+  // user assignments like setComponent("h", 0) on a black/white color.
+  const color: OklchColor =
+    isControlledStringInput && isAchromatic(rawColor)
+      ? { ...rawColor, h: lastGoodHueRef.current }
+      : rawColor;
   const format = isControlledFormat ? controlledFormat! : internalFormat;
   const background = coerce(backgroundColor, WHITE);
 

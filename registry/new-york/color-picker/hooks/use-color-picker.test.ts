@@ -105,6 +105,29 @@ describe("useColorPicker", () => {
     expect(captured!.formats.hex).toMatch(/^#/);
   });
 
+  it("preserves hue across achromatic round-trips in controlled mode (chroma → 0)", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: string }) => useColorPicker({ value }),
+      { initialProps: { value: "oklch(0.7 0.18 240)" } },
+    );
+    expect(result.current.color.h).toBeCloseTo(240, 1);
+    // Round-trip through a gray hex: would normally collapse hue to 0.
+    rerender({ value: "#808080" });
+    expect(result.current.color.h).toBeCloseTo(240, 1);
+  });
+
+  it("preserves hue when controlled value goes to pure black or white", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: string }) => useColorPicker({ value }),
+      { initialProps: { value: "oklch(0.6 0.2 120)" } },
+    );
+    expect(result.current.color.h).toBeCloseTo(120, 1);
+    rerender({ value: "#000000" });
+    expect(result.current.color.h).toBeCloseTo(120, 1);
+    rerender({ value: "#ffffff" });
+    expect(result.current.color.h).toBeCloseTo(120, 1);
+  });
+
   it("controlled mode: value prop overrides internal state", () => {
     const { result, rerender } = renderHook(
       ({ value }: { value: string }) => useColorPicker({ value }),

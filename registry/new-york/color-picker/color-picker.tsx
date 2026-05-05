@@ -16,7 +16,7 @@ import { EyeDropper } from "./parts/eye-dropper";
 export type { ColorFormat, OklchColor, GamutInfo, ContrastResult, Gamut } from "./lib/types";
 export type { UseColorPickerProps, ColorPickerState } from "./hooks/use-color-picker";
 export { useColorPicker } from "./hooks/use-color-picker";
-export { parseColor, formatColor, gamutInfo, toGamut, contrast, apcaContrast, isValidColor } from "./lib/color";
+export { parseColor, formatColor, formatAll, gamutInfo, toGamut, contrast, apcaContrast, isValidColor } from "./lib/color";
 
 export interface ColorPickerProps extends RootProps {
   areaMode?: AreaProps["mode"];

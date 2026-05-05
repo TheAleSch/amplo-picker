@@ -308,6 +308,29 @@ export function findMaxChroma(
  * around the best candidate. ~52 `findMaxChroma` calls per cusp lookup,
  * which is cheap enough to call once per repaint per active hue.
  */
+/**
+ * Map an output format to the gamut whose surface fills the picker's area
+ * and bounds the lossless saturation-preserving updates from the hue and
+ * lightness sliders. OKLCH and OKLab are unbounded as serialization formats
+ * but still need a finite picking gamut — Rec.2020 covers everything that
+ * fits inside `<canvas colorSpace="display-p3">` plus the slice that won't
+ * paint accurately on any current monitor.
+ */
+export function gamutFromFormat(f: ColorFormat): Gamut {
+  switch (f) {
+    case "hex":
+    case "rgb":
+    case "hsl":
+    case "hsb":
+      return "srgb";
+    case "p3":
+      return "p3";
+    case "oklch":
+    case "oklab":
+      return "rec2020";
+  }
+}
+
 export function findCusp(
   hDeg: number,
   gamut: Gamut,

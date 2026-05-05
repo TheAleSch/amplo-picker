@@ -2,27 +2,11 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
-import { findMaxChroma } from "../lib/color";
-import type { ColorFormat, Gamut } from "../lib/types";
+import { findMaxChroma, gamutFromFormat } from "../lib/color";
 import { cn } from "@/lib/utils";
 
 export interface HueProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onKeyDown"> {
   orientation?: "horizontal" | "vertical";
-}
-
-function gamutFromFormat(f: ColorFormat): Gamut {
-  switch (f) {
-    case "hex":
-    case "rgb":
-    case "hsl":
-    case "hsb":
-      return "srgb";
-    case "p3":
-      return "p3";
-    case "oklch":
-    case "oklab":
-      return "rec2020";
-  }
 }
 
 export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(

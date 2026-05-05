@@ -5,8 +5,10 @@ import {
   parseColor,
   formatColor,
   formatAll,
+  gamutFromFormat,
   gamutInfo,
   contrast,
+  toGamut,
 } from "../lib/color";
 import type {
   ColorFormat,
@@ -201,10 +203,30 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
 
   const setFormat = React.useCallback(
     (f: ColorFormat) => {
+      // Switching formats is also a switch of *picking* gamut. If the current
+      // OKLCH state lives outside the new format's gamut (e.g. user authored
+      // a wide P3 chroma in OKLCH mode, then toggled to hex), the displayed
+      // string would be gamut-mapped at format time but the underlying state
+      // — and the gamut badge — would still report out-of-gamut. Clamp on
+      // the way in so state and display agree. Hue is pinned per the picker's
+      // "chroma is the only lossy axis" invariant.
+      const targetGamut = gamutFromFormat(f);
+      const info = gamutInfo(color);
+      const alreadyIn =
+        targetGamut === "srgb"
+          ? info.inSrgb
+          : targetGamut === "p3"
+            ? info.inP3
+            : info.inRec2020;
+      if (!alreadyIn) {
+        const targetHue = color.h;
+        const clamped = toGamut(color, targetGamut);
+        commitColor({ ...clamped, h: targetHue });
+      }
       if (!isControlledFormat) setInternalFormat(f);
       onFormatChange?.(f);
     },
-    [isControlledFormat, onFormatChange],
+    [color, commitColor, isControlledFormat, onFormatChange],
   );
 
   const setFromString = React.useCallback(

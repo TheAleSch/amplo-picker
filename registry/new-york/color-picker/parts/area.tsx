@@ -6,12 +6,13 @@ import {
   findCusp,
   findMaxChroma,
   formatColor,
+  gamutFromFormat as libGamutFromFormat,
   gamutSignedDistance,
   linSrgbToLinP3,
   oklchToLinearSrgb,
   toGamut,
 } from "../lib/color";
-import type { ColorFormat, Gamut, OklchColor } from "../lib/types";
+import type { Gamut, OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
 
 export type AreaMode = "oklch-cl" | "hsv-sv" | "oklch-hc";
@@ -46,21 +47,6 @@ export interface AreaProps extends React.HTMLAttributes<HTMLDivElement> {
   resolution?: number;
 }
 
-function gamutFromFormat(f: ColorFormat): AreaGamut {
-  switch (f) {
-    case "hex":
-    case "rgb":
-    case "hsl":
-    case "hsb":
-      return "srgb";
-    case "p3":
-      return "p3";
-    case "oklch":
-    case "oklab":
-      return "rec2020";
-  }
-}
-
 /** Which gamuts get a warning line drawn inside the active render gamut. */
 function warningGamuts(active: AreaGamut): Gamut[] {
   switch (active) {
@@ -91,7 +77,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   ref,
 ) {
   const { color, setColor, format } = useColorPickerContext();
-  const gamut: AreaGamut = gamutProp ?? gamutFromFormat(format);
+  const gamut: AreaGamut = gamutProp ?? libGamutFromFormat(format);
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [paths, setPaths] = React.useState<string[][]>([]);

@@ -2,10 +2,16 @@
 
 import * as React from "react";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
+import { parseColor, formatAll } from "@/registry/new-york/color-picker/lib/color";
+import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 
 export default function Home() {
-  const [color, setColor] = React.useState("oklch(0.7 0.18 30)");
+  // OKLCH is the lossless source of truth; hex is derived for display/fallback.
+  const [color, setColor] = React.useState<OklchColor>(
+    () => parseColor("oklch(0.7 0.18 30)")!,
+  );
   const [bg, setBg] = React.useState("#ffffff");
+  const formats = React.useMemo(() => formatAll(color), [color]);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-12 px-6 py-16">
@@ -56,12 +62,14 @@ export default function Home() {
           </h2>
           <ColorPicker
             value={color}
-            onValueChange={(_, formatted) => setColor(formatted)}
+            onValueChange={(next) => setColor(next)}
             backgroundColor={bg}
             apca
           />
           <pre className="overflow-x-auto rounded-md border border-border bg-muted/40 p-2 font-mono text-xs">
-            {color}
+            {formats.oklch}
+            {"\n"}
+            {formats.hex}
           </pre>
         </div>
 
@@ -76,7 +84,7 @@ export default function Home() {
           </h2>
           <ColorPicker.Root
             value={color}
-            onValueChange={(_, formatted) => setColor(formatted)}
+            onValueChange={(next) => setColor(next)}
             backgroundColor={bg}
           >
             <ColorPicker.Area mode="oklch-hc" />
@@ -121,7 +129,7 @@ export default function Home() {
 
       <section
         className="rounded-2xl border border-border p-8"
-        style={{ background: bg, color }}
+        style={{ background: bg, color: formats.oklch }}
       >
         <h2 className="mb-2 text-2xl font-semibold">Live preview</h2>
         <p className="text-base">

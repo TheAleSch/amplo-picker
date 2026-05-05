@@ -128,6 +128,22 @@ describe("useColorPicker", () => {
     expect(result.current.color.h).toBeCloseTo(120, 1);
   });
 
+  it("object-controlled mode: setColor with achromatic OklchColor preserves the hue caller passes", () => {
+    let captured: any = null;
+    const { result, rerender } = renderHook(
+      ({ value }: { value: any }) =>
+        useColorPicker({ value, onValueChange: (c) => (captured = c) }),
+      { initialProps: { value: { l: 0.7, c: 0.18, h: 240, alpha: 1 } } },
+    );
+    // Simulate the area-drag pattern: spread color, change l/c only.
+    act(() => {
+      result.current.setColor({ ...result.current.color, c: 0.001, l: 0.5 });
+    });
+    expect(captured.h).toBeCloseTo(240, 1); // hue from spread, untouched
+    rerender({ value: captured });
+    expect(result.current.color.h).toBeCloseTo(240, 1);
+  });
+
   it("controlled mode: value prop overrides internal state", () => {
     const { result, rerender } = renderHook(
       ({ value }: { value: string }) => useColorPicker({ value }),

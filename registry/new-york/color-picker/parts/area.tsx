@@ -69,6 +69,14 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
 
   React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
 
+  // The gradient and gamut boundary only depend on the axis the mode keeps
+  // *fixed* (hue for oklch-cl/hsv-sv, lightness for oklch-hc). Depending on
+  // every channel of `color` triggers a 25 600-pixel canvas repaint and a
+  // 128×128 marching-squares pass on every pointer tick — enough to stall
+  // the bead and give the impression that drags don't follow the mouse,
+  // especially when gamut="p3" (slightly heavier per-pixel work). Narrow
+  // the deps to the locked axis so dragging the live axes is free.
+  const fixedAxisValue = mode === "oklch-hc" ? color.l : color.h;
   React.useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -89,7 +97,8 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
         ? []
         : computeGamutPaths(mode, color, chromaMax, gamut as Gamut),
     );
-  }, [mode, color.h, color.l, color.c, chromaMax, gamut, resolution]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, fixedAxisValue, chromaMax, gamut, resolution]);
 
   const [px, py] = positionFor(mode, color, chromaMax);
 

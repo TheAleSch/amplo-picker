@@ -162,7 +162,7 @@ export function Hero() {
         </div>
       </div>
 
-      <HaloTuner values={halo} onChange={setHalo} />
+      {/* <HaloTuner values={halo} onChange={setHalo} /> */}
     </section>
   );
 }

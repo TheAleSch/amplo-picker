@@ -333,8 +333,8 @@ export default function PlaygroundPage() {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
-        <div className="flex flex-col gap-4">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap items-center gap-1.5">
             {VARIANTS.map((v) => {
               const active = partsEqual(parts, v.parts);

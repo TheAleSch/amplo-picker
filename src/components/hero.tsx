@@ -49,8 +49,8 @@ type HaloParams = {
 };
 
 const DEFAULT_HALO: HaloParams = {
-  bloom: 3.15,
-  intensity: 0.65,
+  bloom: 6,
+  intensity: 0.75,
   blurStride: 30,
   blurPasses: 4,
   lodStep: 2.6,

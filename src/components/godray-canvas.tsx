@@ -105,11 +105,38 @@ uniform float u_bloomScale;
 uniform float u_intensity;
 uniform float u_lodStep;
 
-vec3 linearToSrgb(vec3 c) {
+// Display-P3 uses the same transfer function as sRGB but wider primaries.
+// We compute everything in linear sRGB (where OKLab natively lands), then
+// rotate into linear Display-P3 primaries before applying the transfer.
+// The canvas is tagged display-p3 so the browser routes the result to the
+// wide-gamut display path.
+vec3 linearSrgbToLinearP3(vec3 c) {
+  return vec3(
+    0.8224621*c.r + 0.1775380*c.g,
+    0.0331941*c.r + 0.9668058*c.g,
+    0.0170827*c.r + 0.0723974*c.g + 0.9105199*c.b
+  );
+}
+
+vec3 linearToTransfer(vec3 c) {
   c = max(c, vec3(0.0));
   vec3 a = 12.92 * c;
   vec3 b = 1.055 * pow(c, vec3(1.0/2.4)) - 0.055;
   return mix(a, b, step(vec3(0.0031308), c));
+}
+
+// Reinhard tone map — smooth roll-off for HDR values >1 instead of a hard
+// clip. Without this, the final 8-bit framebuffer write would clip the
+// bloom highlights and we'd lose all the smoothness HDR storage gives us.
+vec3 toneMap(vec3 c) {
+  return c / (1.0 + c);
+}
+
+// Interleaved gradient noise — cheap pixel-coordinate hash that produces
+// a high-quality blue-noise-like dither. Adding ±0.5/255 in 8-bit display
+// space breaks up the visible quantization stripes in dark gradients.
+float ign(vec2 p) {
+  return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
 }
 
 void main() {
@@ -121,7 +148,11 @@ void main() {
   vec3 bloom = (l0 + l1 + l2 + l3) * 0.25;
 
   vec3 col = (sharp + bloom * u_bloomScale) * u_intensity;
-  outColor = vec4(linearToSrgb(col), 1.0);
+  vec3 mapped = toneMap(col);
+  vec3 p3 = linearSrgbToLinearP3(mapped);
+  vec3 display = linearToTransfer(p3);
+  display += (ign(gl_FragCoord.xy) - 0.5) / 255.0;
+  outColor = vec4(display, 1.0);
 }`;
 
 const MASK_PIXELS = 1024;
@@ -180,18 +211,22 @@ export interface GodRayCanvasProps {
   lodStep?: number;
   swirlL?: number;
   swirlC?: number;
+  haloL?: number;
+  haloC?: number;
 }
 
 export function GodRayCanvas({
   className,
   markCenterFraction = { x: 0.34, y: 0.4 },
   markWidthFraction = 0.24,
-  intensity = 1.25,
-  bloom = 4.0,
+  intensity = 1.55,
+  bloom = 1.35,
   blurStride = 20,
-  lodStep = 2.8,
-  swirlL = 0.56,
-  swirlC = 0.3,
+  lodStep = 3.0,
+  swirlL = 0.66,
+  swirlC = 0.25,
+  haloL = 0.6,
+  haloC = 0.25,
 }: GodRayCanvasProps) {
   const ref = React.useRef<HTMLCanvasElement>(null);
   // Live-tunable uniforms read from a ref every frame so changes don't
@@ -203,14 +238,45 @@ export function GodRayCanvas({
     lodStep,
     swirlL,
     swirlC,
+    haloL,
+    haloC,
   });
-  paramsRef.current = { intensity, bloom, blurStride, lodStep, swirlL, swirlC };
+  paramsRef.current = {
+    intensity,
+    bloom,
+    blurStride,
+    lodStep,
+    swirlL,
+    swirlC,
+    haloL,
+    haloC,
+  };
 
   React.useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const gl = canvas.getContext("webgl2", { antialias: false, premultipliedAlpha: false });
+    // colorSpace isn't in lib.dom.d.ts for WebGLContextAttributes yet, so we
+    // cast the options bag. The browser-side attribute is real and covers
+    // context creation; the runtime setter below covers later browsers.
+    const gl = canvas.getContext("webgl2", {
+      antialias: false,
+      premultipliedAlpha: false,
+      colorSpace: "display-p3",
+    } as WebGLContextAttributes);
     if (!gl) return;
+    try {
+      (gl as WebGL2RenderingContext & { drawingBufferColorSpace?: string }).drawingBufferColorSpace = "display-p3";
+    } catch {
+      /* older browsers ignore this — sRGB output still works */
+    }
+
+    // Float color buffers eliminate banding from intermediate quantization.
+    // 16-bit half-floats give ~10 bits of mantissa per channel — plenty for
+    // smooth gradients — and stay renderable on every modern GPU. If the
+    // extension is missing (very old hardware), fall back to 8-bit.
+    const hdr = gl.getExtension("EXT_color_buffer_float");
+    const fboInternal = hdr ? gl.RGBA16F : gl.RGBA;
+    const fboType = hdr ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE;
 
     const vs = compile(gl, gl.VERTEX_SHADER, VERT);
     const paintFs = compile(gl, gl.FRAGMENT_SHADER, PAINT_FRAG);
@@ -256,40 +322,41 @@ export function GodRayCanvas({
       return t;
     };
 
-    // paintTex: full-res silhouette. blurA: half-res H-blur intermediate.
-    // blurB: half-res H+V-blurred (mipmapped — bloom source).
+    // paintTex holds the fill (sharp). haloSrc holds a separately colored
+    // copy of the silhouette used as the bloom input — letting the user
+    // pick a different L/C for the halo than for the fill. blurA/blurB are
+    // the H/V Gaussian intermediates, run at full canvas resolution for
+    // the sharpest halo edge. blurB has mipmaps and is the bloom source.
     const paintTex = makeRtTex(false);
+    const haloSrc = makeRtTex(false);
     const blurA = makeRtTex(false);
     const blurB = makeRtTex(true);
     const paintFbo = gl.createFramebuffer()!;
+    const haloFbo = gl.createFramebuffer()!;
     const fboA = gl.createFramebuffer()!;
     const fboB = gl.createFramebuffer()!;
     let paintW = 0;
     let paintH = 0;
-    let blurW = 0;
-    let blurH = 0;
 
     const allocBuffers = (w: number, h: number) => {
       if (w === paintW && h === paintH) return;
       paintW = w;
       paintH = h;
-      blurW = Math.max(1, Math.floor(w / 2));
-      blurH = Math.max(1, Math.floor(h / 2));
 
-      gl.bindTexture(gl.TEXTURE_2D, paintTex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, paintW, paintH, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, paintFbo);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, paintTex, 0);
+      const allocAttach = (
+        tex: WebGLTexture,
+        fbo: WebGLFramebuffer,
+      ) => {
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, fboInternal, w, h, 0, gl.RGBA, fboType, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      };
 
-      gl.bindTexture(gl.TEXTURE_2D, blurA);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, blurW, blurH, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fboA);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, blurA, 0);
-
-      gl.bindTexture(gl.TEXTURE_2D, blurB);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, blurW, blurH, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fboB);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, blurB, 0);
+      allocAttach(paintTex, paintFbo);
+      allocAttach(haloSrc, haloFbo);
+      allocAttach(blurA, fboA);
+      allocAttach(blurB, fboB);
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     };
@@ -339,10 +406,10 @@ export function GodRayCanvas({
 
       gl.bindVertexArray(vao);
 
-      // Pass 1: paint colored silhouette.
-      gl.bindFramebuffer(gl.FRAMEBUFFER, paintFbo);
-      gl.viewport(0, 0, paintW, paintH);
+      // Shared paint setup — same shader, same mask/geometry uniforms; only
+      // the swirl L/C differ between the two passes.
       gl.useProgram(paintProg);
+      gl.viewport(0, 0, paintW, paintH);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, mask);
       gl.uniform1i(uPaintMask, 0);
@@ -354,26 +421,35 @@ export function GodRayCanvas({
       );
       gl.uniform1f(uPaintTime, t);
       gl.uniform1f(uPaintAspect, aspect);
+
+      // Pass 1a: paint fill colors into paintTex (the sharp silhouette).
+      gl.bindFramebuffer(gl.FRAMEBUFFER, paintFbo);
       gl.uniform1f(uPaintSwirlL, p.swirlL);
       gl.uniform1f(uPaintSwirlC, p.swirlC);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-      // Pass 2: horizontal Gaussian blur into blurA.
+      // Pass 1b: paint halo colors into haloSrc (the bloom input).
+      gl.bindFramebuffer(gl.FRAMEBUFFER, haloFbo);
+      gl.uniform1f(uPaintSwirlL, p.haloL);
+      gl.uniform1f(uPaintSwirlC, p.haloC);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      // Pass 2: horizontal Gaussian blur of haloSrc into blurA.
       gl.bindFramebuffer(gl.FRAMEBUFFER, fboA);
-      gl.viewport(0, 0, blurW, blurH);
+      gl.viewport(0, 0, paintW, paintH);
       gl.useProgram(blurProg);
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, paintTex);
+      gl.bindTexture(gl.TEXTURE_2D, haloSrc);
       gl.uniform1i(uBlurSrc, 0);
-      gl.uniform2f(uBlurStep, p.blurStride / blurW, 0);
+      gl.uniform2f(uBlurStep, p.blurStride / paintW, 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
       // Pass 3: vertical Gaussian blur into blurB.
       gl.bindFramebuffer(gl.FRAMEBUFFER, fboB);
-      gl.viewport(0, 0, blurW, blurH);
+      gl.viewport(0, 0, paintW, paintH);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, blurA);
-      gl.uniform2f(uBlurStep, 0, p.blurStride / blurH);
+      gl.uniform2f(uBlurStep, 0, p.blurStride / paintH);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
       // Mipmap chain on the blurred texture is the multi-scale bloom source.
@@ -413,9 +489,11 @@ export function GodRayCanvas({
       gl.deleteVertexArray(vao);
       gl.deleteTexture(mask);
       gl.deleteTexture(paintTex);
+      gl.deleteTexture(haloSrc);
       gl.deleteTexture(blurA);
       gl.deleteTexture(blurB);
       gl.deleteFramebuffer(paintFbo);
+      gl.deleteFramebuffer(haloFbo);
       gl.deleteFramebuffer(fboA);
       gl.deleteFramebuffer(fboB);
     };

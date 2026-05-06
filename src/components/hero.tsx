@@ -14,10 +14,10 @@ import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 // overlay must use these. The black A renders inset to leave a rainbow rim.
 const MARK_CENTER = { x: 0.3, y: 0.36 };
 const MARK_WIDTH_FRAC = 0.22;
-// Inner black A renders slightly larger than the rainbow's box (102%) so
+// Inner black A renders slightly larger than the rainbow's box (101%) so
 // the rim is shaved tighter on the bottom while the path geometry leaves
 // it visible on top + sides.
-const BLACK_INSET = 1.02;
+const BLACK_INSET = 1.01;
 
 type HaloParams = {
   bloom: number;
@@ -26,15 +26,19 @@ type HaloParams = {
   lodStep: number;
   swirlL: number;
   swirlC: number;
+  haloL: number;
+  haloC: number;
 };
 
 const DEFAULT_HALO: HaloParams = {
-  bloom: 4.0,
-  intensity: 1.25,
+  bloom: 1.35,
+  intensity: 1.55,
   blurStride: 20,
-  lodStep: 2.8,
-  swirlL: 0.56,
-  swirlC: 0.3,
+  lodStep: 3.0,
+  swirlL: 0.66,
+  swirlC: 0.25,
+  haloL: 0.6,
+  haloC: 0.25,
 };
 
 export function Hero() {
@@ -52,6 +56,8 @@ export function Hero() {
         lodStep={halo.lodStep}
         swirlL={halo.swirlL}
         swirlC={halo.swirlC}
+        haloL={halo.haloL}
+        haloC={halo.haloC}
       />
 
       <svg
@@ -111,7 +117,7 @@ export function Hero() {
         </div>
       </div>
 
-      <HaloTuner values={halo} onChange={setHalo} />
+      {/* <HaloTuner values={halo} onChange={setHalo} /> */}
     </section>
   );
 }
@@ -142,8 +148,10 @@ function HaloTuner({
           <TunerSlider label="Intensity" min={0} max={2} step={0.05} value={values.intensity} onChange={set("intensity")} />
           <TunerSlider label="Blur stride" min={1} max={20} step={0.5} value={values.blurStride} onChange={set("blurStride")} />
           <TunerSlider label="LOD step" min={0.5} max={3} step={0.1} value={values.lodStep} onChange={set("lodStep")} />
-          <TunerSlider label="Swirl L" min={0.4} max={1} step={0.01} value={values.swirlL} onChange={set("swirlL")} />
-          <TunerSlider label="Swirl C" min={0} max={0.5} step={0.01} value={values.swirlC} onChange={set("swirlC")} />
+          <TunerSlider label="Fill L" min={0.4} max={1} step={0.01} value={values.swirlL} onChange={set("swirlL")} />
+          <TunerSlider label="Fill C" min={0} max={0.5} step={0.01} value={values.swirlC} onChange={set("swirlC")} />
+          <TunerSlider label="Halo L" min={0.4} max={1} step={0.01} value={values.haloL} onChange={set("haloL")} />
+          <TunerSlider label="Halo C" min={0} max={0.5} step={0.01} value={values.haloC} onChange={set("haloC")} />
           <button
             type="button"
             className="mt-1 self-start rounded border border-white/20 px-2 py-1 text-xs hover:bg-white/10"

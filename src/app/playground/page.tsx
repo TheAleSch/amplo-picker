@@ -62,6 +62,66 @@ type PartKey =
   | "contrastReadout"
   | "eyeDropper";
 
+type PartsState = Record<PartKey, boolean>;
+
+const ALL_OFF: PartsState = {
+  area: false,
+  hue: false,
+  lightness: false,
+  alpha: false,
+  preview: false,
+  channelInput: false,
+  input: false,
+  formatSwitcher: false,
+  swatches: false,
+  gamutBadge: false,
+  contrastReadout: false,
+  eyeDropper: false,
+};
+
+const VARIANTS: Array<{ name: string; parts: PartsState }> = [
+  {
+    name: "Canonical",
+    parts: {
+      ...ALL_OFF,
+      area: true,
+      hue: true,
+      alpha: true,
+      formatSwitcher: true,
+      eyeDropper: true,
+      channelInput: true,
+      gamutBadge: true,
+      contrastReadout: true,
+      swatches: true,
+    },
+  },
+  {
+    name: "Sliders + preview + channel",
+    parts: {
+      ...ALL_OFF,
+      preview: true,
+      hue: true,
+      lightness: true,
+      alpha: true,
+      channelInput: true,
+    },
+  },
+  {
+    name: "Area only",
+    parts: { ...ALL_OFF, area: true },
+  },
+  {
+    name: "Minimal",
+    parts: {
+      ...ALL_OFF,
+      area: true,
+      hue: true,
+      alpha: true,
+      channelInput: true,
+    },
+  },
+];
+
 const PARTS: Array<{ key: PartKey; label: string }> = [
   { key: "area", label: "Area" },
   { key: "hue", label: "Hue" },
@@ -93,20 +153,8 @@ export default function PlaygroundPage() {
   const [contrastShowLabel, setContrastShowLabel] = React.useState(true);
   const [contrastShowValue, setContrastShowValue] = React.useState(true);
   const [contrastShowBadges, setContrastShowBadges] = React.useState(true);
-  const [parts, setParts] = React.useState<Record<PartKey, boolean>>({
-    area: true,
-    hue: true,
-    lightness: false,
-    alpha: true,
-    preview: true,
-    channelInput: true,
-    input: false,
-    formatSwitcher: false,
-    swatches: false,
-    gamutBadge: true,
-    contrastReadout: true,
-    eyeDropper: true,
-  });
+  const [gamutShowLabel, setGamutShowLabel] = React.useState(false);
+  const [parts, setParts] = React.useState<PartsState>(VARIANTS[0].parts);
 
   const toggleFormat = (f: ColorFormat) => {
     setFormats((prev) => {
@@ -135,6 +183,7 @@ export default function PlaygroundPage() {
         contrastShowLabel,
         contrastShowValue,
         contrastShowBadges,
+        gamutShowLabel,
         bg,
         parts,
       }),
@@ -148,6 +197,7 @@ export default function PlaygroundPage() {
       contrastShowLabel,
       contrastShowValue,
       contrastShowBadges,
+      gamutShowLabel,
       bg,
       parts,
     ],
@@ -198,48 +248,47 @@ export default function PlaygroundPage() {
                     showWarningLines={showWarningLines}
                   />
                 )}
-                {(parts.preview ||
-                  parts.hue ||
-                  parts.lightness ||
-                  parts.alpha ||
-                  parts.eyeDropper) && (
-                  <div className="flex items-center gap-2">
-                    {parts.preview && <ColorPicker.Preview />}
-                    {(parts.hue || parts.lightness || parts.alpha) && (
-                      <div className="flex flex-1 flex-col gap-1.5">
-                        {parts.hue && <ColorPicker.Hue />}
-                        {parts.lightness && <ColorPicker.Lightness />}
-                        {parts.alpha && <ColorPicker.Alpha />}
-                      </div>
-                    )}
-                    {parts.eyeDropper && <ColorPicker.EyeDropper />}
+                {parts.preview && <ColorPicker.Preview />}
+                {(parts.hue || parts.lightness || parts.alpha) && (
+                  <div className="flex flex-col gap-1.5">
+                    {parts.hue && <ColorPicker.Hue />}
+                    {parts.lightness && <ColorPicker.Lightness />}
+                    {parts.alpha && <ColorPicker.Alpha />}
                   </div>
                 )}
-                {parts.gamutBadge && (
-                  <div className="flex justify-end">
-                    <ColorPicker.GamutBadge />
+                {(parts.formatSwitcher || parts.eyeDropper) && (
+                  <div className="flex items-center gap-2">
+                    {parts.formatSwitcher && (
+                      <ColorPicker.FormatSwitcher className="flex-1" />
+                    )}
+                    {parts.eyeDropper && (
+                      <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                    )}
                   </div>
                 )}
                 {parts.channelInput && (
                   <ColorPicker.ChannelInput showFormat={showChannelFormat} />
                 )}
-                {(parts.formatSwitcher || parts.input) && (
+                {parts.input && <ColorPicker.CssInput />}
+                {(parts.gamutBadge ||
+                  (parts.contrastReadout && contrastMetrics.length > 0)) && (
                   <div className="flex items-stretch gap-2">
-                    {parts.formatSwitcher && <ColorPicker.FormatSwitcher />}
-                    {parts.input && (
-                      <div className="flex-1">
-                        <ColorPicker.Input />
-                      </div>
+                    {parts.gamutBadge && (
+                      <ColorPicker.GamutBadge
+                        showLabel={gamutShowLabel}
+                        className="w-auto flex-1 justify-center"
+                      />
+                    )}
+                    {parts.contrastReadout && contrastMetrics.length > 0 && (
+                      <ColorPicker.ContrastReadout
+                        metrics={contrastMetrics}
+                        showLabel={contrastShowLabel}
+                        showValue={contrastShowValue}
+                        showBadges={contrastShowBadges}
+                        className="w-auto flex-1 justify-center"
+                      />
                     )}
                   </div>
-                )}
-                {parts.contrastReadout && contrastMetrics.length > 0 && (
-                  <ColorPicker.ContrastReadout
-                    metrics={contrastMetrics}
-                    showLabel={contrastShowLabel}
-                    showValue={contrastShowValue}
-                    showBadges={contrastShowBadges}
-                  />
                 )}
                 {parts.swatches && (
                   <ColorPicker.Swatches
@@ -254,6 +303,21 @@ export default function PlaygroundPage() {
         </div>
 
         <aside className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
+          <Knob label="variant">
+            <div className="flex flex-wrap gap-1.5">
+              {VARIANTS.map((v) => (
+                <button
+                  key={v.name}
+                  type="button"
+                  onClick={() => setParts(v.parts)}
+                  className="rounded border border-border px-2 py-1 text-xs hover:border-foreground hover:text-foreground"
+                >
+                  {v.name}
+                </button>
+              ))}
+            </div>
+          </Knob>
+
           <Knob label="areaMode">
             <div className="flex flex-col gap-1.5">
               {AREA_MODES.map((m) => (
@@ -373,6 +437,10 @@ export default function PlaygroundPage() {
             <Toggle value={contrastShowBadges} onChange={setContrastShowBadges} />
           </Knob>
 
+          <Knob label="GamutBadge.showLabel">
+            <Toggle value={gamutShowLabel} onChange={setGamutShowLabel} />
+          </Knob>
+
           <Knob label="parts">
             <div className="grid grid-cols-2 gap-1.5">
               {PARTS.map((p) => (
@@ -432,6 +500,7 @@ function buildSnippet({
   contrastShowLabel,
   contrastShowValue,
   contrastShowBadges,
+  gamutShowLabel,
   bg,
   parts,
 }: {
@@ -444,6 +513,7 @@ function buildSnippet({
   contrastShowLabel: boolean;
   contrastShowValue: boolean;
   contrastShowBadges: boolean;
+  gamutShowLabel: boolean;
   bg: string;
   parts: Record<PartKey, boolean>;
 }) {
@@ -463,48 +533,53 @@ function buildSnippet({
     lines.push(`  <ColorPicker.Area ${areaProps} />`);
   }
 
+  if (parts.preview) lines.push(`  <ColorPicker.Preview />`);
+
   const sliders: string[] = [];
   if (parts.hue) sliders.push(`<ColorPicker.Hue />`);
   if (parts.lightness) sliders.push(`<ColorPicker.Lightness />`);
   if (parts.alpha) sliders.push(`<ColorPicker.Alpha />`);
+  if (sliders.length) {
+    lines.push(`  <div className="flex flex-col gap-1.5">`);
+    sliders.forEach((s) => lines.push(`    ${s}`));
+    lines.push(`  </div>`);
+  }
 
-  const showRow =
-    parts.preview || sliders.length > 0 || parts.eyeDropper;
-  if (showRow) {
+  if (parts.formatSwitcher || parts.eyeDropper) {
     lines.push(`  <div className="flex items-center gap-2">`);
-    if (parts.preview) lines.push(`    <ColorPicker.Preview />`);
-    if (sliders.length) {
-      lines.push(`    <div className="flex flex-1 flex-col gap-1.5">`);
-      sliders.forEach((s) => lines.push(`      ${s}`));
-      lines.push(`    </div>`);
-    }
-    if (parts.eyeDropper) lines.push(`    <ColorPicker.EyeDropper />`);
+    if (parts.formatSwitcher)
+      lines.push(`    <ColorPicker.FormatSwitcher className="flex-1" />`);
+    if (parts.eyeDropper)
+      lines.push(`    <ColorPicker.EyeDropper className="h-8 w-full flex-1" />`);
     lines.push(`  </div>`);
   }
 
-  if (parts.gamutBadge) {
-    lines.push(`  <div className="flex justify-end">`);
-    lines.push(`    <ColorPicker.GamutBadge />`);
-    lines.push(`  </div>`);
-  }
   if (parts.channelInput)
     lines.push(
       `  <ColorPicker.ChannelInput${showChannelFormat ? "" : " showFormat={false}"} />`,
     );
-  if (parts.formatSwitcher || parts.input) {
+  if (parts.input) lines.push(`  <ColorPicker.CssInput />`);
+
+  const hasContrast = parts.contrastReadout && contrastMetrics.length > 0;
+  if (parts.gamutBadge || hasContrast) {
     lines.push(`  <div className="flex items-stretch gap-2">`);
-    if (parts.formatSwitcher) lines.push(`    <ColorPicker.FormatSwitcher />`);
-    if (parts.input)
-      lines.push(`    <div className="flex-1"><ColorPicker.Input /></div>`);
+    if (parts.gamutBadge) {
+      const gp: string[] = [];
+      if (!gamutShowLabel) gp.push(`showLabel={false}`);
+      gp.push(`className="w-auto flex-1 justify-center"`);
+      lines.push(`    <ColorPicker.GamutBadge ${gp.join(" ")} />`);
+    }
+    if (hasContrast) {
+      const props: string[] = [`metrics={${JSON.stringify(contrastMetrics)}}`];
+      if (!contrastShowLabel) props.push(`showLabel={false}`);
+      if (!contrastShowValue) props.push(`showValue={false}`);
+      if (!contrastShowBadges) props.push(`showBadges={false}`);
+      props.push(`className="w-auto flex-1 justify-center"`);
+      lines.push(`    <ColorPicker.ContrastReadout ${props.join(" ")} />`);
+    }
     lines.push(`  </div>`);
   }
-  if (parts.contrastReadout && contrastMetrics.length > 0) {
-    const props: string[] = [`metrics={${JSON.stringify(contrastMetrics)}}`];
-    if (!contrastShowLabel) props.push(`showLabel={false}`);
-    if (!contrastShowValue) props.push(`showValue={false}`);
-    if (!contrastShowBadges) props.push(`showBadges={false}`);
-    lines.push(`  <ColorPicker.ContrastReadout ${props.join(" ")} />`);
-  }
+
   if (parts.swatches)
     lines.push(
       `  <ColorPicker.Swatches presets={["#fff", "#000", "oklch(0.7 0.18 30)"]} />`,

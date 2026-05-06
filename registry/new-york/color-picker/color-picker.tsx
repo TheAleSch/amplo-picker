@@ -5,7 +5,7 @@ import { Area } from "./parts/area";
 import { Hue } from "./parts/hue";
 import { Lightness } from "./parts/lightness";
 import { Alpha } from "./parts/alpha";
-import { Input } from "./parts/input";
+import { CssInput } from "./parts/css-input";
 import { FormatSwitcher } from "./parts/format-switcher";
 import { ChannelInput } from "./parts/channel-input";
 import { Swatches } from "./parts/swatches";
@@ -51,7 +51,7 @@ export const ColorPicker = {
   Hue,
   Lightness,
   Alpha,
-  Input,
+  CssInput,
   FormatSwitcher,
   ChannelInput,
   Swatches,

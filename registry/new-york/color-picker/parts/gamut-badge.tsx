@@ -10,10 +10,13 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-export interface GamutBadgeProps extends React.HTMLAttributes<HTMLDivElement> {}
+export interface GamutBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Show the "Gamut" prefix label. Default true. */
+  showLabel?: boolean;
+}
 
 export const GamutBadge = React.forwardRef<HTMLDivElement, GamutBadgeProps>(function GamutBadge(
-  { className, ...rest },
+  { showLabel = true, className, ...rest },
   ref,
 ) {
   const { gamut } = useColorPickerContext();
@@ -39,7 +42,7 @@ export const GamutBadge = React.forwardRef<HTMLDivElement, GamutBadgeProps>(func
             )}
             {...rest}
           >
-            <span className="text-muted-foreground">Gamut</span>
+            {showLabel && <span className="text-muted-foreground">Gamut</span>}
             <span className="font-mono font-medium">{label}</span>
           </div>
         </TooltipTrigger>

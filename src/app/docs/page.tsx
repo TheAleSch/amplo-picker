@@ -634,7 +634,7 @@ const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.GamutBadge />
   <ColorPicker.ChannelInput />  {/* format dropdown + per-channel fields */}
   <ColorPicker.FormatSwitcher /> {/* alt: standalone format select */}
-  <ColorPicker.Input />          {/* alt: single CSS-string text field */}
+  <ColorPicker.CssInput />       {/* alt: single CSS-string text field */}
   <ColorPicker.ContrastReadout />
   <ColorPicker.Swatches />
 </ColorPicker.Root>`;
@@ -750,9 +750,9 @@ const PART_ROWS: PropRow[] = [
     default: "—",
   },
   {
-    name: "<ColorPicker.Input>",
+    name: "<ColorPicker.CssInput>",
     type: "—",
-    desc: "Text input. Parses any CSS Color 4 string on Enter/blur, marks invalid via aria-invalid. Escape reverts.",
+    desc: "Single text input that parses any CSS Color 4 string on Enter/blur. Marks invalid via aria-invalid; Escape reverts.",
     default: "—",
   },
   {

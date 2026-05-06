@@ -4,9 +4,9 @@ import * as React from "react";
 import { useColorPickerContext } from "../context";
 import { cn } from "@/lib/utils";
 
-export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {}
+export interface CssInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {}
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
+export const CssInput = React.forwardRef<HTMLInputElement, CssInputProps>(function CssInput(
   { className, ...rest },
   ref,
 ) {

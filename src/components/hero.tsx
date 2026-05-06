@@ -285,9 +285,14 @@ function HeroPicker() {
         <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
       </div>
       <ColorPicker.ChannelInput showFormat={false} />
-      <div className="flex items-center justify-between gap-2">
-        <ColorPicker.GamutBadge />
-        <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
+      <div className="flex items-stretch gap-2">
+        <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+        <ColorPicker.ContrastReadout
+          metrics={["wcag", "apca"]}
+          showLabel={false}
+          showValue={false}
+          className="w-auto flex-1 justify-center"
+        />
       </div>
       <ColorPicker.Swatches presets={P3_VIVID_PRESETS} />
     </ColorPicker.Root>

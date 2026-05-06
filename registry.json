@@ -62,9 +62,9 @@
           "target": "components/ui/color-picker/parts/alpha.tsx"
         },
         {
-          "path": "registry/new-york/color-picker/parts/input.tsx",
+          "path": "registry/new-york/color-picker/parts/css-input.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/input.tsx"
+          "target": "components/ui/color-picker/parts/css-input.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/format-switcher.tsx",

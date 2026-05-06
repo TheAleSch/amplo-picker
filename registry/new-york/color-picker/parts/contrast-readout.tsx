@@ -189,7 +189,7 @@ function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
         "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
         ok
           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-          : "bg-destructive/15 text-destructive",
+          : "bg-red-500/15 text-red-700 dark:text-red-400",
       )}
     >
       {children}

@@ -10,14 +10,27 @@ import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 
-// Single source of truth for mark placement — both the shader and the SVG
-// overlay must use these. The black A renders inset to leave a rainbow rim.
-const MARK_CENTER = { x: 0.3, y: 0.36 };
-const MARK_WIDTH_FRAC = 0.22;
+// Mark placement is responsive — on lg+ the logo sits offset to the left so
+// the picker can occupy the right column; on mobile the logo centers and
+// grows so it reads as the hero artwork above the stacked content.
+const MARK_DESKTOP = { center: { x: 0.3, y: 0.36 }, width: 0.22 };
+const MARK_MOBILE = { center: { x: 0.5, y: 0.22 }, width: 0.5 };
 // Inner black A renders slightly larger than the rainbow's box (101%) so
 // the rim is shaved tighter on the bottom while the path geometry leaves
 // it visible on top + sides.
 const BLACK_INSET = 1.01;
+
+function useResponsiveMark() {
+  const [v, setV] = React.useState(MARK_DESKTOP);
+  React.useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const update = () => setV(mql.matches ? MARK_MOBILE : MARK_DESKTOP);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+  return v;
+}
 
 type HaloParams = {
   bloom: number;
@@ -53,6 +66,7 @@ const DEFAULT_HALO: HaloParams = {
 
 export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+  const { center: MARK_CENTER, width: MARK_WIDTH_FRAC } = useResponsiveMark();
 
   return (
     <section className="relative isolate min-h-screen overflow-hidden bg-background text-foreground">
@@ -110,12 +124,12 @@ export function Hero() {
         <HeroPicker />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-start justify-end gap-12 px-6 pb-12 pt-24 lg:px-16 lg:pb-16">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-start justify-end gap-8 px-6 pb-10 pt-20 sm:gap-12 sm:pb-12 sm:pt-24 lg:px-16 lg:pb-16">
         <div className="flex flex-col gap-3">
-          <h1 className="text-5xl font-semibold tracking-tight md:text-6xl">
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
             Amplo Picker
           </h1>
-          <p className="max-w-md text-base text-white/65">
+          <p className="max-w-md text-sm text-foreground/70 sm:text-base">
             OKLCH-native, Display-P3-aware color picker for shadcn.
             Composable, accessible, gamut-aware. Drop into any Next.js +
             Tailwind&nbsp;v4 app with one CLI command.
@@ -148,7 +162,7 @@ function HaloTuner({
   const set = (k: keyof HaloParams) => (e: React.ChangeEvent<HTMLInputElement>) =>
     onChange({ ...values, [k]: parseFloat(e.target.value) });
   return (
-    <div className="fixed bottom-6 left-6 z-50 w-72 rounded-lg border border-white/10 bg-black/70 text-white shadow-xl backdrop-blur-md">
+    <div className="fixed bottom-6 left-6 z-50 hidden w-72 rounded-lg border border-white/10 bg-black/70 text-white shadow-xl backdrop-blur-md lg:block">
       <button
         type="button"
         className="flex w-full items-center justify-between border-b border-white/10 px-4 py-2 text-sm font-medium"
@@ -250,7 +264,7 @@ function HeroPicker() {
 
 function Toolbar() {
   return (
-    <div className="absolute right-6 top-6 z-10 flex items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 backdrop-blur-md">
+    <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 text-white backdrop-blur-md sm:right-6 sm:top-6">
       <Link
         href="/docs"
         className="rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white"
@@ -259,7 +273,7 @@ function Toolbar() {
       </Link>
       <Link
         href="/playground"
-        className="rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white"
+        className="hidden rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white sm:inline-block"
       >
         Playground
       </Link>
@@ -270,13 +284,14 @@ function Toolbar() {
         target="_blank"
         rel="noreferrer noopener"
         className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+        aria-label="View on GitHub"
       >
         <svg aria-hidden viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
           <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
         </svg>
-        GitHub
+        <span className="hidden sm:inline">GitHub</span>
       </a>
-      <div className="flex items-center pl-1 pr-1.5">
+      <div className="hidden items-center pl-1 pr-1.5 md:flex">
         <iframe
           src="https://ghbtns.com/github-btn.html?user=TheAleSch&repo=amplo-picker&type=star&count=true"
           title="Star TheAleSch/amplo-picker on GitHub"

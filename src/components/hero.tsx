@@ -283,6 +283,15 @@ function HeroPicker() {
       backgroundColor="#0a0a0a"
       className="w-full max-w-70"
     >
+      <div className="flex items-stretch gap-2">
+        <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+        <ColorPicker.ContrastReadout
+          metrics={["wcag", "apca"]}
+          showLabel={false}
+          showValue={false}
+          className="w-auto flex-1 justify-center"
+        />
+      </div>
       <ColorPicker.Area mode="oklch-cl" />
       <div className="flex flex-col gap-1.5">
         <ColorPicker.Hue />
@@ -293,15 +302,6 @@ function HeroPicker() {
         <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
       </div>
       <ColorPicker.ChannelInput showFormat={false} />
-      <div className="flex items-stretch gap-2">
-        <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
-        <ColorPicker.ContrastReadout
-          metrics={["wcag", "apca"]}
-          showLabel={false}
-          showValue={false}
-          className="w-auto flex-1 justify-center"
-        />
-      </div>
       <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
     </ColorPicker.Root>
   );

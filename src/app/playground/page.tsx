@@ -191,6 +191,7 @@ export default function PlaygroundPage() {
   const [contrastShowValue, setContrastShowValue] = React.useState(true);
   const [contrastShowBadges, setContrastShowBadges] = React.useState(true);
   const [gamutShowLabel, setGamutShowLabel] = React.useState(false);
+  const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
   const [parts, setParts] = React.useState<PartsState>(VARIANTS[0].parts);
 
   const toggleFormat = (f: ColorFormat) => {
@@ -300,6 +301,26 @@ export default function PlaygroundPage() {
                 formats={formats}
                 defaultFormat={defaultFormat}
               >
+                {(parts.gamutBadge ||
+                  (parts.contrastReadout && contrastMetrics.length > 0)) && (
+                  <div className="flex items-stretch gap-2">
+                    {parts.gamutBadge && (
+                      <ColorPicker.GamutBadge
+                        showLabel={gamutShowLabel}
+                        className="w-auto flex-1 justify-center"
+                      />
+                    )}
+                    {parts.contrastReadout && contrastMetrics.length > 0 && (
+                      <ColorPicker.ContrastReadout
+                        metrics={contrastMetrics}
+                        showLabel={contrastShowLabel}
+                        showValue={contrastShowValue}
+                        showBadges={contrastShowBadges}
+                        className="w-auto flex-1 justify-center"
+                      />
+                    )}
+                  </div>
+                )}
                 {parts.area && (
                   <ColorPicker.Area
                     mode={areaMode}
@@ -328,29 +349,14 @@ export default function PlaygroundPage() {
                   <ColorPicker.ChannelInput showFormat={showChannelFormat} />
                 )}
                 {parts.input && <ColorPicker.CssInput />}
-                {(parts.gamutBadge ||
-                  (parts.contrastReadout && contrastMetrics.length > 0)) && (
-                  <div className="flex items-stretch gap-2">
-                    {parts.gamutBadge && (
-                      <ColorPicker.GamutBadge
-                        showLabel={gamutShowLabel}
-                        className="w-auto flex-1 justify-center"
-                      />
-                    )}
-                    {parts.contrastReadout && contrastMetrics.length > 0 && (
-                      <ColorPicker.ContrastReadout
-                        metrics={contrastMetrics}
-                        showLabel={contrastShowLabel}
-                        showValue={contrastShowValue}
-                        showBadges={contrastShowBadges}
-                        className="w-auto flex-1 justify-center"
-                      />
-                    )}
-                  </div>
-                )}
                 {parts.swatches && (
                   <ColorPicker.Swatches
-                    presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
+                    presets={["#fff", "#000", "oklch(0.7 0.18 30)", ...savedSwatches]}
+                    onAdd={(_c, hex) =>
+                      setSavedSwatches((prev) =>
+                        prev.includes(hex) ? prev : [...prev, hex],
+                      )
+                    }
                   />
                 )}
               </ColorPicker.Root>
@@ -575,6 +581,26 @@ function buildSnippet({
     lines.push(`  defaultFormat=${JSON.stringify(defaultFormat)}`);
   lines.push(`>`);
 
+  const hasContrast = parts.contrastReadout && contrastMetrics.length > 0;
+  if (parts.gamutBadge || hasContrast) {
+    lines.push(`  <div className="flex items-stretch gap-2">`);
+    if (parts.gamutBadge) {
+      const gp: string[] = [];
+      if (!gamutShowLabel) gp.push(`showLabel={false}`);
+      gp.push(`className="w-auto flex-1 justify-center"`);
+      lines.push(`    <ColorPicker.GamutBadge ${gp.join(" ")} />`);
+    }
+    if (hasContrast) {
+      const props: string[] = [`metrics={${JSON.stringify(contrastMetrics)}}`];
+      if (!contrastShowLabel) props.push(`showLabel={false}`);
+      if (!contrastShowValue) props.push(`showValue={false}`);
+      if (!contrastShowBadges) props.push(`showBadges={false}`);
+      props.push(`className="w-auto flex-1 justify-center"`);
+      lines.push(`    <ColorPicker.ContrastReadout ${props.join(" ")} />`);
+    }
+    lines.push(`  </div>`);
+  }
+
   if (parts.area) {
     const areaProps = `mode="${areaMode}"${showWarningLines ? "" : " showWarningLines={false}"}`;
     lines.push(`  <ColorPicker.Area ${areaProps} />`);
@@ -607,29 +633,9 @@ function buildSnippet({
     );
   if (parts.input) lines.push(`  <ColorPicker.CssInput />`);
 
-  const hasContrast = parts.contrastReadout && contrastMetrics.length > 0;
-  if (parts.gamutBadge || hasContrast) {
-    lines.push(`  <div className="flex items-stretch gap-2">`);
-    if (parts.gamutBadge) {
-      const gp: string[] = [];
-      if (!gamutShowLabel) gp.push(`showLabel={false}`);
-      gp.push(`className="w-auto flex-1 justify-center"`);
-      lines.push(`    <ColorPicker.GamutBadge ${gp.join(" ")} />`);
-    }
-    if (hasContrast) {
-      const props: string[] = [`metrics={${JSON.stringify(contrastMetrics)}}`];
-      if (!contrastShowLabel) props.push(`showLabel={false}`);
-      if (!contrastShowValue) props.push(`showValue={false}`);
-      if (!contrastShowBadges) props.push(`showBadges={false}`);
-      props.push(`className="w-auto flex-1 justify-center"`);
-      lines.push(`    <ColorPicker.ContrastReadout ${props.join(" ")} />`);
-    }
-    lines.push(`  </div>`);
-  }
-
   if (parts.swatches)
     lines.push(
-      `  <ColorPicker.Swatches presets={["#fff", "#000", "oklch(0.7 0.18 30)"]} />`,
+      `  <ColorPicker.Swatches presets={[…]} onAdd={(_c, hex) => savePreset(hex)} />`,
     );
 
   lines.push(`</ColorPicker.Root>`);

@@ -2,6 +2,12 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type ContrastMetric = "wcag" | "apca";
@@ -76,23 +82,31 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
       );
 
     if (togglable) {
+      const nextMetric = metrics[(metrics.indexOf(active) + 1) % metrics.length];
       return (
-        <button
-          ref={ref as React.Ref<HTMLButtonElement>}
-          data-slot="color-picker-contrast-readout"
-          type="button"
-          onClick={cycle}
-          aria-label={`Contrast (${active.toUpperCase()}). Click to switch.`}
-          className={cn(
-            baseClass,
-            "cursor-pointer text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            className,
-          )}
-          {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
-        >
-          {body}
-          <span aria-hidden="true" className="ml-auto text-muted-foreground">⇅</span>
-        </button>
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                ref={ref as React.Ref<HTMLButtonElement>}
+                data-slot="color-picker-contrast-readout"
+                type="button"
+                onClick={cycle}
+                aria-label={`Contrast (${active.toUpperCase()}). Click to switch.`}
+                className={cn(
+                  baseClass,
+                  "cursor-pointer text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  className,
+                )}
+                {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+              >
+                {body}
+                <span aria-hidden="true" className="ml-auto text-muted-foreground">⇅</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Switch to {nextMetric.toUpperCase()}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     }
 

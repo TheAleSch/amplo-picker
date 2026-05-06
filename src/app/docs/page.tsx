@@ -420,6 +420,15 @@ function CanonicalLayout({
       onValueChange={(next) => setColor(next)}
       backgroundColor="#ffffff"
     >
+      <div className="flex items-stretch gap-2">
+        <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+        <ColorPicker.ContrastReadout
+          metrics={["wcag", "apca"]}
+          showLabel={false}
+          showValue={false}
+          className="w-auto flex-1 justify-center"
+        />
+      </div>
       <ColorPicker.Area mode={areaMode} />
       <div className="flex flex-col gap-1.5">
         <ColorPicker.Hue />
@@ -430,10 +439,6 @@ function CanonicalLayout({
         <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
       </div>
       <ColorPicker.ChannelInput showFormat={false} />
-      <div className="flex items-center justify-between gap-2">
-        <ColorPicker.GamutBadge />
-        <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
-      </div>
       <ColorPicker.Swatches />
     </ColorPicker.Root>
   );
@@ -450,6 +455,15 @@ function CompoundExample() {
         onValueChange={(next) => setColor(next)}
         backgroundColor="#ffffff"
       >
+        <div className="flex items-stretch gap-2">
+          <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+          <ColorPicker.ContrastReadout
+            metrics={["wcag", "apca"]}
+            showLabel={false}
+            showValue={false}
+            className="w-auto flex-1 justify-center"
+          />
+        </div>
         <ColorPicker.Area mode="oklch-hc" />
         <div className="flex flex-col gap-1.5">
           <ColorPicker.Lightness />
@@ -460,10 +474,6 @@ function CompoundExample() {
           <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
         </div>
         <ColorPicker.ChannelInput showFormat={false} />
-        <div className="flex items-center justify-between gap-2">
-          <ColorPicker.GamutBadge />
-          <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
-        </div>
       </ColorPicker.Root>
     </div>
   );
@@ -567,6 +577,15 @@ export function ColorPickerDemo() {
       onValueChange={(next) => setColor(next)}
       backgroundColor="#ffffff"
     >
+      <div className="flex items-stretch gap-2">
+        <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+        <ColorPicker.ContrastReadout
+          metrics={["wcag", "apca"]}
+          showLabel={false}
+          showValue={false}
+          className="w-auto flex-1 justify-center"
+        />
+      </div>
       <ColorPicker.Area mode="oklch-cl" />
       <div className="flex flex-col gap-1.5">
         <ColorPicker.Hue />
@@ -577,10 +596,6 @@ export function ColorPickerDemo() {
         <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
       </div>
       <ColorPicker.ChannelInput showFormat={false} />
-      <div className="flex items-center justify-between gap-2">
-        <ColorPicker.GamutBadge />
-        <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
-      </div>
       <ColorPicker.Swatches />
     </ColorPicker.Root>
   );
@@ -614,6 +629,15 @@ const HSV_CODE = `<ColorPicker.Root
   onValueChange={(next) => setColor(next)}
   backgroundColor="#ffffff"
 >
+  <div className="flex items-stretch gap-2">
+    <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+    <ColorPicker.ContrastReadout
+      metrics={["wcag", "apca"]}
+      showLabel={false}
+      showValue={false}
+      className="w-auto flex-1 justify-center"
+    />
+  </div>
   <ColorPicker.Area mode="hsv-sv" />
   <div className="flex flex-col gap-1.5">
     <ColorPicker.Hue />
@@ -624,10 +648,6 @@ const HSV_CODE = `<ColorPicker.Root
     <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
   </div>
   <ColorPicker.ChannelInput showFormat={false} />
-  <div className="flex items-center justify-between gap-2">
-    <ColorPicker.GamutBadge />
-    <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
-  </div>
   <ColorPicker.Swatches />
 </ColorPicker.Root>`;
 
@@ -636,6 +656,15 @@ const COMPOUND_CODE = `<ColorPicker.Root
   onValueChange={(next) => setColor(next)}
   backgroundColor="#ffffff"
 >
+  <div className="flex items-stretch gap-2">
+    <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+    <ColorPicker.ContrastReadout
+      metrics={["wcag", "apca"]}
+      showLabel={false}
+      showValue={false}
+      className="w-auto flex-1 justify-center"
+    />
+  </div>
   <ColorPicker.Area mode="oklch-hc" />
   <div className="flex flex-col gap-1.5">
     <ColorPicker.Lightness />
@@ -646,10 +675,6 @@ const COMPOUND_CODE = `<ColorPicker.Root
     <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
   </div>
   <ColorPicker.ChannelInput showFormat={false} />
-  <div className="flex items-center justify-between gap-2">
-    <ColorPicker.GamutBadge />
-    <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
-  </div>
 </ColorPicker.Root>`;
 
 const POPOVER_CODE = `import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

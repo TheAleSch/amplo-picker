@@ -146,7 +146,9 @@ float ign(vec2 p) {
 }
 
 void main() {
-  vec3 sharp = texture(u_paint, v_uv).rgb;
+  vec4 paintSample = texture(u_paint, v_uv);
+  vec3 sharp = paintSample.rgb;
+  float fillAlpha = paintSample.a;
   // Chain of LOD samples: each step is u_lodStep mip levels coarser than
   // the last. Count and step together control how broad the halo spreads
   // and how soon you start hitting deep-mip rectangle artifacts.
@@ -163,7 +165,10 @@ void main() {
   vec3 p3 = linearSrgbToLinearP3(mapped);
   vec3 display = linearToTransfer(p3);
   display += (ign(gl_FragCoord.xy) - 0.5) / 255.0;
-  outColor = vec4(display, 1.0);
+  // Coverage-based alpha: silhouette is fully opaque, bloom carries its own
+  // luminance, dark regions go transparent so the section bg shows through.
+  float alpha = clamp(max(fillAlpha, max(display.r, max(display.g, display.b))), 0.0, 1.0);
+  outColor = vec4(display, alpha);
 }`;
 
 const MASK_PIXELS = 1024;

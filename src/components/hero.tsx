@@ -55,7 +55,7 @@ export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
 
   return (
-    <section className="dark relative isolate min-h-screen overflow-hidden bg-[#131313] text-white">
+    <section className="relative isolate min-h-screen overflow-hidden bg-background text-foreground">
       <GodRayCanvas
         className="absolute inset-0"
         markCenterFraction={MARK_CENTER}

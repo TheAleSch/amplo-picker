@@ -15,6 +15,9 @@ export interface ChannelInputProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   /** Override the formats from <ColorPicker.Root formats={...}>. */
   formats?: ColorFormat[];
+  /** Hide the inline format selector — useful when pairing with a
+   * standalone <FormatSwitcher /> elsewhere in the layout. */
+  showFormat?: boolean;
 }
 
 /**
@@ -26,7 +29,10 @@ export interface ChannelInputProps
 export const ChannelInput = React.forwardRef<
   HTMLDivElement,
   ChannelInputProps
->(function ChannelInput({ formats: formatsProp, className, ...rest }, ref) {
+>(function ChannelInput(
+  { formats: formatsProp, showFormat = true, className, ...rest },
+  ref,
+) {
   const {
     color,
     format,
@@ -52,14 +58,18 @@ export const ChannelInput = React.forwardRef<
       ref={ref}
       data-slot="color-picker-channel-input"
       className={cn(
-        "flex h-8 items-stretch overflow-hidden rounded-md border border-input bg-background font-mono text-xs",
-        "focus-within:ring-2 focus-within:ring-ring",
+        "flex h-8 items-stretch overflow-hidden rounded-md border border-input bg-transparent font-mono text-xs shadow-xs",
+        "focus-within:ring-1 focus-within:ring-ring",
         className,
       )}
       {...rest}
     >
-      <FormatSelect format={format} formats={formats} onChange={setFormat} />
-      <Divider />
+      {showFormat && (
+        <>
+          <FormatSelect format={format} formats={formats} onChange={setFormat} />
+          <Divider />
+        </>
+      )}
       {format === "hex" ? (
         <HexField value={formatted} onCommit={setFromString} />
       ) : (

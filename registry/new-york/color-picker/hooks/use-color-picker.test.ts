@@ -4,10 +4,12 @@ import { useColorPicker } from "./use-color-picker";
 
 describe("useColorPicker", () => {
   it("initializes from defaultValue string", () => {
-    const { result } = renderHook(() => useColorPicker({ defaultValue: "#ff0000" }));
+    const { result } = renderHook(() =>
+      useColorPicker({ defaultValue: "#ff0000", defaultFormat: "hex" }),
+    );
     expect(result.current.color.l).toBeGreaterThan(0.5);
     expect(result.current.color.alpha).toBe(1);
-    expect(result.current.formatted).toMatch(/^#ff0000/i);
+    expect(result.current.formatted).toMatch(/^#FF0000/i);
   });
 
   it("falls back to opaque black when no defaultValue", () => {

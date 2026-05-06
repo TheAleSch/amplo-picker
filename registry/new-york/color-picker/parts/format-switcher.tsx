@@ -36,8 +36,8 @@ export const FormatSwitcher = React.forwardRef<
         value={format}
         onChange={(e) => setFormat(e.target.value as ColorFormat)}
         className={cn(
-          "h-8 appearance-none rounded-md border border-input bg-background pl-2 pr-7 font-mono text-xs uppercase tracking-wide outline-none",
-          "focus-visible:ring-2 focus-visible:ring-ring",
+          "h-8 w-full appearance-none rounded-md border border-input bg-transparent pl-2.5 pr-7 font-mono text-xs uppercase tracking-wide shadow-xs outline-none",
+          "focus-visible:ring-1 focus-visible:ring-ring",
           "cursor-pointer",
         )}
         {...rest}

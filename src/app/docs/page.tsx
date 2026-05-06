@@ -414,19 +414,19 @@ function CanonicalLayout({
       backgroundColor="#ffffff"
     >
       <ColorPicker.Area mode={areaMode} />
+      <div className="flex flex-col gap-1.5">
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
+      </div>
       <div className="flex items-center gap-2">
-        <ColorPicker.Preview />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <ColorPicker.Hue />
-          <ColorPicker.Alpha />
-        </div>
-        <ColorPicker.EyeDropper />
+        <ColorPicker.FormatSwitcher className="flex-1" />
+        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
       </div>
-      <div className="flex items-center justify-end">
+      <ColorPicker.ChannelInput showFormat={false} />
+      <div className="flex items-center justify-between gap-2">
         <ColorPicker.GamutBadge />
+        <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       </div>
-      <ColorPicker.ChannelInput />
-      <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       <ColorPicker.Swatches />
     </ColorPicker.Root>
   );
@@ -444,19 +444,19 @@ function CompoundExample() {
         backgroundColor="#ffffff"
       >
         <ColorPicker.Area mode="oklch-hc" />
-        <div className="flex items-center gap-2">
-          <ColorPicker.Preview />
-          <div className="flex flex-1 flex-col gap-1.5">
-            <ColorPicker.Lightness />
-            <ColorPicker.Alpha />
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <ColorPicker.Lightness />
+          <ColorPicker.Alpha />
         </div>
+        <div className="flex items-center gap-2">
+          <ColorPicker.FormatSwitcher className="flex-1" />
+          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+        </div>
+        <ColorPicker.ChannelInput showFormat={false} />
         <div className="flex items-center justify-between gap-2">
           <ColorPicker.GamutBadge />
-          <ColorPicker.EyeDropper />
+          <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
         </div>
-        <ColorPicker.ChannelInput />
-        <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       </ColorPicker.Root>
     </div>
   );
@@ -509,19 +509,19 @@ export function ColorPickerDemo() {
       backgroundColor="#ffffff"
     >
       <ColorPicker.Area mode="oklch-cl" />
+      <div className="flex flex-col gap-1.5">
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
+      </div>
       <div className="flex items-center gap-2">
-        <ColorPicker.Preview />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <ColorPicker.Hue />
-          <ColorPicker.Alpha />
-        </div>
-        <ColorPicker.EyeDropper />
+        <ColorPicker.FormatSwitcher className="flex-1" />
+        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
       </div>
-      <div className="flex items-center justify-end">
+      <ColorPicker.ChannelInput showFormat={false} />
+      <div className="flex items-center justify-between gap-2">
         <ColorPicker.GamutBadge />
+        <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       </div>
-      <ColorPicker.ChannelInput />
-      <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       <ColorPicker.Swatches />
     </ColorPicker.Root>
   );
@@ -556,19 +556,19 @@ const HSV_CODE = `<ColorPicker.Root
   backgroundColor="#ffffff"
 >
   <ColorPicker.Area mode="hsv-sv" />
+  <div className="flex flex-col gap-1.5">
+    <ColorPicker.Hue />
+    <ColorPicker.Alpha />
+  </div>
   <div className="flex items-center gap-2">
-    <ColorPicker.Preview />
-    <div className="flex flex-1 flex-col gap-1.5">
-      <ColorPicker.Hue />
-      <ColorPicker.Alpha />
-    </div>
-    <ColorPicker.EyeDropper />
+    <ColorPicker.FormatSwitcher className="flex-1" />
+    <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
   </div>
-  <div className="flex items-center justify-end">
+  <ColorPicker.ChannelInput showFormat={false} />
+  <div className="flex items-center justify-between gap-2">
     <ColorPicker.GamutBadge />
+    <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
   </div>
-  <ColorPicker.ChannelInput />
-  <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
   <ColorPicker.Swatches />
 </ColorPicker.Root>`;
 
@@ -578,19 +578,19 @@ const COMPOUND_CODE = `<ColorPicker.Root
   backgroundColor="#ffffff"
 >
   <ColorPicker.Area mode="oklch-hc" />
-  <div className="flex items-center gap-2">
-    <ColorPicker.Preview />
-    <div className="flex flex-1 flex-col gap-1.5">
-      <ColorPicker.Lightness />
-      <ColorPicker.Alpha />
-    </div>
+  <div className="flex flex-col gap-1.5">
+    <ColorPicker.Lightness />
+    <ColorPicker.Alpha />
   </div>
+  <div className="flex items-center gap-2">
+    <ColorPicker.FormatSwitcher className="flex-1" />
+    <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+  </div>
+  <ColorPicker.ChannelInput showFormat={false} />
   <div className="flex items-center justify-between gap-2">
     <ColorPicker.GamutBadge />
-    <ColorPicker.EyeDropper />
+    <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
   </div>
-  <ColorPicker.ChannelInput />
-  <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
 </ColorPicker.Root>`;
 
 const POPOVER_CODE = `import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -611,14 +611,15 @@ const POPOVER_CODE = `import { Popover, PopoverContent, PopoverTrigger } from "@
       backgroundColor="#ffffff"
     >
       <ColorPicker.Area />
-      <div className="flex items-center gap-2">
-        <ColorPicker.Preview />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <ColorPicker.Hue />
-          <ColorPicker.Alpha />
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
       </div>
-      <ColorPicker.ChannelInput />
+      <div className="flex items-center gap-2">
+        <ColorPicker.FormatSwitcher className="flex-1" />
+        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+      </div>
+      <ColorPicker.ChannelInput showFormat={false} />
     </ColorPicker.Root>
   </PopoverContent>
 </Popover>`;
@@ -695,7 +696,7 @@ const ROOT_PROPS: PropRow[] = [
   {
     name: "defaultFormat",
     type: "ColorFormat",
-    default: '"hex"',
+    default: '"p3"',
     desc: "Uncontrolled initial format.",
   },
   {
@@ -727,7 +728,7 @@ const PART_ROWS: PropRow[] = [
   {
     name: "<ColorPicker.Hue>",
     type: "orientation",
-    desc: 'Hue slider. orientation = "horizontal" | "vertical". Pair with Area mode "oklch-cl" or "hsv-sv".',
+    desc: 'Hue slider. orientation = "horizontal" | "vertical". Pair with Area mode "oklch-cl" or "hsv-sv". Mode-aware: when format is "hsl" or "hsb" the slider tracks that format\'s hue scale (so the bead matches the channel input H exactly); for OKLCH/OKLab it tracks canonical OKLCH hue with chroma rescaling on commit. Hex/RGB/P3 fall back to OKLCH hue.',
     default: "—",
   },
   {
@@ -762,9 +763,9 @@ const PART_ROWS: PropRow[] = [
   },
   {
     name: "<ColorPicker.ChannelInput>",
-    type: "formats",
-    desc: 'Photoshop-style multi-field input. Renders the format selector + one numeric field per channel (R/G/B/A%, H/S/L/A%, etc.) plus an alpha % field. For "hex" falls back to a single text field. Each numeric field supports ↑/↓ to step (Shift = big step) and accepts a pasted CSS color string from any field.',
-    default: "—",
+    type: "formats, showFormat",
+    desc: 'Photoshop-style multi-field input. Renders the format selector + one numeric field per channel (R/G/B/A%, H/S/L/A%, etc.) plus an alpha % field. For "hex" falls back to a single text field. Pass showFormat={false} when pairing with a standalone <FormatSwitcher /> elsewhere in the layout (skips the inline selector). Each numeric field supports ↑/↓ to step (Shift = big step) and accepts a pasted CSS color string from any field.',
+    default: "showFormat=true",
   },
   {
     name: "<ColorPicker.Swatches>",
@@ -775,13 +776,13 @@ const PART_ROWS: PropRow[] = [
   {
     name: "<ColorPicker.GamutBadge>",
     type: "—",
-    desc: "Live status: sRGB / Display-P3 / Rec.2020 / Out of gamut.",
+    desc: "Live status: sRGB / P3 / Rec.2020 / Out of gamut. Hovering shows a tooltip with the active color space.",
     default: "—",
   },
   {
     name: "<ColorPicker.ContrastReadout>",
-    type: "metrics, defaultMetric",
-    desc: 'Surfaces one contrast metric at a time. metrics is ("wcag" | "apca")[] (default ["wcag"]); when metrics.length > 1 the readout becomes a button — click to cycle.',
+    type: "metrics, defaultMetric, showLabel, showValue, showBadges",
+    desc: 'Surfaces one contrast metric at a time. metrics is ("wcag" | "apca")[] (default ["wcag"]); when metrics.length > 1 the readout becomes a button — click to cycle. Toggle showLabel / showValue / showBadges (all default true) to hide the metric name, the numeric value, or the AA/AAA / body/headline / fail pills — set everything but showBadges to false for a minimal pass/fail-only badge.',
     default: "—",
   },
   {

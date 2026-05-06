@@ -115,7 +115,7 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
     defaultValue,
     onValueChange,
     format: controlledFormat,
-    defaultFormat = "hex",
+    defaultFormat = "p3",
     onFormatChange,
     formats: formatsProp,
     backgroundColor,

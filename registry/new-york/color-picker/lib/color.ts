@@ -97,7 +97,7 @@ export function formatColor(color: OklchColor, format: ColorFormat): string {
       const mapped = mapToGamutColor(color, "srgb");
       const rgb = toRgb({ mode: "oklch", ...oklchObj(mapped) });
       if (!rgb) return "#000000";
-      return color.alpha < 1 ? formatHex8(rgb) : formatHex(rgb);
+      return (color.alpha < 1 ? formatHex8(rgb) : formatHex(rgb)).toUpperCase();
     }
     case "rgb": {
       const mapped = mapToGamutColor(color, "srgb");

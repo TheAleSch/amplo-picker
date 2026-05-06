@@ -52,8 +52,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
         }
       }}
       className={cn(
-        "h-8 w-full rounded-md border bg-background px-2 font-mono text-xs outline-none",
-        "border-input focus-visible:ring-2 focus-visible:ring-ring",
+        "h-8 w-full rounded-md border bg-transparent px-2 font-mono text-xs shadow-xs outline-none",
+        "border-input focus-visible:ring-1 focus-visible:ring-ring",
         error && "border-destructive focus-visible:ring-destructive",
         className,
       )}

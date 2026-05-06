@@ -84,7 +84,15 @@ export default function PlaygroundPage() {
   const [bg, setBg] = React.useState("#ffffff");
   const [areaMode, setAreaMode] = React.useState<AreaMode>("oklch-cl");
   const [formats, setFormats] = React.useState<ColorFormat[]>([...ALL_FORMATS]);
+  const [defaultFormat, setDefaultFormat] = React.useState<ColorFormat>("p3");
   const [showWarningLines, setShowWarningLines] = React.useState(true);
+  const [showChannelFormat, setShowChannelFormat] = React.useState(true);
+  const [contrastMetrics, setContrastMetrics] = React.useState<("wcag" | "apca")[]>(
+    ["wcag", "apca"],
+  );
+  const [contrastShowLabel, setContrastShowLabel] = React.useState(true);
+  const [contrastShowValue, setContrastShowValue] = React.useState(true);
+  const [contrastShowBadges, setContrastShowBadges] = React.useState(true);
   const [parts, setParts] = React.useState<Record<PartKey, boolean>>({
     area: true,
     hue: true,
@@ -117,8 +125,32 @@ export default function PlaygroundPage() {
 
   const code = React.useMemo(
     () =>
-      buildSnippet({ areaMode, formats, showWarningLines, bg, parts }),
-    [areaMode, formats, showWarningLines, bg, parts],
+      buildSnippet({
+        areaMode,
+        formats,
+        defaultFormat,
+        showWarningLines,
+        showChannelFormat,
+        contrastMetrics,
+        contrastShowLabel,
+        contrastShowValue,
+        contrastShowBadges,
+        bg,
+        parts,
+      }),
+    [
+      areaMode,
+      formats,
+      defaultFormat,
+      showWarningLines,
+      showChannelFormat,
+      contrastMetrics,
+      contrastShowLabel,
+      contrastShowValue,
+      contrastShowBadges,
+      bg,
+      parts,
+    ],
   );
 
   return (
@@ -158,6 +190,7 @@ export default function PlaygroundPage() {
                 onValueChange={(c) => setColor(c)}
                 backgroundColor={bg}
                 formats={formats}
+                defaultFormat={defaultFormat}
               >
                 {parts.area && (
                   <ColorPicker.Area
@@ -187,7 +220,9 @@ export default function PlaygroundPage() {
                     <ColorPicker.GamutBadge />
                   </div>
                 )}
-                {parts.channelInput && <ColorPicker.ChannelInput />}
+                {parts.channelInput && (
+                  <ColorPicker.ChannelInput showFormat={showChannelFormat} />
+                )}
                 {(parts.formatSwitcher || parts.input) && (
                   <div className="flex items-stretch gap-2">
                     {parts.formatSwitcher && <ColorPicker.FormatSwitcher />}
@@ -198,8 +233,13 @@ export default function PlaygroundPage() {
                     )}
                   </div>
                 )}
-                {parts.contrastReadout && (
-                  <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
+                {parts.contrastReadout && contrastMetrics.length > 0 && (
+                  <ColorPicker.ContrastReadout
+                    metrics={contrastMetrics}
+                    showLabel={contrastShowLabel}
+                    showValue={contrastShowValue}
+                    showBadges={contrastShowBadges}
+                  />
                 )}
                 {parts.swatches && (
                   <ColorPicker.Swatches
@@ -262,8 +302,75 @@ export default function PlaygroundPage() {
             </div>
           </Knob>
 
+          <Knob label="defaultFormat">
+            <select
+              value={defaultFormat}
+              onChange={(e) => {
+                const next = e.target.value as ColorFormat;
+                setDefaultFormat(next);
+                if (!formats.includes(next)) {
+                  setFormats((prev) =>
+                    [...prev, next].sort(
+                      (a, b) => ALL_FORMATS.indexOf(a) - ALL_FORMATS.indexOf(b),
+                    ),
+                  );
+                }
+              }}
+              className="h-8 w-full rounded-md border border-input bg-transparent px-2 font-mono text-xs uppercase shadow-xs"
+            >
+              {ALL_FORMATS.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </Knob>
+
           <Knob label="showWarningLines">
             <Toggle value={showWarningLines} onChange={setShowWarningLines} />
+          </Knob>
+
+          <Knob label="ChannelInput.showFormat">
+            <Toggle value={showChannelFormat} onChange={setShowChannelFormat} />
+          </Knob>
+
+          <Knob label="ContrastReadout.metrics">
+            <div className="flex flex-wrap gap-1.5">
+              {(["wcag", "apca"] as const).map((m) => {
+                const on = contrastMetrics.includes(m);
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() =>
+                      setContrastMetrics((prev) =>
+                        prev.includes(m)
+                          ? prev.filter((x) => x !== m)
+                          : ([...prev, m] as ("wcag" | "apca")[]),
+                      )
+                    }
+                    className={cn(
+                      "rounded border px-2 py-1 font-mono text-xs uppercase",
+                      on
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+          </Knob>
+
+          <Knob label="ContrastReadout.showLabel">
+            <Toggle value={contrastShowLabel} onChange={setContrastShowLabel} />
+          </Knob>
+          <Knob label="ContrastReadout.showValue">
+            <Toggle value={contrastShowValue} onChange={setContrastShowValue} />
+          </Knob>
+          <Knob label="ContrastReadout.showBadges">
+            <Toggle value={contrastShowBadges} onChange={setContrastShowBadges} />
           </Knob>
 
           <Knob label="parts">
@@ -318,13 +425,25 @@ export default function PlaygroundPage() {
 function buildSnippet({
   areaMode,
   formats,
+  defaultFormat,
   showWarningLines,
+  showChannelFormat,
+  contrastMetrics,
+  contrastShowLabel,
+  contrastShowValue,
+  contrastShowBadges,
   bg,
   parts,
 }: {
   areaMode: AreaMode;
   formats: ColorFormat[];
+  defaultFormat: ColorFormat;
   showWarningLines: boolean;
+  showChannelFormat: boolean;
+  contrastMetrics: ("wcag" | "apca")[];
+  contrastShowLabel: boolean;
+  contrastShowValue: boolean;
+  contrastShowBadges: boolean;
   bg: string;
   parts: Record<PartKey, boolean>;
 }) {
@@ -335,6 +454,8 @@ function buildSnippet({
   lines.push(`  backgroundColor=${JSON.stringify(bg)}`);
   if (formats.length !== ALL_FORMATS.length)
     lines.push(`  formats={${JSON.stringify(formats)}}`);
+  if (defaultFormat !== "p3")
+    lines.push(`  defaultFormat=${JSON.stringify(defaultFormat)}`);
   lines.push(`>`);
 
   if (parts.area) {
@@ -366,7 +487,10 @@ function buildSnippet({
     lines.push(`    <ColorPicker.GamutBadge />`);
     lines.push(`  </div>`);
   }
-  if (parts.channelInput) lines.push(`  <ColorPicker.ChannelInput />`);
+  if (parts.channelInput)
+    lines.push(
+      `  <ColorPicker.ChannelInput${showChannelFormat ? "" : " showFormat={false}"} />`,
+    );
   if (parts.formatSwitcher || parts.input) {
     lines.push(`  <div className="flex items-stretch gap-2">`);
     if (parts.formatSwitcher) lines.push(`    <ColorPicker.FormatSwitcher />`);
@@ -374,8 +498,13 @@ function buildSnippet({
       lines.push(`    <div className="flex-1"><ColorPicker.Input /></div>`);
     lines.push(`  </div>`);
   }
-  if (parts.contrastReadout)
-    lines.push(`  <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />`);
+  if (parts.contrastReadout && contrastMetrics.length > 0) {
+    const props: string[] = [`metrics={${JSON.stringify(contrastMetrics)}}`];
+    if (!contrastShowLabel) props.push(`showLabel={false}`);
+    if (!contrastShowValue) props.push(`showValue={false}`);
+    if (!contrastShowBadges) props.push(`showBadges={false}`);
+    lines.push(`  <ColorPicker.ContrastReadout ${props.join(" ")} />`);
+  }
   if (parts.swatches)
     lines.push(
       `  <ColorPicker.Swatches presets={["#fff", "#000", "oklch(0.7 0.18 30)"]} />`,

@@ -68,6 +68,21 @@ type HaloParams = {
   haloC: number;
 };
 
+// Wide-gamut Display-P3 swatches — pure primaries plus vivid in-betweens.
+// These exceed the sRGB gamut and only render correctly on P3 displays.
+const P3_VIVID_PRESETS = [
+  "color(display-p3 1 0 0)",
+  "color(display-p3 1 0.45 0)",
+  "color(display-p3 1 0.9 0)",
+  "color(display-p3 0.4 1 0)",
+  "color(display-p3 0 1 0.4)",
+  "color(display-p3 0 1 1)",
+  "color(display-p3 0 0.5 1)",
+  "color(display-p3 0.4 0 1)",
+  "color(display-p3 0.85 0 1)",
+  "color(display-p3 1 0 0.6)",
+];
+
 const DEFAULT_HALO: HaloParams = {
   bloom: 6,
   intensity: 1,
@@ -258,22 +273,23 @@ function HeroPicker() {
       value={color}
       onValueChange={setColor}
       backgroundColor="#0a0a0a"
-      className="w-full max-w-[280px]"
+      className="w-full max-w-70"
     >
       <ColorPicker.Area mode="oklch-cl" />
+      <div className="flex flex-col gap-1.5">
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
+      </div>
       <div className="flex items-center gap-2">
-        <ColorPicker.EyeDropper />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <ColorPicker.Hue />
-          <ColorPicker.Alpha />
-        </div>
+        <ColorPicker.FormatSwitcher className="flex-1" />
+        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
       </div>
-      <div className="flex items-center justify-end">
+      <ColorPicker.ChannelInput showFormat={false} />
+      <div className="flex items-center justify-between gap-2">
         <ColorPicker.GamutBadge />
+        <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       </div>
-      <ColorPicker.ChannelInput />
-      <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
-      <ColorPicker.Swatches />
+      <ColorPicker.Swatches presets={P3_VIVID_PRESETS} />
     </ColorPicker.Root>
   );
 }

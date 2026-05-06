@@ -38,8 +38,10 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
     >
       {presets.map((p, i) => {
         const parsed = parseColor(p);
-        const display = parsed ? formatColor(parsed, "hex") : "#000";
         const active = parsed ? formatColor(parsed, "hex") === formatted : false;
+        // Paint the swatch with the raw preset string so out-of-sRGB colors
+        // (P3 / OKLCH wide-gamut) actually render in their native gamut on
+        // capable displays. Hex-conversion would clamp them to sRGB.
         return (
           <button
             key={`${p}-${i}`}
@@ -53,7 +55,7 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
               "focus-visible:ring-2 focus-visible:ring-ring hover:scale-110",
               active && "ring-2 ring-ring",
             )}
-            style={{ background: display }}
+            style={{ background: p }}
           />
         );
       })}

@@ -15,13 +15,27 @@ export interface ContrastReadoutProps extends React.HTMLAttributes<HTMLDivElemen
   metrics?: ContrastMetric[];
   /** Override the initial metric. Must be present in `metrics`. */
   defaultMetric?: ContrastMetric;
+  /** Show the metric label ("WCAG" / "APCA"). Default true. */
+  showLabel?: boolean;
+  /** Show the numeric value (ratio / Lc). Default true. */
+  showValue?: boolean;
+  /** Show the pass/fail level badges (AA, AAA, body, headline, fail). Default true. */
+  showBadges?: boolean;
 }
 
 const DEFAULT_METRICS: ContrastMetric[] = ["wcag"];
 
 export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutProps>(
   function ContrastReadout(
-    { metrics = DEFAULT_METRICS, defaultMetric, className, ...rest },
+    {
+      metrics = DEFAULT_METRICS,
+      defaultMetric,
+      showLabel = true,
+      showValue = true,
+      showBadges = true,
+      className,
+      ...rest
+    },
     ref,
   ) {
     const { contrast } = useColorPickerContext();
@@ -44,9 +58,21 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
 
     const body =
       active === "wcag" ? (
-        <WcagBody wcag={contrast.wcag} aa={contrast.wcagLevel.aaNormal} aaa={contrast.wcagLevel.aaaNormal} />
+        <WcagBody
+          wcag={contrast.wcag}
+          aa={contrast.wcagLevel.aaNormal}
+          aaa={contrast.wcagLevel.aaaNormal}
+          showLabel={showLabel}
+          showValue={showValue}
+          showBadges={showBadges}
+        />
       ) : (
-        <ApcaBody lc={contrast.apca} />
+        <ApcaBody
+          lc={contrast.apca}
+          showLabel={showLabel}
+          showValue={showValue}
+          showBadges={showBadges}
+        />
       );
 
     if (togglable) {
@@ -85,34 +111,72 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
   },
 );
 
-function WcagBody({ wcag, aa, aaa }: { wcag: number; aa: boolean; aaa: boolean }) {
+function WcagBody({
+  wcag,
+  aa,
+  aaa,
+  showLabel,
+  showValue,
+  showBadges,
+}: {
+  wcag: number;
+  aa: boolean;
+  aaa: boolean;
+  showLabel: boolean;
+  showValue: boolean;
+  showBadges: boolean;
+}) {
   return (
     <>
-      <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground">WCAG</span>
-        <span className="font-mono font-medium">{wcag.toFixed(2)}:1</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <Badge ok={aa}>AA</Badge>
-        <Badge ok={aaa}>AAA</Badge>
-      </div>
+      {(showLabel || showValue) && (
+        <div className="flex items-center gap-1.5">
+          {showLabel && <span className="text-muted-foreground">WCAG</span>}
+          {showValue && (
+            <span className="font-mono font-medium">{wcag.toFixed(2)}:1</span>
+          )}
+        </div>
+      )}
+      {showBadges && (
+        <div className="flex items-center gap-1">
+          <Badge ok={aa}>AA</Badge>
+          <Badge ok={aaa}>AAA</Badge>
+        </div>
+      )}
     </>
   );
 }
 
-function ApcaBody({ lc }: { lc: number }) {
+function ApcaBody({
+  lc,
+  showLabel,
+  showValue,
+  showBadges,
+}: {
+  lc: number;
+  showLabel: boolean;
+  showValue: boolean;
+  showBadges: boolean;
+}) {
   const abs = Math.abs(lc);
   const level: "fail" | "body" | "headline" =
     abs >= 75 ? "headline" : abs >= 60 ? "body" : "fail";
   return (
     <>
-      <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground">APCA</span>
-        <span className="font-mono font-medium">Lc {lc.toFixed(1)}</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <Badge ok={level !== "fail"}>{level === "headline" ? "headline" : level === "body" ? "body" : "fail"}</Badge>
-      </div>
+      {(showLabel || showValue) && (
+        <div className="flex items-center gap-1.5">
+          {showLabel && <span className="text-muted-foreground">APCA</span>}
+          {showValue && (
+            <span className="font-mono font-medium">Lc {lc.toFixed(1)}</span>
+          )}
+        </div>
+      )}
+      {showBadges && (
+        <div className="flex items-center gap-1">
+          <Badge ok={level !== "fail"}>
+            {level === "headline" ? "headline" : level === "body" ? "body" : "fail"}
+          </Badge>
+        </div>
+      )}
     </>
   );
 }

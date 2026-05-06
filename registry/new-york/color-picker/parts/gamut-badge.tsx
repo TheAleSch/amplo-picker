@@ -2,6 +2,12 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface GamutBadgeProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -13,47 +19,32 @@ export const GamutBadge = React.forwardRef<HTMLDivElement, GamutBadgeProps>(func
   const { gamut } = useColorPickerContext();
 
   let label = "sRGB";
-  let tone = "ok";
-  let title = "Color is within the sRGB gamut and displays identically on every modern screen.";
-  if (!gamut.inSrgb && gamut.inP3) {
-    label = "Display-P3";
-    tone = "warn";
-    title =
-      "Outside the sRGB gamut. Wide-gamut (Display-P3) screens render this faithfully; sRGB screens fall back to the closest sRGB approximation.";
-  } else if (!gamut.inP3 && gamut.inRec2020) {
-    label = "Rec.2020";
-    tone = "warn";
-    title =
-      "Outside both sRGB and Display-P3 gamuts. Most consumer displays will show a clipped approximation.";
-  } else if (!gamut.inRec2020) {
-    label = "Out of gamut";
-    tone = "danger";
-    title = "Color falls outside Rec.2020. Will be gamut-mapped on output.";
-  }
+  if (!gamut.inSrgb && gamut.inP3) label = "P3";
+  else if (!gamut.inP3 && gamut.inRec2020) label = "Rec.2020";
+  else if (!gamut.inRec2020) label = "Out of gamut";
 
   return (
-    <div
-      ref={ref}
-      data-slot="color-picker-gamut-badge"
-      role="status"
-      aria-live="polite"
-      title={title}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-        tone === "ok" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-        tone === "warn" && "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-        tone === "danger" && "bg-destructive/15 text-destructive",
-        className,
-      )}
-      {...rest}
-    >
-      <span aria-hidden className={cn(
-        "size-1.5 rounded-full",
-        tone === "ok" && "bg-emerald-500",
-        tone === "warn" && "bg-amber-500",
-        tone === "danger" && "bg-destructive",
-      )} />
-      {label}
-    </div>
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            ref={ref}
+            data-slot="color-picker-gamut-badge"
+            role="status"
+            aria-live="polite"
+            tabIndex={0}
+            className={cn(
+              "inline-flex w-full cursor-default items-center gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5 text-xs",
+              className,
+            )}
+            {...rest}
+          >
+            <span className="text-muted-foreground">Gamut</span>
+            <span className="font-mono font-medium">{label}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Color in {label} color space</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 });

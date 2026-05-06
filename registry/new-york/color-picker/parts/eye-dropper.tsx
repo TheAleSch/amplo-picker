@@ -48,8 +48,8 @@ export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(f
       aria-label="Pick color from screen"
       onClick={onClick}
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-md border border-border bg-background outline-none transition-colors",
-        "hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
+        "inline-flex size-8 items-center justify-center rounded-md border border-input bg-transparent text-sm font-medium shadow-xs outline-none transition-colors",
+        "hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
         className,
       )}
       {...rest}

@@ -23,6 +23,8 @@
   --color-input: oklch(0.922 0 0);
   --color-ring: oklch(0.708 0 0);
   --radius: 0.625rem;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .dark {

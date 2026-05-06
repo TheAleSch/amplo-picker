@@ -17,15 +17,15 @@ const TABS: PackageManager[] = ["pnpm", "yarn", "npm", "bun"];
 
 export interface InstallTabsProps {
   url: string;
-  title?: string;
-  description?: string;
+  title?: string | null;
+  description?: string | null;
   className?: string;
 }
 
 export function InstallTabs({
   url,
-  title = "Use the registry",
-  description = "Pull components into your codebase with one command.",
+  title,
+  description,
   className,
 }: InstallTabsProps) {
   const [active, setActive] = React.useState<PackageManager>("pnpm");
@@ -49,15 +49,22 @@ export function InstallTabs({
         className,
       )}
     >
-      <div className="flex flex-col gap-1 px-5 pt-4 pb-3">
-        <h3 className="text-base font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
+      {(title || description) && (
+        <div className="flex flex-col gap-1 px-5 pt-4 pb-3">
+          {title && <h3 className="text-base font-semibold">{title}</h3>}
+          {description && (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
+        </div>
+      )}
 
       <div
         role="tablist"
         aria-label="Package manager"
-        className="flex items-center gap-4 border-t border-border px-5"
+        className={cn(
+          "flex items-center gap-4 px-5",
+          (title || description) && "border-t border-border",
+        )}
       >
         {TABS.map((pm) => {
           const isActive = pm === active;

@@ -216,12 +216,6 @@ function ChannelField({
   return (
     <label className="relative inline-flex h-full min-w-0 flex-1 items-center">
       <span className="sr-only">{channel.label}</span>
-      <span
-        aria-hidden
-        className="pointer-events-none pl-2 text-muted-foreground"
-      >
-        {channel.label}
-      </span>
       <input
         data-slot="color-picker-channel-input-field"
         type="text"

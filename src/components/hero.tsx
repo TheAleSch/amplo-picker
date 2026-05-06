@@ -262,12 +262,11 @@ function HeroPicker() {
     >
       <ColorPicker.Area mode="oklch-cl" />
       <div className="flex items-center gap-2">
-        <ColorPicker.Preview />
+        <ColorPicker.EyeDropper />
         <div className="flex flex-1 flex-col gap-1.5">
           <ColorPicker.Hue />
           <ColorPicker.Alpha />
         </div>
-        <ColorPicker.EyeDropper />
       </div>
       <div className="flex items-center justify-end">
         <ColorPicker.GamutBadge />

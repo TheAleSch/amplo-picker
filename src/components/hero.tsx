@@ -102,14 +102,29 @@ const DEFAULT_HALO: HaloParams = {
 
 export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+  const [color, setColor] = React.useState<OklchColor>(
+    () => parseColor("oklch(0.7 0.18 30)")!,
+  );
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
   const { center, width } = useMeasuredMark(sectionRef, markRef);
 
+  // Drive <body> background from the picker. Restore on unmount so
+  // navigating to /docs or /playground doesn't leak the hero color.
+  const bgString = `oklch(${color.l} ${color.c} ${color.h} / ${color.alpha ?? 1})`;
+  React.useEffect(() => {
+    const prev = document.body.style.background;
+    document.body.style.background = bgString;
+    return () => {
+      document.body.style.background = prev;
+    };
+  }, [bgString]);
+
   return (
     <section
       ref={sectionRef}
-      className="relative isolate min-h-screen overflow-hidden bg-background text-foreground"
+      className="relative isolate min-h-screen overflow-hidden text-foreground"
+      style={{ backgroundColor: bgString }}
     >
       <GodRayCanvas
         className="absolute inset-0"
@@ -166,7 +181,7 @@ export function Hero() {
 
           {/* Right column: picker */}
           <div className="flex w-full justify-center">
-            <HeroPicker />
+            <HeroPicker color={color} setColor={setColor} />
           </div>
         </div>
 
@@ -266,10 +281,13 @@ function TunerSlider({
   );
 }
 
-function HeroPicker() {
-  const [color, setColor] = React.useState<OklchColor>(
-    () => parseColor("oklch(0.7 0.18 30)")!,
-  );
+function HeroPicker({
+  color,
+  setColor,
+}: {
+  color: OklchColor;
+  setColor: (c: OklchColor) => void;
+}) {
   const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
   const swatches = React.useMemo(
     () => [...P3_VIVID_PRESETS, ...savedSwatches],
@@ -282,7 +300,7 @@ function HeroPicker() {
     <ColorPicker.Root
       value={color}
       onValueChange={setColor}
-      backgroundColor="#0a0a0a"
+      backgroundColor={`oklch(${color.l} ${color.c} ${color.h} / ${color.alpha ?? 1})`}
       className="w-full max-w-70"
     >
       <div className="flex items-stretch gap-2">

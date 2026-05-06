@@ -146,8 +146,8 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       )}
       style={{
         background: isVertical
-          ? "linear-gradient(to bottom, oklch(0.7 0.18 0), oklch(0.7 0.18 60), oklch(0.7 0.18 120), oklch(0.7 0.18 180), oklch(0.7 0.18 240), oklch(0.7 0.18 300), oklch(0.7 0.18 360))"
-          : "linear-gradient(to right, oklch(0.7 0.18 0), oklch(0.7 0.18 60), oklch(0.7 0.18 120), oklch(0.7 0.18 180), oklch(0.7 0.18 240), oklch(0.7 0.18 300), oklch(0.7 0.18 360))",
+          ? "linear-gradient(to bottom, oklch(0.7 0.25 0), oklch(0.7 0.25 60), oklch(0.7 0.25 120), oklch(0.7 0.25 180), oklch(0.7 0.25 240), oklch(0.7 0.25 300), oklch(0.7 0.25 360))"
+          : "linear-gradient(to right, oklch(0.7 0.25 0), oklch(0.7 0.25 60), oklch(0.7 0.25 120), oklch(0.7 0.25 180), oklch(0.7 0.25 240), oklch(0.7 0.25 300), oklch(0.7 0.25 360))",
       }}
       {...rest}
     >
@@ -155,8 +155,8 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
         className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]"
         style={
           isVertical
-            ? { left: "50%", top: `calc(${pos} * (100% - 16px) + 8px)`, background: `oklch(0.7 0.18 ${displayedHue})` }
-            : { left: `calc(${pos} * (100% - 16px) + 8px)`, top: "50%", background: `oklch(0.7 0.18 ${displayedHue})` }
+            ? { left: "50%", top: `calc(${pos} * (100% - 16px) + 8px)`, background: `oklch(0.7 0.25 ${displayedHue})` }
+            : { left: `calc(${pos} * (100% - 16px) + 8px)`, top: "50%", background: `oklch(0.7 0.25 ${displayedHue})` }
         }
       />
     </div>

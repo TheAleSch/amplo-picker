@@ -19,13 +19,39 @@ const MARK_WIDTH_FRAC = 0.22;
 // it visible on top + sides.
 const BLACK_INSET = 1.02;
 
+type HaloParams = {
+  bloom: number;
+  intensity: number;
+  blurStride: number;
+  lodStep: number;
+  swirlL: number;
+  swirlC: number;
+};
+
+const DEFAULT_HALO: HaloParams = {
+  bloom: 4.0,
+  intensity: 1.25,
+  blurStride: 20,
+  lodStep: 2.8,
+  swirlL: 0.56,
+  swirlC: 0.3,
+};
+
 export function Hero() {
+  const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+
   return (
     <section className="dark relative isolate min-h-screen overflow-hidden bg-[#131313] text-white">
       <GodRayCanvas
         className="absolute inset-0"
         markCenterFraction={MARK_CENTER}
         markWidthFraction={MARK_WIDTH_FRAC}
+        bloom={halo.bloom}
+        intensity={halo.intensity}
+        blurStride={halo.blurStride}
+        lodStep={halo.lodStep}
+        swirlL={halo.swirlL}
+        swirlC={halo.swirlC}
       />
 
       <svg
@@ -40,7 +66,13 @@ export function Hero() {
           transform: "translate(-50%, -50%)",
         }}
       >
-        <path d={AMPLO_MARK_PATH} fill="#000" />
+        <path
+          d={AMPLO_MARK_PATH}
+          fill="#000"
+          stroke="rgba(0,0,0,0.2)"
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+        />
       </svg>
 
       <Toolbar />
@@ -78,7 +110,84 @@ export function Hero() {
           <HeroPicker />
         </div>
       </div>
+
+      <HaloTuner values={halo} onChange={setHalo} />
     </section>
+  );
+}
+
+function HaloTuner({
+  values,
+  onChange,
+}: {
+  values: HaloParams;
+  onChange: (next: HaloParams) => void;
+}) {
+  const [open, setOpen] = React.useState(true);
+  const set = (k: keyof HaloParams) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    onChange({ ...values, [k]: parseFloat(e.target.value) });
+  return (
+    <div className="fixed bottom-6 left-6 z-50 w-72 rounded-lg border border-white/10 bg-black/70 text-white shadow-xl backdrop-blur-md">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between border-b border-white/10 px-4 py-2 text-sm font-medium"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>Tune halo</span>
+        <span className="text-xs opacity-60">{open ? "−" : "+"}</span>
+      </button>
+      {open && (
+        <div className="flex flex-col gap-3 p-4 text-xs">
+          <TunerSlider label="Bloom" min={0} max={4} step={0.05} value={values.bloom} onChange={set("bloom")} />
+          <TunerSlider label="Intensity" min={0} max={2} step={0.05} value={values.intensity} onChange={set("intensity")} />
+          <TunerSlider label="Blur stride" min={1} max={20} step={0.5} value={values.blurStride} onChange={set("blurStride")} />
+          <TunerSlider label="LOD step" min={0.5} max={3} step={0.1} value={values.lodStep} onChange={set("lodStep")} />
+          <TunerSlider label="Swirl L" min={0.4} max={1} step={0.01} value={values.swirlL} onChange={set("swirlL")} />
+          <TunerSlider label="Swirl C" min={0} max={0.5} step={0.01} value={values.swirlC} onChange={set("swirlC")} />
+          <button
+            type="button"
+            className="mt-1 self-start rounded border border-white/20 px-2 py-1 text-xs hover:bg-white/10"
+            onClick={() => onChange(DEFAULT_HALO)}
+          >
+            Reset
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TunerSlider({
+  label,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+}: {
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="flex items-center justify-between">
+        <span>{label}</span>
+        <span className="font-mono text-white/70">{value.toFixed(2)}</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={onChange}
+        className="w-full accent-white"
+      />
+    </label>
   );
 }
 

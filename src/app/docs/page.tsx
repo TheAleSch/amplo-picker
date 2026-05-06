@@ -108,6 +108,13 @@ export default function DocsPage() {
             preview={<PopoverExample />}
             code={POPOVER_CODE}
           />
+
+          <Example
+            title="User-saved swatches"
+            description="Lift the presets array and pass onAdd — the consumer owns persistence. Below is a localStorage demo; swap setItem for fetch() to save server-side."
+            preview={<SavedSwatchesExample />}
+            code={SAVED_SWATCHES_CODE}
+          />
         </section>
 
         <section className="flex flex-col gap-4">
@@ -493,6 +500,58 @@ function PopoverExample() {
   );
 }
 
+function SavedSwatchesExample() {
+  const [color, setColor] = React.useState<OklchColor>(
+    () => parseColor("oklch(0.7 0.18 30)")!,
+  );
+  const [saved, setSaved] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("amplo-saved-swatches");
+      if (raw) setSaved(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const presets = React.useMemo(
+    () => ["#ffffff", "#000000", "oklch(0.7 0.18 30)", ...saved],
+    [saved],
+  );
+
+  return (
+    <div className="w-full max-w-xs">
+      <ColorPicker.Root
+        value={color}
+        onValueChange={(next) => setColor(next)}
+        backgroundColor="#ffffff"
+      >
+        <ColorPicker.Area mode="oklch-cl" />
+        <div className="flex flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <ColorPicker.ChannelInput />
+        <ColorPicker.Swatches
+          presets={presets}
+          onAdd={(_c, hex) => {
+            setSaved((prev) => {
+              if (prev.includes(hex)) return prev;
+              const next = [...prev, hex];
+              try {
+                window.localStorage.setItem(
+                  "amplo-saved-swatches",
+                  JSON.stringify(next),
+                );
+              } catch {}
+              return next;
+            });
+          }}
+        />
+      </ColorPicker.Root>
+    </div>
+  );
+}
+
 /* ─────────────────────────── Code strings ─────────────────────────── */
 
 const HERO_CODE = `"use client";
@@ -623,6 +682,44 @@ const POPOVER_CODE = `import { Popover, PopoverContent, PopoverTrigger } from "@
     </ColorPicker.Root>
   </PopoverContent>
 </Popover>`;
+
+const SAVED_SWATCHES_CODE = `"use client";
+
+import * as React from "react";
+import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
+
+const STARTERS = ["#ffffff", "#000000", "oklch(0.7 0.18 30)"];
+
+export function PickerWithSavedSwatches() {
+  const [color, setColor] = React.useState(() => parseColor("oklch(0.7 0.18 30)")!);
+  const [saved, setSaved] = React.useState<string[]>([]);
+
+  // Load on mount.
+  React.useEffect(() => {
+    const raw = window.localStorage.getItem("my-saved-swatches");
+    if (raw) setSaved(JSON.parse(raw));
+  }, []);
+
+  return (
+    <ColorPicker.Root value={color} onValueChange={setColor} backgroundColor="#ffffff">
+      <ColorPicker.Area mode="oklch-cl" />
+      <ColorPicker.Hue />
+      <ColorPicker.ChannelInput />
+      <ColorPicker.Swatches
+        presets={[...STARTERS, ...saved]}
+        onAdd={(_color, hex) => {
+          setSaved((prev) => {
+            if (prev.includes(hex)) return prev;
+            const next = [...prev, hex];
+            window.localStorage.setItem("my-saved-swatches", JSON.stringify(next));
+            // Or hit your server: fetch("/api/swatches", { method: "POST", body: JSON.stringify({ hex }) })
+            return next;
+          });
+        }}
+      />
+    </ColorPicker.Root>
+  );
+}`;
 
 const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.Area />
@@ -769,15 +866,15 @@ const PART_ROWS: PropRow[] = [
   },
   {
     name: "<ColorPicker.Swatches>",
-    type: "presets",
-    desc: "Grid of preset chips. presets accepts any CSS color strings.",
+    type: "presets, onAdd",
+    desc: "Grid of preset chips. presets accepts any CSS color strings (including wide-gamut color(display-p3 …) — they paint in their native gamut on capable displays). When onAdd is provided, renders a “+” tile after the presets that calls onAdd(color, hex); the consumer owns persistence (lift presets and update on add — localStorage / a server / a store / etc.).",
     default: "—",
   },
   {
     name: "<ColorPicker.GamutBadge>",
-    type: "—",
-    desc: "Live status: sRGB / P3 / Rec.2020 / Out of gamut. Hovering shows a tooltip with the active color space.",
-    default: "—",
+    type: "showLabel",
+    desc: 'Live status: sRGB / P3 / Rec.2020 / Out of gamut. Hovering shows a shadcn Tooltip with the active color space. Set showLabel={false} to drop the "Gamut" prefix and render just the space name (good for cramped layouts paired with ContrastReadout in the same row).',
+    default: "showLabel=true",
   },
   {
     name: "<ColorPicker.ContrastReadout>",

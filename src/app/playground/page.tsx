@@ -79,9 +79,10 @@ const ALL_OFF: PartsState = {
   eyeDropper: false,
 };
 
-const VARIANTS: Array<{ name: string; parts: PartsState }> = [
+const VARIANTS: Array<{ name: string; hint: string; parts: PartsState }> = [
   {
     name: "Canonical",
+    hint: "Everything: area, sliders, channel input, gamut, contrast, swatches.",
     parts: {
       ...ALL_OFF,
       area: true,
@@ -96,7 +97,24 @@ const VARIANTS: Array<{ name: string; parts: PartsState }> = [
     },
   },
   {
-    name: "Sliders + preview + channel",
+    name: "Compact",
+    hint: "Area + sliders + channel input — no swatches, no a11y readout.",
+    parts: {
+      ...ALL_OFF,
+      area: true,
+      hue: true,
+      alpha: true,
+      channelInput: true,
+    },
+  },
+  {
+    name: "Minimal",
+    hint: "Area + hue + CSS string field. Smallest still-useful picker.",
+    parts: { ...ALL_OFF, area: true, hue: true, input: true },
+  },
+  {
+    name: "Sliders only",
+    hint: "Preview + hue/lightness/alpha + channel input. No 2D area.",
     parts: {
       ...ALL_OFF,
       preview: true,
@@ -108,17 +126,36 @@ const VARIANTS: Array<{ name: string; parts: PartsState }> = [
   },
   {
     name: "Area only",
+    hint: "Just the 2D canvas — pair with your own slider/input UI.",
     parts: { ...ALL_OFF, area: true },
   },
   {
-    name: "Minimal",
+    name: "Photoshop",
+    hint: "Area + hue rail + channel input + eyedropper. Classic image-app picker.",
+    parts: {
+      ...ALL_OFF,
+      area: true,
+      hue: true,
+      eyeDropper: true,
+      channelInput: true,
+    },
+  },
+  {
+    name: "A11y review",
+    hint: "Area + sliders + WCAG/APCA readout. Use when contrast is the main job.",
     parts: {
       ...ALL_OFF,
       area: true,
       hue: true,
       alpha: true,
-      channelInput: true,
+      gamutBadge: true,
+      contrastReadout: true,
     },
+  },
+  {
+    name: "Brand swatches",
+    hint: "Swatches grid only — surface a fixed palette for token picking.",
+    parts: { ...ALL_OFF, preview: true, swatches: true, input: true },
   },
 ];
 
@@ -230,8 +267,29 @@ export default function PlaygroundPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
         <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {VARIANTS.map((v) => {
+              const active = partsEqual(parts, v.parts);
+              return (
+                <button
+                  key={v.name}
+                  type="button"
+                  onClick={() => setParts(v.parts)}
+                  title={v.hint}
+                  className={cn(
+                    "rounded-md border px-3 py-1.5 text-xs transition-colors",
+                    active
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+                  )}
+                >
+                  {v.name}
+                </button>
+              );
+            })}
+          </div>
           <div
-            className="flex min-h-[440px] items-center justify-center rounded-xl border border-border p-8"
+            className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
             style={{ background: bg }}
           >
             <div className="w-full max-w-xs">
@@ -303,21 +361,6 @@ export default function PlaygroundPage() {
         </div>
 
         <aside className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
-          <Knob label="variant">
-            <div className="flex flex-wrap gap-1.5">
-              {VARIANTS.map((v) => (
-                <button
-                  key={v.name}
-                  type="button"
-                  onClick={() => setParts(v.parts)}
-                  className="rounded border border-border px-2 py-1 text-xs hover:border-foreground hover:text-foreground"
-                >
-                  {v.name}
-                </button>
-              ))}
-            </div>
-          </Knob>
-
           <Knob label="areaMode">
             <div className="flex flex-col gap-1.5">
               {AREA_MODES.map((m) => (
@@ -488,6 +531,10 @@ export default function PlaygroundPage() {
       </div>
     </main>
   );
+}
+
+function partsEqual(a: PartsState, b: PartsState): boolean {
+  return (Object.keys(a) as PartKey[]).every((k) => a[k] === b[k]);
 }
 
 function buildSnippet({

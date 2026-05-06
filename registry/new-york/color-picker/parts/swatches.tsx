@@ -1,12 +1,20 @@
 "use client";
 
 import * as React from "react";
+import { Plus } from "lucide-react";
 import { useColorPickerContext } from "../context";
 import { formatColor, parseColor } from "../lib/color";
+import type { OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
 
 export interface SwatchesProps extends React.HTMLAttributes<HTMLDivElement> {
   presets?: string[];
+  /**
+   * When provided, renders a "+" tile after the presets that calls this with
+   * the current color. The consumer owns state (lift `presets` and update it
+   * here, persist to localStorage / a server / Zustand / whatever).
+   */
+  onAdd?: (color: OklchColor, hex: string) => void;
 }
 
 const DEFAULT_PRESETS = [
@@ -23,10 +31,10 @@ const DEFAULT_PRESETS = [
 ];
 
 export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function Swatches(
-  { presets = DEFAULT_PRESETS, className, ...rest },
+  { presets = DEFAULT_PRESETS, onAdd, className, ...rest },
   ref,
 ) {
-  const { setColor, formatted } = useColorPickerContext();
+  const { color, setColor, formatted } = useColorPickerContext();
   return (
     <div
       ref={ref}
@@ -59,6 +67,19 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           />
         );
       })}
+      {onAdd && (
+        <button
+          type="button"
+          aria-label="Add current color to swatches"
+          onClick={() => onAdd(color, formatColor(color, "hex"))}
+          className={cn(
+            "inline-flex size-5 items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none transition-colors",
+            "hover:border-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+          )}
+        >
+          <Plus className="size-3" />
+        </button>
+      )}
     </div>
   );
 });

@@ -268,6 +268,14 @@ function HeroPicker() {
   const [color, setColor] = React.useState<OklchColor>(
     () => parseColor("oklch(0.7 0.18 30)")!,
   );
+  const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
+  const swatches = React.useMemo(
+    () => [...P3_VIVID_PRESETS, ...savedSwatches],
+    [savedSwatches],
+  );
+  const addSwatch = React.useCallback((_c: OklchColor, hex: string) => {
+    setSavedSwatches((prev) => (prev.includes(hex) ? prev : [...prev, hex]));
+  }, []);
   return (
     <ColorPicker.Root
       value={color}
@@ -294,7 +302,7 @@ function HeroPicker() {
           className="w-auto flex-1 justify-center"
         />
       </div>
-      <ColorPicker.Swatches presets={P3_VIVID_PRESETS} />
+      <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
     </ColorPicker.Root>
   );
 }

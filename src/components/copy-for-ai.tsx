@@ -25,7 +25,7 @@ export function CopyForAi({ className }: CopyForAiProps) {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5 text-xs",
+        "flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/30 px-2 py-1.5 text-xs",
         className,
       )}
     >
@@ -35,7 +35,7 @@ export function CopyForAi({ className }: CopyForAiProps) {
         type="button"
         onClick={copy}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] outline-none transition-colors",
+          "inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 font-mono text-[11px] outline-none transition-colors",
           "hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring",
         )}
         aria-label={copied ? "Prompt copied" : "Copy prompt for AI"}
@@ -56,7 +56,7 @@ export function CopyForAi({ className }: CopyForAiProps) {
       <a
         href="/llms-full.txt"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[11px] outline-none transition-colors",
+          "inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 font-mono text-[11px] outline-none transition-colors",
           "hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring",
         )}
         title="Full API reference as plain markdown — paste the URL into your agent"

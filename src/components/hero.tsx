@@ -10,25 +10,45 @@ import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 
-// Mark placement is responsive — on lg+ the logo sits offset to the left so
-// the picker can occupy the right column; on mobile the logo centers and
-// grows so it reads as the hero artwork above the stacked content.
-const MARK_DESKTOP = { center: { x: 0.3, y: 0.36 }, width: 0.22 };
-const MARK_MOBILE = { center: { x: 0.5, y: 0.22 }, width: 0.5 };
-// Inner black A renders slightly larger than the rainbow's box (101%) so
-// the rim is shaved tighter on the bottom while the path geometry leaves
-// it visible on top + sides.
-const BLACK_INSET = 1.01;
+// Mark renders inline in the left column. Halo center + width are measured
+// from the actual DOM rect each frame so the godray canvas tracks the mark
+// regardless of viewport / breakpoint.
+const MARK_ASPECT = 290 / 333;
+const MARK_FALLBACK = { center: { x: 0.5, y: 0.3 }, width: 0.2 };
 
-function useResponsiveMark() {
-  const [v, setV] = React.useState(MARK_DESKTOP);
+function useMeasuredMark(
+  sectionRef: React.RefObject<HTMLElement | null>,
+  markRef: React.RefObject<HTMLElement | null>,
+) {
+  const [v, setV] = React.useState(MARK_FALLBACK);
   React.useEffect(() => {
-    const mql = window.matchMedia("(max-width: 1023px)");
-    const update = () => setV(mql.matches ? MARK_MOBILE : MARK_DESKTOP);
-    update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
-  }, []);
+    const measure = () => {
+      const sec = sectionRef.current;
+      const mk = markRef.current;
+      if (!sec || !mk) return;
+      const sr = sec.getBoundingClientRect();
+      const mr = mk.getBoundingClientRect();
+      if (sr.width === 0 || sr.height === 0) return;
+      setV({
+        center: {
+          x: (mr.left - sr.left + mr.width / 2) / sr.width,
+          y: (mr.top - sr.top + mr.height / 2) / sr.height,
+        },
+        width: mr.width / sr.width,
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (sectionRef.current) ro.observe(sectionRef.current);
+    if (markRef.current) ro.observe(markRef.current);
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [sectionRef, markRef]);
   return v;
 }
 
@@ -66,14 +86,19 @@ const DEFAULT_HALO: HaloParams = {
 
 export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
-  const { center: MARK_CENTER, width: MARK_WIDTH_FRAC } = useResponsiveMark();
+  const sectionRef = React.useRef<HTMLElement | null>(null);
+  const markRef = React.useRef<HTMLDivElement | null>(null);
+  const { center, width } = useMeasuredMark(sectionRef, markRef);
 
   return (
-    <section className="relative isolate min-h-screen overflow-hidden bg-background text-foreground">
+    <section
+      ref={sectionRef}
+      className="relative isolate min-h-screen overflow-hidden bg-background text-foreground"
+    >
       <GodRayCanvas
         className="absolute inset-0"
-        markCenterFraction={MARK_CENTER}
-        markWidthFraction={MARK_WIDTH_FRAC}
+        markCenterFraction={center}
+        markWidthFraction={width}
         bloom={halo.bloom}
         intensity={halo.intensity}
         blurStride={halo.blurStride}
@@ -89,64 +114,55 @@ export function Hero() {
         haloC={halo.haloC}
       />
 
-      <svg
-        viewBox={AMPLO_MARK_VIEWBOX}
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={{
-          left: `${MARK_CENTER.x * 100}%`,
-          top: `${MARK_CENTER.y * 100}%`,
-          width: `${MARK_WIDTH_FRAC * BLACK_INSET * 100}vw`,
-          height: "auto",
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <path
-          d={AMPLO_MARK_PATH}
-          fill="#000"
-          stroke="rgba(0,0,0,0.2)"
-          strokeWidth={1}
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-
       <Toolbar />
 
-      {/* Desktop: picker absolutely positioned so its vertical center aligns
-          with the rainbow mark center (MARK_CENTER.y). */}
-      <div
-        className="absolute right-6 z-10 hidden lg:right-32 lg:block xl:right-48"
-        style={{
-          top: `${MARK_CENTER.y * 100}%`,
-          transform: "translateY(-50%)",
-        }}
-      >
-        <HeroPicker />
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 pb-8 pt-20 lg:px-16 lg:pb-16 lg:pt-24">
+        <div className="flex flex-1 flex-col items-center justify-center gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
+          {/* Left column: mark + centered title + subtitle */}
+          <div className="flex flex-col items-center gap-6 text-center">
+            <div
+              ref={markRef}
+              className="w-full max-w-70"
+              style={{ aspectRatio: `${333} / ${290}` }}
+            >
+              <svg
+                viewBox={AMPLO_MARK_VIEWBOX}
+                aria-hidden
+                className="pointer-events-none h-full w-full"
+              >
+                <path
+                  d={AMPLO_MARK_PATH}
+                  fill="#000"
+                  stroke="rgba(0,0,0,0.2)"
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+            <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.02em] sm:text-5xl">
+              Amplo Picker
+            </h1>
+            <p className="max-w-[300px] text-sm leading-[1.5] text-foreground/70 sm:max-w-[480px] sm:text-base">
+              OKLCH-native, Display-P3-aware color picker for shadcn.
+              Composable, accessible, gamut-aware.
+            </p>
+          </div>
+
+          {/* Right column: picker */}
+          <div className="flex w-full justify-center">
+            <HeroPicker />
+          </div>
+        </div>
+
+        <div className="mt-8 flex w-full justify-center lg:mt-12">
+          <InstallTabs
+            url="https://amplo.ale.design/r/color-picker.json"
+            className="w-full max-w-xl"
+          />
+        </div>
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-start justify-end gap-8 px-6 pb-10 pt-20 sm:gap-12 sm:pb-12 sm:pt-24 lg:px-16 lg:pb-16">
-        <div className="flex flex-col gap-3">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
-            Amplo Picker
-          </h1>
-          <p className="max-w-md text-sm text-foreground/70 sm:text-base">
-            OKLCH-native, Display-P3-aware color picker for shadcn.
-            Composable, accessible, gamut-aware. Drop into any Next.js +
-            Tailwind&nbsp;v4 app with one CLI command.
-          </p>
-        </div>
-        <InstallTabs
-          url="https://amplo.ale.design/r/color-picker.json"
-          className="w-full max-w-xl"
-        />
-
-        {/* Mobile: picker stacks below the install tabs in normal flow. */}
-        <div className="w-full lg:hidden">
-          <HeroPicker />
-        </div>
-      </div>
-
-      {/* <HaloTuner values={halo} onChange={setHalo} /> */}
+      <HaloTuner values={halo} onChange={setHalo} />
     </section>
   );
 }
@@ -242,21 +258,22 @@ function HeroPicker() {
       value={color}
       onValueChange={setColor}
       backgroundColor="#0a0a0a"
-      className="w-full max-w-[360px]"
+      className="w-full max-w-[280px]"
     >
       <ColorPicker.Area mode="oklch-cl" />
       <div className="flex items-center gap-2">
+        <ColorPicker.Preview />
         <div className="flex flex-1 flex-col gap-1.5">
           <ColorPicker.Hue />
           <ColorPicker.Alpha />
         </div>
         <ColorPicker.EyeDropper />
       </div>
-      <ColorPicker.Input />
-      <div className="flex items-center justify-between gap-2">
-        <ColorPicker.ContrastReadout metrics={["wcag"]} />
+      <div className="flex items-center justify-end">
         <ColorPicker.GamutBadge />
       </div>
+      <ColorPicker.ChannelInput />
+      <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       <ColorPicker.Swatches />
     </ColorPicker.Root>
   );
@@ -264,7 +281,7 @@ function HeroPicker() {
 
 function Toolbar() {
   return (
-    <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 text-white backdrop-blur-md sm:right-6 sm:top-6">
+    <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 text-white backdrop-blur-md sm:top-6">
       <Link
         href="/docs"
         className="rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white"

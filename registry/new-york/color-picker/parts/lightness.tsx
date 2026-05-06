@@ -115,11 +115,11 @@ export const Lightness = React.forwardRef<HTMLDivElement, LightnessProps>(
             isVertical
               ? {
                   left: "50%",
-                  top: `${color.l * 100}%`,
+                  top: `calc(${color.l} * (100% - 16px) + 8px)`,
                   background: formatColor({ ...color, alpha: 1 }, "oklch"),
                 }
               : {
-                  left: `${color.l * 100}%`,
+                  left: `calc(${color.l} * (100% - 16px) + 8px)`,
                   top: "50%",
                   background: formatColor({ ...color, alpha: 1 }, "oklch"),
                 }

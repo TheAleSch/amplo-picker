@@ -112,8 +112,8 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
         className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]"
         style={
           isVertical
-            ? { left: "50%", top: `${color.alpha * 100}%`, background: opaque }
-            : { left: `${color.alpha * 100}%`, top: "50%", background: opaque }
+            ? { left: "50%", top: `calc(${color.alpha} * (100% - 16px) + 8px)`, background: opaque }
+            : { left: `calc(${color.alpha} * (100% - 16px) + 8px)`, top: "50%", background: opaque }
         }
       />
     </div>

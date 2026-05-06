@@ -1,9 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { converter } from "culori";
 import { useColorPickerContext } from "../context";
 import { findMaxChroma, gamutFromFormat } from "../lib/color";
+import { setColorChannel } from "../lib/channels";
 import { cn } from "@/lib/utils";
+
+const toHsl = converter("hsl");
+const toHsv = converter("hsv");
 
 export interface HueProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onKeyDown"> {
   orientation?: "horizontal" | "vertical";
@@ -14,6 +19,24 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   ref,
 ) {
   const { color, format, setColor } = useColorPickerContext();
+
+  // Slider tracks the active format's hue scale so the position matches the
+  // value shown in ChannelInput. OKLCH hue ≠ HSL/HSB hue for the same color
+  // (red is OKLCH ~29° / HSL 0°), so an OKLCH-driven slider feels broken to
+  // users editing in HSL/HSB. For formats without a hue channel (hex, rgb,
+  // p3, oklab) we fall back to OKLCH hue.
+  const usesFormatHue = format === "hsl" || format === "hsb";
+  const displayedHue = React.useMemo(() => {
+    if (format === "hsl") {
+      const c = toHsl({ mode: "oklch", l: color.l, c: color.c, h: color.h });
+      return c?.h ?? color.h;
+    }
+    if (format === "hsb") {
+      const c = toHsv({ mode: "oklch", l: color.l, c: color.c, h: color.h });
+      return c?.h ?? color.h;
+    }
+    return color.h;
+  }, [format, color.l, color.c, color.h]);
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement);
 
@@ -25,12 +48,16 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   // stays green.
   const commitHue = React.useCallback(
     (newH: number) => {
-      // setColor takes an arbitrary OklchColor and trusts the caller — unlike
-      // setComponent("h", ...) it does not wrap. Wrap here so keyboard Left at
-      // h=0 doesn't store -1° (visible as the bead leaking outside the track
-      // in OKLCH/OKLab/P3 modes, where serialize/parse preserves the negative
-      // hue. sRGB-family modes round-trip white through achromatic and hide it).
       const wrapped = ((newH % 360) + 360) % 360;
+      // HSL/HSB: write hue through the active format so the channel input's
+      // H value matches the slider exactly (no OKLCH↔HSL hue drift).
+      if (usesFormatHue) {
+        setColor(setColorChannel(color, format, "h", wrapped));
+        return;
+      }
+      // OKLCH path: rescale chroma to preserve "saturation" — the bead's X
+      // position in the area — as max chroma at (L, H, gamut) shifts with
+      // hue (e.g. green has less max chroma than red in P3).
       const gamut = gamutFromFormat(format);
       const oldMaxC = findMaxChroma(color.l, color.h, gamut);
       const newMaxC = findMaxChroma(color.l, wrapped, gamut);
@@ -38,7 +65,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       const nextC = saturation * newMaxC;
       setColor({ ...color, h: wrapped, c: nextC });
     },
-    [color, format, setColor],
+    [color, format, setColor, usesFormatHue],
   );
 
   const moveTo = (clientCoord: number) => {
@@ -64,7 +91,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const big = e.shiftKey ? 10 : 1;
-    let next = color.h;
+    let next = displayedHue;
     switch (e.key) {
       case "ArrowLeft":
       case "ArrowDown":
@@ -93,7 +120,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
     commitHue(next);
   };
 
-  const pos = (color.h % 360) / 360;
+  const pos = (((displayedHue % 360) + 360) % 360) / 360;
   const isVertical = orientation === "vertical";
 
   return (
@@ -104,8 +131,8 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       aria-label="Hue"
       aria-valuemin={0}
       aria-valuemax={360}
-      aria-valuenow={Math.round(color.h)}
-      aria-valuetext={`${Math.round(color.h)} degrees`}
+      aria-valuenow={Math.round(displayedHue)}
+      aria-valuetext={`${Math.round(displayedHue)} degrees`}
       aria-orientation={orientation}
       tabIndex={0}
       onPointerDown={onPointerDown}
@@ -128,8 +155,8 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
         className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]"
         style={
           isVertical
-            ? { left: "50%", top: `${pos * 100}%`, background: `oklch(0.7 0.18 ${color.h})` }
-            : { left: `${pos * 100}%`, top: "50%", background: `oklch(0.7 0.18 ${color.h})` }
+            ? { left: "50%", top: `calc(${pos} * (100% - 16px) + 8px)`, background: `oklch(0.7 0.18 ${displayedHue})` }
+            : { left: `calc(${pos} * (100% - 16px) + 8px)`, top: "50%", background: `oklch(0.7 0.18 ${displayedHue})` }
         }
       />
     </div>

@@ -70,7 +70,7 @@ type HaloParams = {
 
 const DEFAULT_HALO: HaloParams = {
   bloom: 6,
-  intensity: 0.75,
+  intensity: 1,
   blurStride: 30,
   blurPasses: 4,
   lodStep: 2.6,
@@ -281,7 +281,7 @@ function HeroPicker() {
 
 function Toolbar() {
   return (
-    <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 text-white backdrop-blur-md sm:top-6">
+    <div className="absolute left-1/2 top-4 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 text-white backdrop-blur-md sm:top-6">
       <Link
         href="/docs"
         className="rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white"
@@ -290,7 +290,7 @@ function Toolbar() {
       </Link>
       <Link
         href="/playground"
-        className="hidden rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white sm:inline-block"
+        className="rounded-full px-3 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white"
       >
         Playground
       </Link>

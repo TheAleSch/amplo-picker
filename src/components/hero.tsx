@@ -172,7 +172,7 @@ export function Hero() {
         <div className="mt-8 flex w-full justify-center lg:mt-12">
           <InstallTabs
             url="https://amplo.ale.design/r/color-picker.json"
-            className="w-full max-w-xl"
+            className="w-full max-w-70"
           />
         </div>
       </div>

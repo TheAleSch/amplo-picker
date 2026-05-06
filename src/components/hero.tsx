@@ -23,7 +23,12 @@ type HaloParams = {
   bloom: number;
   intensity: number;
   blurStride: number;
+  blurPasses: number;
   lodStep: number;
+  lodCount: number;
+  whitepoint: number;
+  hueSpeed: number;
+  haloHueOffset: number;
   swirlL: number;
   swirlC: number;
   haloL: number;
@@ -31,14 +36,19 @@ type HaloParams = {
 };
 
 const DEFAULT_HALO: HaloParams = {
-  bloom: 1.35,
-  intensity: 1.55,
-  blurStride: 20,
-  lodStep: 3.0,
+  bloom: 3.15,
+  intensity: 0.65,
+  blurStride: 30,
+  blurPasses: 4,
+  lodStep: 2.6,
+  lodCount: 4,
+  whitepoint: 1.0,
+  hueSpeed: 1.0,
+  haloHueOffset: 0,
   swirlL: 0.66,
-  swirlC: 0.25,
-  haloL: 0.6,
-  haloC: 0.25,
+  swirlC: 0.36,
+  haloL: 0.47,
+  haloC: 0.14,
 };
 
 export function Hero() {
@@ -53,7 +63,12 @@ export function Hero() {
         bloom={halo.bloom}
         intensity={halo.intensity}
         blurStride={halo.blurStride}
+        blurPasses={halo.blurPasses}
         lodStep={halo.lodStep}
+        lodCount={halo.lodCount}
+        whitepoint={halo.whitepoint}
+        hueSpeed={halo.hueSpeed}
+        haloHueOffset={halo.haloHueOffset}
         swirlL={halo.swirlL}
         swirlC={halo.swirlC}
         haloL={halo.haloL}
@@ -143,11 +158,16 @@ function HaloTuner({
         <span className="text-xs opacity-60">{open ? "−" : "+"}</span>
       </button>
       {open && (
-        <div className="flex flex-col gap-3 p-4 text-xs">
-          <TunerSlider label="Bloom" min={0} max={4} step={0.05} value={values.bloom} onChange={set("bloom")} />
-          <TunerSlider label="Intensity" min={0} max={2} step={0.05} value={values.intensity} onChange={set("intensity")} />
-          <TunerSlider label="Blur stride" min={1} max={20} step={0.5} value={values.blurStride} onChange={set("blurStride")} />
+        <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4 text-xs">
+          <TunerSlider label="Bloom" min={0} max={6} step={0.05} value={values.bloom} onChange={set("bloom")} />
+          <TunerSlider label="Intensity" min={0} max={3} step={0.05} value={values.intensity} onChange={set("intensity")} />
+          <TunerSlider label="Whitepoint" min={1} max={20} step={0.1} value={values.whitepoint} onChange={set("whitepoint")} />
+          <TunerSlider label="Blur stride" min={1} max={80} step={1} value={values.blurStride} onChange={set("blurStride")} />
+          <TunerSlider label="Blur passes" min={1} max={6} step={1} value={values.blurPasses} onChange={set("blurPasses")} />
           <TunerSlider label="LOD step" min={0.5} max={3} step={0.1} value={values.lodStep} onChange={set("lodStep")} />
+          <TunerSlider label="LOD count" min={1} max={8} step={1} value={values.lodCount} onChange={set("lodCount")} />
+          <TunerSlider label="Hue speed" min={0} max={1} step={0.01} value={values.hueSpeed} onChange={set("hueSpeed")} />
+          <TunerSlider label="Halo hue Δ" min={-3.14} max={3.14} step={0.05} value={values.haloHueOffset} onChange={set("haloHueOffset")} />
           <TunerSlider label="Fill L" min={0.4} max={1} step={0.01} value={values.swirlL} onChange={set("swirlL")} />
           <TunerSlider label="Fill C" min={0} max={0.5} step={0.01} value={values.swirlC} onChange={set("swirlC")} />
           <TunerSlider label="Halo L" min={0.4} max={1} step={0.01} value={values.haloL} onChange={set("haloL")} />

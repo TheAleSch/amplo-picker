@@ -26,6 +26,8 @@ uniform float u_time;
 uniform float u_aspect;
 uniform float u_swirlL;
 uniform float u_swirlC;
+uniform float u_hueSpeed;
+uniform float u_hueOffset;
 
 vec3 oklabToLinear(vec3 c) {
   float L = c.x, a = c.y, b = c.z;
@@ -56,7 +58,7 @@ vec3 swirlColor(vec2 p, vec2 center, float aspect, float t) {
   vec2 dd = p - center;
   dd.x *= aspect;
   float a = atan(dd.y, dd.x);
-  float h = a + t * 0.22
+  float h = a + t * u_hueSpeed + u_hueOffset
           + 0.55 * sin(dd.y * 12.0 - t * 0.9)
           + 0.40 * cos(dd.x * 10.0 + t * 0.7);
   return oklch(u_swirlL, u_swirlC, h);
@@ -104,6 +106,8 @@ uniform sampler2D u_bloom;
 uniform float u_bloomScale;
 uniform float u_intensity;
 uniform float u_lodStep;
+uniform int u_lodCount;
+uniform float u_whitepoint;
 
 // Display-P3 uses the same transfer function as sRGB but wider primaries.
 // We compute everything in linear sRGB (where OKLab natively lands), then
@@ -125,11 +129,13 @@ vec3 linearToTransfer(vec3 c) {
   return mix(a, b, step(vec3(0.0031308), c));
 }
 
-// Reinhard tone map — smooth roll-off for HDR values >1 instead of a hard
-// clip. Without this, the final 8-bit framebuffer write would clip the
-// bloom highlights and we'd lose all the smoothness HDR storage gives us.
-vec3 toneMap(vec3 c) {
-  return c / (1.0 + c);
+// Extended Reinhard with whitepoint W: c * (1 + c/W²) / (1 + c). At W=1
+// this is plain Reinhard (anything bright crushes hard). As W grows, the
+// curve straightens out — bright values stay bright instead of compressing
+// to grey. High W + high bloom is the "illuminate the page" combo.
+vec3 toneMap(vec3 c, float W) {
+  float W2 = max(W * W, 1e-4);
+  return c * (1.0 + c / W2) / (1.0 + c);
 }
 
 // Interleaved gradient noise — cheap pixel-coordinate hash that produces
@@ -141,14 +147,19 @@ float ign(vec2 p) {
 
 void main() {
   vec3 sharp = texture(u_paint, v_uv).rgb;
-  vec3 l0 = textureLod(u_bloom, v_uv, 0.0).rgb;
-  vec3 l1 = textureLod(u_bloom, v_uv, u_lodStep).rgb;
-  vec3 l2 = textureLod(u_bloom, v_uv, u_lodStep * 2.0).rgb;
-  vec3 l3 = textureLod(u_bloom, v_uv, u_lodStep * 3.0).rgb;
-  vec3 bloom = (l0 + l1 + l2 + l3) * 0.25;
+  // Chain of LOD samples: each step is u_lodStep mip levels coarser than
+  // the last. Count and step together control how broad the halo spreads
+  // and how soon you start hitting deep-mip rectangle artifacts.
+  const int MAX_LODS = 8;
+  vec3 bloom = vec3(0.0);
+  for (int i = 0; i < MAX_LODS; i++) {
+    if (i >= u_lodCount) break;
+    bloom += textureLod(u_bloom, v_uv, float(i) * u_lodStep).rgb;
+  }
+  bloom /= max(float(u_lodCount), 1.0);
 
   vec3 col = (sharp + bloom * u_bloomScale) * u_intensity;
-  vec3 mapped = toneMap(col);
+  vec3 mapped = toneMap(col, u_whitepoint);
   vec3 p3 = linearSrgbToLinearP3(mapped);
   vec3 display = linearToTransfer(p3);
   display += (ign(gl_FragCoord.xy) - 0.5) / 255.0;
@@ -208,7 +219,12 @@ export interface GodRayCanvasProps {
   intensity?: number;
   bloom?: number;
   blurStride?: number;
+  blurPasses?: number;
   lodStep?: number;
+  lodCount?: number;
+  whitepoint?: number;
+  hueSpeed?: number;
+  haloHueOffset?: number;
   swirlL?: number;
   swirlC?: number;
   haloL?: number;
@@ -219,14 +235,19 @@ export function GodRayCanvas({
   className,
   markCenterFraction = { x: 0.34, y: 0.4 },
   markWidthFraction = 0.24,
-  intensity = 1.55,
-  bloom = 1.35,
-  blurStride = 20,
-  lodStep = 3.0,
+  intensity = 0.65,
+  bloom = 3.15,
+  blurStride = 30,
+  blurPasses = 4,
+  lodStep = 2.6,
+  lodCount = 4,
+  whitepoint = 1.0,
+  hueSpeed = 1.0,
+  haloHueOffset = 0,
   swirlL = 0.66,
-  swirlC = 0.25,
-  haloL = 0.6,
-  haloC = 0.25,
+  swirlC = 0.36,
+  haloL = 0.47,
+  haloC = 0.14,
 }: GodRayCanvasProps) {
   const ref = React.useRef<HTMLCanvasElement>(null);
   // Live-tunable uniforms read from a ref every frame so changes don't
@@ -235,7 +256,12 @@ export function GodRayCanvas({
     intensity,
     bloom,
     blurStride,
+    blurPasses,
     lodStep,
+    lodCount,
+    whitepoint,
+    hueSpeed,
+    haloHueOffset,
     swirlL,
     swirlC,
     haloL,
@@ -245,7 +271,12 @@ export function GodRayCanvas({
     intensity,
     bloom,
     blurStride,
+    blurPasses,
     lodStep,
+    lodCount,
+    whitepoint,
+    hueSpeed,
+    haloHueOffset,
     swirlL,
     swirlC,
     haloL,
@@ -368,6 +399,8 @@ export function GodRayCanvas({
     const uPaintAspect = gl.getUniformLocation(paintProg, "u_aspect");
     const uPaintSwirlL = gl.getUniformLocation(paintProg, "u_swirlL");
     const uPaintSwirlC = gl.getUniformLocation(paintProg, "u_swirlC");
+    const uPaintHueSpeed = gl.getUniformLocation(paintProg, "u_hueSpeed");
+    const uPaintHueOffset = gl.getUniformLocation(paintProg, "u_hueOffset");
 
     const uBlurSrc = gl.getUniformLocation(blurProg, "u_src");
     const uBlurStep = gl.getUniformLocation(blurProg, "u_step");
@@ -377,6 +410,8 @@ export function GodRayCanvas({
     const uCompBloomScale = gl.getUniformLocation(compProg, "u_bloomScale");
     const uCompIntensity = gl.getUniformLocation(compProg, "u_intensity");
     const uCompLodStep = gl.getUniformLocation(compProg, "u_lodStep");
+    const uCompLodCount = gl.getUniformLocation(compProg, "u_lodCount");
+    const uCompWhitepoint = gl.getUniformLocation(compProg, "u_whitepoint");
 
     const [, , vbW, vbH] = AMPLO_RAINBOW_VIEWBOX.split(" ").map(Number);
     const markAspect = vbW / vbH;
@@ -421,36 +456,46 @@ export function GodRayCanvas({
       );
       gl.uniform1f(uPaintTime, t);
       gl.uniform1f(uPaintAspect, aspect);
+      gl.uniform1f(uPaintHueSpeed, p.hueSpeed);
 
       // Pass 1a: paint fill colors into paintTex (the sharp silhouette).
       gl.bindFramebuffer(gl.FRAMEBUFFER, paintFbo);
       gl.uniform1f(uPaintSwirlL, p.swirlL);
       gl.uniform1f(uPaintSwirlC, p.swirlC);
+      gl.uniform1f(uPaintHueOffset, 0.0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
       // Pass 1b: paint halo colors into haloSrc (the bloom input).
       gl.bindFramebuffer(gl.FRAMEBUFFER, haloFbo);
       gl.uniform1f(uPaintSwirlL, p.haloL);
       gl.uniform1f(uPaintSwirlC, p.haloC);
+      gl.uniform1f(uPaintHueOffset, p.haloHueOffset);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-      // Pass 2: horizontal Gaussian blur of haloSrc into blurA.
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fboA);
-      gl.viewport(0, 0, paintW, paintH);
+      // Pass 2: separable Gaussian blur, iterated p.blurPasses times.
+      // Combined sigma multiplies by sqrt(N) per iteration → wider, softer
+      // halo without ever increasing the per-iteration tap count.
       gl.useProgram(blurProg);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, haloSrc);
-      gl.uniform1i(uBlurSrc, 0);
-      gl.uniform2f(uBlurStep, p.blurStride / paintW, 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-      // Pass 3: vertical Gaussian blur into blurB.
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fboB);
       gl.viewport(0, 0, paintW, paintH);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, blurA);
-      gl.uniform2f(uBlurStep, 0, p.blurStride / paintH);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.uniform1i(uBlurSrc, 0);
+      const passes = Math.max(1, Math.min(8, Math.round(p.blurPasses)));
+      let blurSrc: WebGLTexture = haloSrc;
+      for (let i = 0; i < passes; i++) {
+        // H pass: blurSrc → blurA
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fboA);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, blurSrc);
+        gl.uniform2f(uBlurStep, p.blurStride / paintW, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        // V pass: blurA → blurB
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fboB);
+        gl.bindTexture(gl.TEXTURE_2D, blurA);
+        gl.uniform2f(uBlurStep, 0, p.blurStride / paintH);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        blurSrc = blurB;
+      }
 
       // Mipmap chain on the blurred texture is the multi-scale bloom source.
       gl.bindTexture(gl.TEXTURE_2D, blurB);
@@ -469,6 +514,8 @@ export function GodRayCanvas({
       gl.uniform1f(uCompBloomScale, p.bloom);
       gl.uniform1f(uCompIntensity, p.intensity);
       gl.uniform1f(uCompLodStep, p.lodStep);
+      gl.uniform1i(uCompLodCount, Math.max(1, Math.min(8, Math.round(p.lodCount))));
+      gl.uniform1f(uCompWhitepoint, Math.max(0.01, p.whitepoint));
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
       raf = requestAnimationFrame(tick);

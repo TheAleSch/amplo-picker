@@ -175,7 +175,7 @@ export function Hero() {
             url="https://amplo.ale.design/r/fill-picker.json"
             className="w-full max-w-70"
           />
-          <CopyForAi />
+          <CopyForAi className="w-full max-w-70 justify-center" />
         </div>
       </div>
 

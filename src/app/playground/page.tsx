@@ -220,14 +220,26 @@ export default function PlaygroundPage() {
   const [formats, setFormats] = React.useState<ColorFormat[]>([...ALL_FORMATS]);
   const [defaultFormat, setDefaultFormat] = React.useState<ColorFormat>("p3");
   const [showWarningLines, setShowWarningLines] = React.useState(true);
-  const [showChannelFormat, setShowChannelFormat] = React.useState(true);
+  // Initial display knob state mirrors VARIANTS[0] (Canonical = Hero) so the
+  // first paint matches the active variant tab.
+  const [showChannelFormat, setShowChannelFormat] = React.useState(
+    VARIANTS[0].channelShowFormat ?? true,
+  );
   const [contrastMetrics, setContrastMetrics] = React.useState<("wcag" | "apca")[]>(
     ["wcag", "apca"],
   );
-  const [contrastShowLabel, setContrastShowLabel] = React.useState(true);
-  const [contrastShowValue, setContrastShowValue] = React.useState(true);
-  const [contrastShowBadges, setContrastShowBadges] = React.useState(true);
-  const [gamutShowLabel, setGamutShowLabel] = React.useState(false);
+  const [contrastShowLabel, setContrastShowLabel] = React.useState(
+    VARIANTS[0].contrastShowLabel ?? true,
+  );
+  const [contrastShowValue, setContrastShowValue] = React.useState(
+    VARIANTS[0].contrastShowValue ?? true,
+  );
+  const [contrastShowBadges, setContrastShowBadges] = React.useState(
+    VARIANTS[0].contrastShowBadges ?? true,
+  );
+  const [gamutShowLabel, setGamutShowLabel] = React.useState(
+    VARIANTS[0].gamutShowLabel ?? false,
+  );
   const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
   const [parts, setParts] = React.useState<PartsState>(VARIANTS[0].parts);
 

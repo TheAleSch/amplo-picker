@@ -7,14 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Package manager is **pnpm**.
 
 - `pnpm dev` — Next.js dev server (Turbopack). Runs the demo/docs site.
-- `pnpm build` — Next.js production build.
+- `pnpm build` — runs `pnpm registry:build` then `next build`. CI builds emit registry artifacts automatically.
 - `pnpm lint` — `next lint`.
 - `pnpm typecheck` — `tsc --noEmit` (TS is `noEmit`-only; no separate build step).
 - `pnpm test` — Vitest, single run.
 - `pnpm test:watch` — Vitest watch mode.
 - Single test file: `pnpm vitest run registry/new-york/color-picker/lib/color.test.ts`
 - Single test by name: `pnpm vitest run -t "parses hex"`
-- `pnpm registry:build` — runs `scripts/build-registry.ts` (via `tsx`). Reads `registry.json`, inlines each referenced file, and emits `public/r/<item>.json` + `public/r/index.json`. **Outputs in `public/r/*.json` are gitignored** — they are produced as a build artifact for deployment.
+- `pnpm registry:build` — runs `scripts/build-registry.ts` (via `tsx`). Reads `registry.json`, inlines each referenced file, and emits `public/r/<item>.json` (per-item bundle with file content) + `public/r/registry.json` (catalog index, file metadata only — schema: `https://ui.shadcn.com/schema/registry.json`). **Outputs in `public/r/*.json` are gitignored** — they are produced as a build artifact for deployment.
 
 ## Project shape
 

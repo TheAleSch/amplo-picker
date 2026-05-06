@@ -23,6 +23,7 @@ interface RegistryItem {
   type: string;
   title?: string;
   description?: string;
+  categories?: string[];
   dependencies?: string[];
   registryDependencies?: string[];
   files: RegistryFile[];
@@ -46,6 +47,7 @@ function main() {
       type: item.type,
       title: item.title,
       description: item.description,
+      categories: item.categories,
       dependencies: item.dependencies ?? [],
       registryDependencies: item.registryDependencies ?? [],
       files: item.files.map((f) => {
@@ -63,11 +65,12 @@ function main() {
     console.log(`✓ wrote ${path.relative(ROOT, outPath)} (${out.files.length} files)`);
   }
 
-  const indexPath = path.join(OUT_DIR, "index.json");
+  const registryPath = path.join(OUT_DIR, "registry.json");
   fs.writeFileSync(
-    indexPath,
+    registryPath,
     JSON.stringify(
       {
+        $schema: "https://ui.shadcn.com/schema/registry.json",
         name: manifest.name,
         homepage: manifest.homepage,
         items: manifest.items.map((i) => ({
@@ -75,13 +78,21 @@ function main() {
           type: i.type,
           title: i.title,
           description: i.description,
+          categories: i.categories,
+          dependencies: i.dependencies ?? [],
+          registryDependencies: i.registryDependencies ?? [],
+          files: i.files.map((f) => ({
+            path: f.path,
+            type: f.type,
+            target: f.target,
+          })),
         })),
       },
       null,
       2,
     ) + "\n",
   );
-  console.log(`✓ wrote ${path.relative(ROOT, indexPath)}`);
+  console.log(`✓ wrote ${path.relative(ROOT, registryPath)}`);
 }
 
 main();

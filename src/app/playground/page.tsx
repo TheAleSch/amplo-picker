@@ -79,10 +79,31 @@ const ALL_OFF: PartsState = {
   eyeDropper: false,
 };
 
-const VARIANTS: Array<{ name: string; hint: string; parts: PartsState }> = [
+interface VariantOverrides {
+  areaMode?: AreaMode;
+  defaultFormat?: ColorFormat;
+  channelShowFormat?: boolean;
+  gamutShowLabel?: boolean;
+  contrastShowLabel?: boolean;
+  contrastShowValue?: boolean;
+  contrastShowBadges?: boolean;
+}
+
+const VARIANTS: Array<{
+  name: string;
+  hint: string;
+  parts: PartsState;
+} & VariantOverrides> = [
   {
     name: "Canonical",
-    hint: "Everything: area, sliders, channel input, gamut, contrast, swatches.",
+    hint: "Mirrors the home hero: gamut + contrast on top, area, sliders, format/eyedropper, channel input, swatches.",
+    areaMode: "oklch-cl",
+    defaultFormat: "p3",
+    channelShowFormat: false,
+    gamutShowLabel: false,
+    contrastShowLabel: false,
+    contrastShowValue: false,
+    contrastShowBadges: true,
     parts: {
       ...ALL_OFF,
       area: true,
@@ -130,12 +151,29 @@ const VARIANTS: Array<{ name: string; hint: string; parts: PartsState }> = [
     parts: { ...ALL_OFF, area: true },
   },
   {
-    name: "Photoshop",
-    hint: "Area + hue rail + channel input + eyedropper. Classic image-app picker.",
+    name: "Framer",
+    hint: "HSV-style area + hue + alpha + channel input + format/eyedropper. Mirrors Framer's color popover.",
+    areaMode: "hsv-sv",
     parts: {
       ...ALL_OFF,
       area: true,
       hue: true,
+      alpha: true,
+      channelInput: true,
+      formatSwitcher: true,
+      eyeDropper: true,
+    },
+  },
+  {
+    name: "Figma",
+    hint: "Contrast on top, area, hue + alpha rail, format inline with channels. Mirrors Figma's color popover.",
+    areaMode: "oklch-cl",
+    parts: {
+      ...ALL_OFF,
+      contrastReadout: true,
+      area: true,
+      hue: true,
+      alpha: true,
       eyeDropper: true,
       channelInput: true,
     },
@@ -275,7 +313,34 @@ export default function PlaygroundPage() {
                 <button
                   key={v.name}
                   type="button"
-                  onClick={() => setParts(v.parts)}
+                  onClick={() => {
+                    setParts(v.parts);
+                    if (v.areaMode) setAreaMode(v.areaMode);
+                    if (v.defaultFormat) {
+                      setDefaultFormat(v.defaultFormat);
+                      if (!formats.includes(v.defaultFormat)) {
+                        setFormats((prev) =>
+                          [...prev, v.defaultFormat!].sort(
+                            (a, b) =>
+                              ALL_FORMATS.indexOf(a) - ALL_FORMATS.indexOf(b),
+                          ),
+                        );
+                      }
+                    }
+                    if (v.channelShowFormat !== undefined)
+                      setShowChannelFormat(v.channelShowFormat);
+                    else if (v.parts.channelInput && !v.parts.formatSwitcher)
+                      setShowChannelFormat(true);
+                    else if (v.parts.formatSwitcher) setShowChannelFormat(false);
+                    if (v.gamutShowLabel !== undefined)
+                      setGamutShowLabel(v.gamutShowLabel);
+                    if (v.contrastShowLabel !== undefined)
+                      setContrastShowLabel(v.contrastShowLabel);
+                    if (v.contrastShowValue !== undefined)
+                      setContrastShowValue(v.contrastShowValue);
+                    if (v.contrastShowBadges !== undefined)
+                      setContrastShowBadges(v.contrastShowBadges);
+                  }}
                   title={v.hint}
                   className={cn(
                     "rounded-md border px-3 py-1.5 text-xs transition-colors",

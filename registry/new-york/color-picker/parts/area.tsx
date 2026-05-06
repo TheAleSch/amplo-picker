@@ -43,6 +43,13 @@ export interface AreaProps extends React.HTMLAttributes<HTMLDivElement> {
    * `chromaMax` (no fill warp, no lines).
    */
   gamut?: AreaGamut;
+  /**
+   * Show the gamut-cutoff warning lines drawn inside the active render gamut.
+   * Defaults to true. Setting to false hides them regardless of `gamut` —
+   * useful for a quieter visual when the badge already conveys gamut status.
+   * No effect when `gamut` is "srgb" or "none" (nothing to draw anyway).
+   */
+  showWarningLines?: boolean;
   /** Render resolution of the gradient canvas. Higher = sharper, slower. Default 160. */
   resolution?: number;
 }
@@ -70,6 +77,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     mode = "oklch-cl",
     chromaMax = 0.4,
     gamut: gamutProp,
+    showWarningLines = true,
     resolution = 160,
     className,
     ...rest
@@ -105,7 +113,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const img = ctx.createImageData(w, h);
     paintGradient(img, w, h, mode, color, chromaMax, gamut, SUPPORTS_P3);
     ctx.putImageData(img, 0, 0);
-    if (gamut === "none") {
+    if (gamut === "none" || !showWarningLines) {
       setPaths([]);
     } else {
       setPaths(
@@ -115,7 +123,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, fixedAxisValue, chromaMax, gamut, resolution]);
+  }, [mode, fixedAxisValue, chromaMax, gamut, showWarningLines, resolution]);
 
   const [px, py] = positionFor(mode, color, chromaMax, gamut);
 

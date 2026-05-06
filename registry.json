@@ -22,6 +22,11 @@
           "target": "components/ui/color-picker/lib/color.ts"
         },
         {
+          "path": "registry/new-york/color-picker/lib/channels.ts",
+          "type": "registry:lib",
+          "target": "components/ui/color-picker/lib/channels.ts"
+        },
+        {
           "path": "registry/new-york/color-picker/hooks/use-color-picker.ts",
           "type": "registry:hook",
           "target": "components/ui/color-picker/hooks/use-color-picker.ts"
@@ -65,6 +70,11 @@
           "path": "registry/new-york/color-picker/parts/format-switcher.tsx",
           "type": "registry:ui",
           "target": "components/ui/color-picker/parts/format-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/channel-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/color-picker/parts/channel-input.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/swatches.tsx",

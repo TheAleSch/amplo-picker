@@ -443,7 +443,7 @@ function CompoundExample() {
           <ColorPicker.GamutBadge />
           <ColorPicker.EyeDropper />
         </div>
-        <ColorPicker.Input />
+        <ColorPicker.ChannelInput />
         <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
       </ColorPicker.Root>
     </div>
@@ -551,7 +551,7 @@ const COMPOUND_CODE = `<ColorPicker.Root
     <ColorPicker.GamutBadge />
     <ColorPicker.EyeDropper />
   </div>
-  <ColorPicker.Input />
+  <ColorPicker.ChannelInput />
   <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
 </ColorPicker.Root>`;
 
@@ -584,8 +584,9 @@ const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.Alpha />
   <ColorPicker.EyeDropper />
   <ColorPicker.GamutBadge />
-  <ColorPicker.FormatSwitcher />
-  <ColorPicker.Input />
+  <ColorPicker.ChannelInput />  {/* format dropdown + per-channel fields */}
+  <ColorPicker.FormatSwitcher /> {/* alt: standalone format select */}
+  <ColorPicker.Input />          {/* alt: single CSS-string text field */}
   <ColorPicker.ContrastReadout />
   <ColorPicker.Swatches />
 </ColorPicker.Root>`;
@@ -642,6 +643,12 @@ const DEFAULT_PROPS: PropRow[] = [
     default: "false",
     desc: "Hide the EyeDropper button regardless of browser support.",
   },
+  {
+    name: "showWarningLines",
+    type: "boolean",
+    default: "true",
+    desc: "Show the gamut-cutoff warning lines on the area. Set to false for a quieter visual when the gamut badge already conveys gamut status.",
+  },
 ];
 
 const ROOT_PROPS: PropRow[] = [
@@ -693,8 +700,8 @@ const ROOT_PROPS: PropRow[] = [
 const PART_ROWS: PropRow[] = [
   {
     name: "<ColorPicker.Area>",
-    type: "mode, chromaMax, gamut, resolution",
-    desc: 'mode picks the axes: oklch-cl (Y = OKLCH lightness, top row is white), hsv-sv (Y = HSV-style "value", top-left = white, top-right = saturated), oklch-hc (X = hue, Y = chroma — pair with ColorPicker.Lightness). gamut controls the render gamut and warning lines: "srgb", "p3", "rec2020", "none". Defaults to the gamut implied by the active output format. Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PageUp/Down.',
+    type: "mode, chromaMax, gamut, showWarningLines, resolution",
+    desc: 'mode picks the axes: oklch-cl (Y = OKLCH lightness, top row is white), hsv-sv (Y = HSV-style "value", top-left = white, top-right = saturated), oklch-hc (X = hue, Y = chroma — pair with ColorPicker.Lightness). gamut controls the render gamut and warning lines: "srgb", "p3", "rec2020", "none". Defaults to the gamut implied by the active output format. showWarningLines (default true) toggles the cutoff lines without changing the render gamut. Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PageUp/Down.',
     default: "—",
   },
   {
@@ -731,6 +738,12 @@ const PART_ROWS: PropRow[] = [
     name: "<ColorPicker.FormatSwitcher>",
     type: "formats",
     desc: "Native <select> of formats. Reads the available list from <ColorPicker.Root formats={...}>; pass an explicit `formats` prop to override locally.",
+    default: "—",
+  },
+  {
+    name: "<ColorPicker.ChannelInput>",
+    type: "formats",
+    desc: 'Photoshop-style multi-field input. Renders the format selector + one numeric field per channel (R/G/B/A%, H/S/L/A%, etc.) plus an alpha % field. For "hex" falls back to a single text field. Each numeric field supports ↑/↓ to step (Shift = big step) and accepts a pasted CSS color string from any field. The default <ColorPicker /> uses this in place of FormatSwitcher + Input.',
     default: "—",
   },
   {

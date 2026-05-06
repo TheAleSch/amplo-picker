@@ -8,6 +8,7 @@ import { Lightness } from "./parts/lightness";
 import { Alpha } from "./parts/alpha";
 import { Input } from "./parts/input";
 import { FormatSwitcher } from "./parts/format-switcher";
+import { ChannelInput } from "./parts/channel-input";
 import { Swatches } from "./parts/swatches";
 import { GamutBadge } from "./parts/gamut-badge";
 import { ContrastReadout } from "./parts/contrast-readout";
@@ -25,6 +26,12 @@ export interface ColorPickerProps extends RootProps {
   hideEyeDropper?: boolean;
   /** Render APCA contrast value alongside WCAG. */
   apca?: boolean;
+  /**
+   * Show the gamut-cutoff warning lines on the area. Defaults to true.
+   * Hides them when false; no effect when the active render gamut already
+   * has nothing to draw (sRGB output formats).
+   */
+  showWarningLines?: boolean;
 }
 
 /**
@@ -35,6 +42,7 @@ function DefaultColorPicker({
   areaMode = "oklch-cl",
   hideEyeDropper,
   apca,
+  showWarningLines,
   children,
   ...rootProps
 }: ColorPickerProps) {
@@ -43,7 +51,7 @@ function DefaultColorPicker({
   }
   return (
     <Root {...rootProps}>
-      <Area mode={areaMode} />
+      <Area mode={areaMode} showWarningLines={showWarningLines} />
       <div className="flex items-center gap-2">
         <Preview />
         <div className="flex flex-1 flex-col gap-1.5">
@@ -55,12 +63,7 @@ function DefaultColorPicker({
       <div className="flex items-center justify-end">
         <GamutBadge />
       </div>
-      <div className="flex items-stretch gap-2">
-        <FormatSwitcher />
-        <div className="flex-1">
-          <Input />
-        </div>
-      </div>
+      <ChannelInput />
       <ContrastReadout metrics={apca ? ["wcag", "apca"] : ["wcag"]} />
       <Swatches />
     </Root>
@@ -75,6 +78,7 @@ export const ColorPicker = Object.assign(DefaultColorPicker, {
   Alpha,
   Input,
   FormatSwitcher,
+  ChannelInput,
   Swatches,
   GamutBadge,
   ContrastReadout,

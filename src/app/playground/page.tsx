@@ -54,6 +54,7 @@ type PartKey =
   | "lightness"
   | "alpha"
   | "preview"
+  | "channelInput"
   | "input"
   | "formatSwitcher"
   | "swatches"
@@ -67,6 +68,7 @@ const PARTS: Array<{ key: PartKey; label: string }> = [
   { key: "lightness", label: "Lightness" },
   { key: "alpha", label: "Alpha" },
   { key: "preview", label: "Preview" },
+  { key: "channelInput", label: "ChannelInput" },
   { key: "input", label: "Input" },
   { key: "formatSwitcher", label: "FormatSwitcher" },
   { key: "swatches", label: "Swatches" },
@@ -87,14 +89,16 @@ export default function PlaygroundPage() {
   const [formats, setFormats] = React.useState<ColorFormat[]>([...ALL_FORMATS]);
   const [apca, setApca] = React.useState(true);
   const [hideEyeDropper, setHideEyeDropper] = React.useState(false);
+  const [showWarningLines, setShowWarningLines] = React.useState(true);
   const [parts, setParts] = React.useState<Record<PartKey, boolean>>({
     area: true,
     hue: true,
     lightness: false,
     alpha: true,
     preview: true,
-    input: true,
-    formatSwitcher: true,
+    channelInput: true,
+    input: false,
+    formatSwitcher: false,
     swatches: false,
     gamutBadge: true,
     contrastReadout: true,
@@ -124,10 +128,20 @@ export default function PlaygroundPage() {
         formats,
         apca,
         hideEyeDropper,
+        showWarningLines,
         bg,
         parts,
       }),
-    [variant, areaMode, formats, apca, hideEyeDropper, bg, parts],
+    [
+      variant,
+      areaMode,
+      formats,
+      apca,
+      hideEyeDropper,
+      showWarningLines,
+      bg,
+      parts,
+    ],
   );
 
   // Default <ColorPicker /> always renders Hue regardless of areaMode, so
@@ -175,6 +189,7 @@ export default function PlaygroundPage() {
                   formats={formats}
                   apca={apca}
                   hideEyeDropper={hideEyeDropper}
+                  showWarningLines={showWarningLines}
                 />
               ) : (
                 <ColorPicker.Root
@@ -183,7 +198,12 @@ export default function PlaygroundPage() {
                   backgroundColor={bg}
                   formats={formats}
                 >
-                  {parts.area && <ColorPicker.Area mode={areaMode} />}
+                  {parts.area && (
+                    <ColorPicker.Area
+                      mode={areaMode}
+                      showWarningLines={showWarningLines}
+                    />
+                  )}
                   {(parts.preview ||
                     parts.hue ||
                     parts.lightness ||
@@ -206,6 +226,7 @@ export default function PlaygroundPage() {
                       <ColorPicker.GamutBadge />
                     </div>
                   )}
+                  {parts.channelInput && <ColorPicker.ChannelInput />}
                   {(parts.formatSwitcher || parts.input) && (
                     <div className="flex items-stretch gap-2">
                       {parts.formatSwitcher && <ColorPicker.FormatSwitcher />}
@@ -302,6 +323,10 @@ export default function PlaygroundPage() {
             </div>
           </Knob>
 
+          <Knob label="showWarningLines">
+            <Toggle value={showWarningLines} onChange={setShowWarningLines} />
+          </Knob>
+
           {variant === "default" ? (
             <>
               <Knob label="apca">
@@ -371,6 +396,7 @@ function buildSnippet({
   formats,
   apca,
   hideEyeDropper,
+  showWarningLines,
   bg,
   parts,
 }: {
@@ -379,6 +405,7 @@ function buildSnippet({
   formats: ColorFormat[];
   apca: boolean;
   hideEyeDropper: boolean;
+  showWarningLines: boolean;
   bg: string;
   parts: Record<PartKey, boolean>;
 }) {
@@ -386,6 +413,7 @@ function buildSnippet({
     formats.length === ALL_FORMATS.length
       ? ""
       : `\n  formats={${JSON.stringify(formats)}}`;
+  const linesLine = showWarningLines ? "" : "\n  showWarningLines={false}";
 
   if (variant === "default") {
     const apcaLine = apca ? "\n  apca" : "";
@@ -394,7 +422,7 @@ function buildSnippet({
   value={color}
   onValueChange={setColor}
   areaMode="${areaMode}"
-  backgroundColor=${JSON.stringify(bg)}${formatsLine}${apcaLine}${hideEdLine}
+  backgroundColor=${JSON.stringify(bg)}${formatsLine}${apcaLine}${hideEdLine}${linesLine}
 />`;
   }
 
@@ -407,7 +435,10 @@ function buildSnippet({
     lines.push(`  formats={${JSON.stringify(formats)}}`);
   lines.push(`>`);
 
-  if (parts.area) lines.push(`  <ColorPicker.Area mode="${areaMode}" />`);
+  if (parts.area) {
+    const areaProps = `mode="${areaMode}"${showWarningLines ? "" : " showWarningLines={false}"}`;
+    lines.push(`  <ColorPicker.Area ${areaProps} />`);
+  }
 
   const sliders: string[] = [];
   if (parts.hue) sliders.push(`<ColorPicker.Hue />`);
@@ -433,6 +464,7 @@ function buildSnippet({
     lines.push(`    <ColorPicker.GamutBadge />`);
     lines.push(`  </div>`);
   }
+  if (parts.channelInput) lines.push(`  <ColorPicker.ChannelInput />`);
   if (parts.formatSwitcher || parts.input) {
     lines.push(`  <div className="flex items-stretch gap-2">`);
     if (parts.formatSwitcher) lines.push(`    <ColorPicker.FormatSwitcher />`);

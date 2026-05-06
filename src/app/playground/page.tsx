@@ -139,10 +139,9 @@ const VARIANTS: Array<{
   },
   {
     name: "Sliders only",
-    hint: "Preview + hue/lightness/alpha + channel input. No 2D area.",
+    hint: "Hue/lightness/alpha + channel input. No 2D area.",
     parts: {
       ...ALL_OFF,
-      preview: true,
       hue: true,
       lightness: true,
       alpha: true,

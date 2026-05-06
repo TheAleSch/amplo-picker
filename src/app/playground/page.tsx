@@ -87,6 +87,10 @@ interface VariantOverrides {
   contrastShowLabel?: boolean;
   contrastShowValue?: boolean;
   contrastShowBadges?: boolean;
+  /** Render the format+eyedropper row AFTER the channel input instead of before. */
+  formatRowAfterChannel?: boolean;
+  /** Render the eyedropper inline to the LEFT of the slider stack (Figma-style). */
+  eyedropperBesideSliders?: boolean;
 }
 
 const VARIANTS: Array<{
@@ -152,21 +156,26 @@ const VARIANTS: Array<{
   },
   {
     name: "Framer",
-    hint: "HSV-style area + hue/alpha sliders + channel input with the format selector inline. Mirrors Framer's color popover.",
-    areaMode: "hsv-sv",
-    channelShowFormat: true,
+    hint: "Area + hue/alpha + numeric channels, then format dropdown + eyedropper underneath. Mirrors Framer's color popover.",
+    areaMode: "oklch-cl",
+    channelShowFormat: false,
+    formatRowAfterChannel: true,
     parts: {
       ...ALL_OFF,
       area: true,
       hue: true,
       alpha: true,
       channelInput: true,
+      formatSwitcher: true,
+      eyeDropper: true,
     },
   },
   {
     name: "Figma",
-    hint: "Contrast on top, area, hue + alpha rail, format inline with channels. Mirrors Figma's color popover.",
+    hint: "Contrast on top, area, eyedropper beside hue + alpha rail, format inline with channels. Mirrors Figma's color popover.",
     areaMode: "oklch-cl",
+    channelShowFormat: true,
+    eyedropperBesideSliders: true,
     parts: {
       ...ALL_OFF,
       contrastReadout: true,
@@ -241,6 +250,12 @@ export default function PlaygroundPage() {
     VARIANTS[0].gamutShowLabel ?? false,
   );
   const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
+  const [formatRowAfterChannel, setFormatRowAfterChannel] = React.useState(
+    VARIANTS[0].formatRowAfterChannel ?? false,
+  );
+  const [eyedropperBesideSliders, setEyedropperBesideSliders] = React.useState(
+    VARIANTS[0].eyedropperBesideSliders ?? false,
+  );
   const [parts, setParts] = React.useState<PartsState>(VARIANTS[0].parts);
 
   const toggleFormat = (f: ColorFormat) => {
@@ -271,6 +286,8 @@ export default function PlaygroundPage() {
         contrastShowValue,
         contrastShowBadges,
         gamutShowLabel,
+        formatRowAfterChannel,
+        eyedropperBesideSliders,
         bg,
         parts,
       }),
@@ -285,6 +302,8 @@ export default function PlaygroundPage() {
       contrastShowValue,
       contrastShowBadges,
       gamutShowLabel,
+      formatRowAfterChannel,
+      eyedropperBesideSliders,
       bg,
       parts,
     ],
@@ -351,6 +370,8 @@ export default function PlaygroundPage() {
                       setContrastShowValue(v.contrastShowValue);
                     if (v.contrastShowBadges !== undefined)
                       setContrastShowBadges(v.contrastShowBadges);
+                    setFormatRowAfterChannel(v.formatRowAfterChannel ?? false);
+                    setEyedropperBesideSliders(v.eyedropperBesideSliders ?? false);
                   }}
                   title={v.hint}
                   className={cn(
@@ -405,25 +426,50 @@ export default function PlaygroundPage() {
                 )}
                 {parts.preview && <ColorPicker.Preview />}
                 {(parts.hue || parts.lightness || parts.alpha) && (
-                  <div className="flex flex-col gap-1.5">
-                    {parts.hue && <ColorPicker.Hue />}
-                    {parts.lightness && <ColorPicker.Lightness />}
-                    {parts.alpha && <ColorPicker.Alpha />}
-                  </div>
+                  eyedropperBesideSliders && parts.eyeDropper ? (
+                    <div className="flex items-center gap-2">
+                      <ColorPicker.EyeDropper />
+                      <div className="flex flex-1 flex-col gap-1.5">
+                        {parts.hue && <ColorPicker.Hue />}
+                        {parts.lightness && <ColorPicker.Lightness />}
+                        {parts.alpha && <ColorPicker.Alpha />}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {parts.hue && <ColorPicker.Hue />}
+                      {parts.lightness && <ColorPicker.Lightness />}
+                      {parts.alpha && <ColorPicker.Alpha />}
+                    </div>
+                  )
                 )}
-                {(parts.formatSwitcher || parts.eyeDropper) && (
-                  <div className="flex items-center gap-2">
-                    {parts.formatSwitcher && (
-                      <ColorPicker.FormatSwitcher className="flex-1" />
-                    )}
-                    {parts.eyeDropper && (
-                      <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
-                    )}
-                  </div>
-                )}
+                {!formatRowAfterChannel &&
+                  (parts.formatSwitcher ||
+                    (parts.eyeDropper && !eyedropperBesideSliders)) && (
+                    <div className="flex items-center gap-2">
+                      {parts.formatSwitcher && (
+                        <ColorPicker.FormatSwitcher className="flex-1" />
+                      )}
+                      {parts.eyeDropper && !eyedropperBesideSliders && (
+                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                      )}
+                    </div>
+                  )}
                 {parts.channelInput && (
                   <ColorPicker.ChannelInput showFormat={showChannelFormat} />
                 )}
+                {formatRowAfterChannel &&
+                  (parts.formatSwitcher ||
+                    (parts.eyeDropper && !eyedropperBesideSliders)) && (
+                    <div className="flex items-center gap-2">
+                      {parts.formatSwitcher && (
+                        <ColorPicker.FormatSwitcher className="flex-1" />
+                      )}
+                      {parts.eyeDropper && !eyedropperBesideSliders && (
+                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                      )}
+                    </div>
+                  )}
                 {parts.input && <ColorPicker.CssInput />}
                 {parts.swatches && (
                   <ColorPicker.Swatches
@@ -630,6 +676,8 @@ function buildSnippet({
   contrastShowValue,
   contrastShowBadges,
   gamutShowLabel,
+  formatRowAfterChannel,
+  eyedropperBesideSliders,
   bg,
   parts,
 }: {
@@ -643,6 +691,8 @@ function buildSnippet({
   contrastShowValue: boolean;
   contrastShowBadges: boolean;
   gamutShowLabel: boolean;
+  formatRowAfterChannel: boolean;
+  eyedropperBesideSliders: boolean;
   bg: string;
   parts: Record<PartKey, boolean>;
 }) {
@@ -689,24 +739,39 @@ function buildSnippet({
   if (parts.lightness) sliders.push(`<ColorPicker.Lightness />`);
   if (parts.alpha) sliders.push(`<ColorPicker.Alpha />`);
   if (sliders.length) {
-    lines.push(`  <div className="flex flex-col gap-1.5">`);
-    sliders.forEach((s) => lines.push(`    ${s}`));
-    lines.push(`  </div>`);
+    if (eyedropperBesideSliders && parts.eyeDropper) {
+      lines.push(`  <div className="flex items-center gap-2">`);
+      lines.push(`    <ColorPicker.EyeDropper />`);
+      lines.push(`    <div className="flex flex-1 flex-col gap-1.5">`);
+      sliders.forEach((s) => lines.push(`      ${s}`));
+      lines.push(`    </div>`);
+      lines.push(`  </div>`);
+    } else {
+      lines.push(`  <div className="flex flex-col gap-1.5">`);
+      sliders.forEach((s) => lines.push(`    ${s}`));
+      lines.push(`  </div>`);
+    }
   }
 
-  if (parts.formatSwitcher || parts.eyeDropper) {
+  const formatRow = () => {
+    const showEyedrop = parts.eyeDropper && !eyedropperBesideSliders;
+    if (!parts.formatSwitcher && !showEyedrop) return;
     lines.push(`  <div className="flex items-center gap-2">`);
     if (parts.formatSwitcher)
       lines.push(`    <ColorPicker.FormatSwitcher className="flex-1" />`);
-    if (parts.eyeDropper)
+    if (showEyedrop)
       lines.push(`    <ColorPicker.EyeDropper className="h-8 w-full flex-1" />`);
     lines.push(`  </div>`);
-  }
+  };
+
+  if (!formatRowAfterChannel) formatRow();
 
   if (parts.channelInput)
     lines.push(
       `  <ColorPicker.ChannelInput${showChannelFormat ? "" : " showFormat={false}"} />`,
     );
+
+  if (formatRowAfterChannel) formatRow();
   if (parts.input) lines.push(`  <ColorPicker.CssInput />`);
 
   if (parts.swatches)

@@ -25,7 +25,6 @@ const TOC = [
   ["api-utils", "API: Color utilities"],
   ["color-spaces", "Color spaces"],
   ["accessibility", "Accessibility"],
-  ["publishing", "Publishing your own registry"],
 ] as const;
 
 export default function DocsPage() {
@@ -62,14 +61,10 @@ export default function DocsPage() {
         <section className="flex flex-col gap-4">
           <H2 id="installation">Installation</H2>
           <InstallTabs
-            url="https://amplo.ale.design/r/color-picker.json"
+            url="https://amplo.ale.design/r/fill-picker.json"
             title="CLI"
-            description="One command. The shadcn CLI drops the picker into components/ui/color-picker/ and installs culori + lucide-react."
+            description="One command. The shadcn CLI drops the picker into components/ui/fill-picker/ and installs culori + lucide-react."
           />
-          <p className="text-sm text-muted-foreground">
-            Replace the URL with your deployed origin if you forked the
-            registry. See <a href="#publishing" className="underline">Publishing</a> below.
-          </p>
         </section>
 
         <section className="flex flex-col gap-4">
@@ -233,33 +228,6 @@ export default function DocsPage() {
               preference for swatch hover scale.
             </li>
           </ul>
-        </section>
-
-        <section className="flex flex-col gap-4">
-          <H2 id="publishing">Publishing your own registry</H2>
-          <ol className="flex list-decimal flex-col gap-1.5 pl-5">
-            <li>
-              Edit <Code>registry.json</Code> — change <Code>name</Code>,{" "}
-              <Code>homepage</Code>, item names.
-            </li>
-            <li>
-              Run <Code>pnpm registry:build</Code> to emit{" "}
-              <Code>public/r/*.json</Code>.
-            </li>
-            <li>Deploy the Next.js app (Vercel works out of the box).</li>
-            <li>
-              Users install with{" "}
-              <Code>
-                {"npx shadcn@latest add https://<your-host>/r/color-picker.json"}
-              </Code>
-              .
-            </li>
-          </ol>
-          <p className="text-sm text-muted-foreground">
-            The registry build is incremental and ships only what&apos;s listed
-            in the manifest — keep <Code>registry.json</Code> as the source of
-            truth.
-          </p>
         </section>
 
         <footer className="border-t border-border pt-8 text-sm text-muted-foreground">

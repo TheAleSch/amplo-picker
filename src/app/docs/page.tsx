@@ -232,13 +232,6 @@ export default function DocsPage() {
           </ul>
         </section>
 
-        <footer className="border-t border-border pt-8 text-sm text-muted-foreground">
-          Source on{" "}
-          <Link href="/" className="underline">
-            home
-          </Link>
-          . MIT licensed.
-        </footer>
       </article>
 
       <aside className="hidden lg:block">

@@ -7,6 +7,11 @@ import { formatColor, parseColor } from "../lib/color";
 import type { OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
 
+// Inline SVG checkerboard so transparent / partially-opaque presets read as
+// translucent rather than solid against the popover bg.
+const CHECKERBOARD =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
+
 export interface SwatchesProps extends React.HTMLAttributes<HTMLDivElement> {
   presets?: string[];
   /**
@@ -59,12 +64,18 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
             aria-label={p}
             onClick={() => setColor(p)}
             className={cn(
-              "size-5 cursor-pointer rounded-sm border border-border outline-none transition-transform",
+              "relative size-5 cursor-pointer overflow-hidden rounded-sm border border-border outline-none transition-transform",
               "focus-visible:ring-2 focus-visible:ring-ring hover:scale-110",
               active && "ring-2 ring-ring",
             )}
-            style={{ background: p }}
-          />
+            style={{ backgroundImage: CHECKERBOARD, backgroundSize: "8px 8px" }}
+          >
+            <span
+              aria-hidden
+              className="absolute inset-0"
+              style={{ background: p }}
+            />
+          </button>
         );
       })}
       {onAdd && (

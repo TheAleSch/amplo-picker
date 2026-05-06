@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { Check, X } from "lucide-react";
 import { useColorPickerContext } from "../context";
+import { formatColor } from "../lib/color";
 import {
   Tooltip,
   TooltipContent,
@@ -9,6 +11,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+const CHECKERBOARD =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
 
 export type ContrastMetric = "wcag" | "apca";
 
@@ -31,6 +36,12 @@ export interface ContrastReadoutProps extends React.HTMLAttributes<HTMLDivElemen
 
 const DEFAULT_METRICS: ContrastMetric[] = ["wcag"];
 
+interface PassRow {
+  ok: boolean;
+  label: string;
+  detail: string;
+}
+
 export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutProps>(
   function ContrastReadout(
     {
@@ -44,7 +55,9 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
     },
     ref,
   ) {
-    const { contrast } = useColorPickerContext();
+    const { contrast, color, background } = useColorPickerContext();
+    const fgCss = formatColor(color, "p3");
+    const bgCss = formatColor(background, "p3");
     const initial =
       defaultMetric && metrics.includes(defaultMetric) ? defaultMetric : metrics[0];
     const [active, setActive] = React.useState<ContrastMetric>(initial);
@@ -81,47 +94,89 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
         />
       );
 
+    const popover =
+      active === "wcag"
+        ? wcagPopover(
+            contrast.wcag,
+            contrast.wcagLevel.aaNormal,
+            contrast.wcagLevel.aaaNormal,
+          )
+        : apcaPopover(contrast.apca);
+
     if (togglable) {
       const nextMetric = metrics[(metrics.indexOf(active) + 1) % metrics.length];
       return (
         <TooltipProvider delayDuration={150}>
-          <button
-            ref={ref as React.Ref<HTMLButtonElement>}
-            data-slot="color-picker-contrast-readout"
-            type="button"
-            onClick={cycle}
-            aria-label={`Contrast (${active.toUpperCase()}). Click to switch to ${nextMetric.toUpperCase()}.`}
-            className={cn(
-              baseClass,
-              "cursor-pointer text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              className,
-            )}
-            {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
-          >
-            {body}
-            <Tooltip>
-              <TooltipTrigger asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                ref={ref as React.Ref<HTMLButtonElement>}
+                data-slot="color-picker-contrast-readout"
+                type="button"
+                onClick={cycle}
+                aria-label={`Contrast (${active.toUpperCase()}). Click to switch to ${nextMetric.toUpperCase()}.`}
+                className={cn(
+                  baseClass,
+                  "cursor-pointer text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  className,
+                )}
+                {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+              >
+                {body}
                 <span aria-hidden="true" className="ml-auto text-muted-foreground">⇅</span>
-              </TooltipTrigger>
-              <TooltipContent>Switch to {nextMetric.toUpperCase()}</TooltipContent>
-            </Tooltip>
-          </button>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              align="center"
+              className="max-w-[260px] bg-popover p-2.5 text-popover-foreground shadow-md"
+            >
+              <PopoverPanel
+                title={popover.title}
+                rows={popover.rows}
+                fg={fgCss}
+                bg={bgCss}
+                footer={`Click to switch to ${nextMetric.toUpperCase()}`}
+              />
+            </TooltipContent>
+          </Tooltip>
         </TooltipProvider>
       );
     }
 
     return (
       <TooltipProvider delayDuration={150}>
-        <div
-          ref={ref}
-          data-slot="color-picker-contrast-readout"
-          role="group"
-          aria-label="Contrast against background"
-          className={cn(baseClass, className)}
-          {...rest}
-        >
-          {body}
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              ref={ref}
+              data-slot="color-picker-contrast-readout"
+              role="group"
+              tabIndex={0}
+              aria-label="Contrast against background"
+              className={cn(
+                baseClass,
+                "cursor-default outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                className,
+              )}
+              {...rest}
+            >
+              {body}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            align="center"
+            className="max-w-[260px] bg-popover p-2.5 text-popover-foreground shadow-md"
+          >
+            <PopoverPanel
+              title={popover.title}
+              rows={popover.rows}
+              fg={fgCss}
+              bg={bgCss}
+            />
+          </TooltipContent>
+        </Tooltip>
       </TooltipProvider>
     );
   },
@@ -154,26 +209,8 @@ function WcagBody({
       )}
       {showBadges && (
         <div className="flex items-center gap-1">
-          <Badge
-            ok={aa}
-            tooltip={
-              aa
-                ? "Passes WCAG AA — readable for body text (contrast ≥ 4.5:1)"
-                : "Fails WCAG AA — body text needs contrast ≥ 4.5:1"
-            }
-          >
-            AA
-          </Badge>
-          <Badge
-            ok={aaa}
-            tooltip={
-              aaa
-                ? "Passes WCAG AAA — enhanced contrast for body text (≥ 7:1)"
-                : "Fails WCAG AAA — enhanced contrast for body text needs ≥ 7:1"
-            }
-          >
-            AAA
-          </Badge>
+          <Badge ok={aa}>AA</Badge>
+          <Badge ok={aaa}>AAA</Badge>
         </div>
       )}
     </>
@@ -194,12 +231,6 @@ function ApcaBody({
   const abs = Math.abs(lc);
   const level: "fail" | "body" | "headline" =
     abs >= 75 ? "headline" : abs >= 60 ? "body" : "fail";
-  const tooltip =
-    level === "headline"
-      ? "Passes APCA for headlines and large text (|Lc| ≥ 75)"
-      : level === "body"
-        ? "Passes APCA for body text (|Lc| ≥ 60). Not strong enough for headlines (needs ≥ 75)."
-        : "Fails APCA — body text needs |Lc| ≥ 60";
   return (
     <>
       {(showLabel || showValue) && (
@@ -212,7 +243,7 @@ function ApcaBody({
       )}
       {showBadges && (
         <div className="flex items-center gap-1">
-          <Badge ok={level !== "fail"} tooltip={tooltip}>
+          <Badge ok={level !== "fail"}>
             {level === "headline" ? "headline" : level === "body" ? "body" : "fail"}
           </Badge>
         </div>
@@ -221,21 +252,12 @@ function ApcaBody({
   );
 }
 
-function Badge({
-  ok,
-  tooltip,
-  children,
-}: {
-  ok: boolean;
-  tooltip?: string;
-  children: React.ReactNode;
-}) {
-  const span = (
+function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
     <span
-      tabIndex={tooltip ? 0 : undefined}
       aria-label={typeof children === "string" ? `${children} ${ok ? "passes" : "fails"}` : undefined}
       className={cn(
-        "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
         ok
           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
           : "bg-red-500/15 text-red-700 dark:text-red-400",
@@ -244,11 +266,118 @@ function Badge({
       {children}
     </span>
   );
-  if (!tooltip) return span;
+}
+
+function PopoverPanel({
+  title,
+  rows,
+  fg,
+  bg,
+  footer,
+}: {
+  title: string;
+  rows: PassRow[];
+  fg: string;
+  bg: string;
+  footer?: string;
+}) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{span}</TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
+    <div className="flex flex-col gap-2 text-left">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </div>
+        <div
+          aria-hidden
+          className="flex shrink-0 overflow-hidden rounded border border-border"
+          title={`fg ${fg} on bg ${bg}`}
+        >
+          <Chip color={fg} />
+          <Chip color={bg} />
+        </div>
+      </div>
+      <ul className="flex flex-col gap-1.5">
+        {rows.map((r) => (
+          <li key={r.label} className="flex items-start gap-2">
+            <span
+              aria-hidden
+              className={cn(
+                "mt-0.5 inline-flex size-3.5 shrink-0 items-center justify-center rounded-full",
+                r.ok
+                  ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                  : "bg-red-500/20 text-red-600 dark:text-red-400",
+              )}
+            >
+              {r.ok ? <Check className="size-2.5" /> : <X className="size-2.5" />}
+            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-medium leading-tight">{r.label}</span>
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                {r.detail}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {footer && (
+        <div className="border-t border-border pt-1.5 text-[11px] text-muted-foreground">
+          {footer}
+        </div>
+      )}
+    </div>
   );
+}
+
+function Chip({ color }: { color: string }) {
+  return (
+    <span
+      className="block size-4"
+      style={{ backgroundImage: CHECKERBOARD, backgroundSize: "8px 8px" }}
+    >
+      <span className="block size-full" style={{ background: color }} />
+    </span>
+  );
+}
+
+function wcagPopover(
+  ratio: number,
+  aa: boolean,
+  aaa: boolean,
+): { title: string; rows: PassRow[] } {
+  return {
+    title: `WCAG ${ratio.toFixed(2)}:1`,
+    rows: [
+      {
+        ok: aa,
+        label: aa ? "Passes AA" : "Fails AA",
+        detail: "Body text needs ≥ 4.5:1",
+      },
+      {
+        ok: aaa,
+        label: aaa ? "Passes AAA" : "Fails AAA",
+        detail: "Enhanced body text needs ≥ 7:1",
+      },
+    ],
+  };
+}
+
+function apcaPopover(lc: number): { title: string; rows: PassRow[] } {
+  const abs = Math.abs(lc);
+  const passesBody = abs >= 60;
+  const passesHeadline = abs >= 75;
+  return {
+    title: `APCA Lc ${lc.toFixed(1)}`,
+    rows: [
+      {
+        ok: passesBody,
+        label: passesBody ? "Passes body text" : "Fails body text",
+        detail: "Body text needs |Lc| ≥ 60",
+      },
+      {
+        ok: passesHeadline,
+        label: passesHeadline ? "Passes headlines" : "Fails headlines",
+        detail: "Headline / large text needs |Lc| ≥ 75",
+      },
+    ],
+  };
 }

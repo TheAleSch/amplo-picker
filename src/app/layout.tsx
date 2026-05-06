@@ -5,6 +5,22 @@ export const metadata: Metadata = {
   title: "Amplo Picker",
   description:
     "OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware.",
+  icons: {
+    icon: [
+      { url: "/favicon/favicon.ico", sizes: "any" },
+      {
+        url: "/favicon/favicon.svg",
+        type: "image/svg+xml",
+      },
+      {
+        url: "/favicon/favicon-96x96.png",
+        sizes: "96x96",
+        type: "image/png",
+      },
+    ],
+    apple: "/favicon/apple-touch-icon.png",
+  },
+  manifest: "/favicon/site.webmanifest",
 };
 
 export default function RootLayout({

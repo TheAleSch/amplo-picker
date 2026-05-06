@@ -152,16 +152,15 @@ const VARIANTS: Array<{
   },
   {
     name: "Framer",
-    hint: "HSV-style area + hue + alpha + channel input + format/eyedropper. Mirrors Framer's color popover.",
+    hint: "HSV-style area + hue/alpha sliders + channel input with the format selector inline. Mirrors Framer's color popover.",
     areaMode: "hsv-sv",
+    channelShowFormat: true,
     parts: {
       ...ALL_OFF,
       area: true,
       hue: true,
       alpha: true,
       channelInput: true,
-      formatSwitcher: true,
-      eyeDropper: true,
     },
   },
   {

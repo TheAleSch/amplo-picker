@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Moon, Sun } from "lucide-react";
 import { GodRayCanvas } from "./godray-canvas";
 import { InstallTabs } from "./install-tabs";
+import { CopyForAi } from "./copy-for-ai";
 import { AMPLO_MARK_PATH, AMPLO_MARK_VIEWBOX } from "./amplo-mark";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
@@ -169,11 +170,12 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="mt-8 flex w-full justify-center lg:mt-12">
+        <div className="mt-8 flex w-full flex-col items-center gap-3 lg:mt-12">
           <InstallTabs
             url="https://amplo.ale.design/r/fill-picker.json"
             className="w-full max-w-70"
           />
+          <CopyForAi />
         </div>
       </div>
 

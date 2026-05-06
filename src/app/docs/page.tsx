@@ -13,6 +13,7 @@ import {
 import { CodeBlock } from "@/components/code-block";
 import { PreviewTabs } from "@/components/preview-tabs";
 import { InstallTabs } from "@/components/install-tabs";
+import { CopyForAi } from "@/components/copy-for-ai";
 
 const TOC = [
   ["installation", "Installation"],
@@ -54,6 +55,7 @@ export default function DocsPage() {
             accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app
             with one CLI command.
           </p>
+          <CopyForAi className="mt-2" />
         </header>
 
         <PreviewTabs preview={<HeroExample />} code={HERO_CODE} />

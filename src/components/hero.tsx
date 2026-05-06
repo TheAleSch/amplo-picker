@@ -338,17 +338,6 @@ function Toolbar() {
         </svg>
         <span className="hidden sm:inline">GitHub</span>
       </a>
-      <div className="hidden items-center pl-1 pr-1.5 md:flex">
-        <iframe
-          src="https://ghbtns.com/github-btn.html?user=TheAleSch&repo=amplo-picker&type=star&count=true"
-          title="Star TheAleSch/amplo-picker on GitHub"
-          frameBorder="0"
-          scrolling="0"
-          width="80"
-          height="20"
-          style={{ display: "block", colorScheme: "dark" }}
-        />
-      </div>
     </div>
   );
 }

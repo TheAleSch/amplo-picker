@@ -173,9 +173,9 @@ export function Hero() {
         <div className="mt-8 flex w-full flex-col items-center gap-3 lg:mt-12">
           <InstallTabs
             url="https://amplo.ale.design/r/fill-picker.json"
-            className="w-full max-w-70"
+            className="w-full max-w-md"
           />
-          <CopyForAi className="w-full max-w-70 justify-center" />
+          <CopyForAi className="w-full max-w-md justify-center" />
         </div>
       </div>
 

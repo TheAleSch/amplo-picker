@@ -85,42 +85,44 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
       const nextMetric = metrics[(metrics.indexOf(active) + 1) % metrics.length];
       return (
         <TooltipProvider delayDuration={150}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                ref={ref as React.Ref<HTMLButtonElement>}
-                data-slot="color-picker-contrast-readout"
-                type="button"
-                onClick={cycle}
-                aria-label={`Contrast (${active.toUpperCase()}). Click to switch.`}
-                className={cn(
-                  baseClass,
-                  "cursor-pointer text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  className,
-                )}
-                {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
-              >
-                {body}
+          <button
+            ref={ref as React.Ref<HTMLButtonElement>}
+            data-slot="color-picker-contrast-readout"
+            type="button"
+            onClick={cycle}
+            aria-label={`Contrast (${active.toUpperCase()}). Click to switch to ${nextMetric.toUpperCase()}.`}
+            className={cn(
+              baseClass,
+              "cursor-pointer text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              className,
+            )}
+            {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+          >
+            {body}
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <span aria-hidden="true" className="ml-auto text-muted-foreground">⇅</span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Switch to {nextMetric.toUpperCase()}</TooltipContent>
-          </Tooltip>
+              </TooltipTrigger>
+              <TooltipContent>Switch to {nextMetric.toUpperCase()}</TooltipContent>
+            </Tooltip>
+          </button>
         </TooltipProvider>
       );
     }
 
     return (
-      <div
-        ref={ref}
-        data-slot="color-picker-contrast-readout"
-        role="group"
-        aria-label="Contrast against background"
-        className={cn(baseClass, className)}
-        {...rest}
-      >
-        {body}
-      </div>
+      <TooltipProvider delayDuration={150}>
+        <div
+          ref={ref}
+          data-slot="color-picker-contrast-readout"
+          role="group"
+          aria-label="Contrast against background"
+          className={cn(baseClass, className)}
+          {...rest}
+        >
+          {body}
+        </div>
+      </TooltipProvider>
     );
   },
 );
@@ -152,8 +154,26 @@ function WcagBody({
       )}
       {showBadges && (
         <div className="flex items-center gap-1">
-          <Badge ok={aa}>AA</Badge>
-          <Badge ok={aaa}>AAA</Badge>
+          <Badge
+            ok={aa}
+            tooltip={
+              aa
+                ? "Passes WCAG AA — readable for body text (contrast ≥ 4.5:1)"
+                : "Fails WCAG AA — body text needs contrast ≥ 4.5:1"
+            }
+          >
+            AA
+          </Badge>
+          <Badge
+            ok={aaa}
+            tooltip={
+              aaa
+                ? "Passes WCAG AAA — enhanced contrast for body text (≥ 7:1)"
+                : "Fails WCAG AAA — enhanced contrast for body text needs ≥ 7:1"
+            }
+          >
+            AAA
+          </Badge>
         </div>
       )}
     </>
@@ -174,6 +194,12 @@ function ApcaBody({
   const abs = Math.abs(lc);
   const level: "fail" | "body" | "headline" =
     abs >= 75 ? "headline" : abs >= 60 ? "body" : "fail";
+  const tooltip =
+    level === "headline"
+      ? "Passes APCA for headlines and large text (|Lc| ≥ 75)"
+      : level === "body"
+        ? "Passes APCA for body text (|Lc| ≥ 60). Not strong enough for headlines (needs ≥ 75)."
+        : "Fails APCA — body text needs |Lc| ≥ 60";
   return (
     <>
       {(showLabel || showValue) && (
@@ -186,7 +212,7 @@ function ApcaBody({
       )}
       {showBadges && (
         <div className="flex items-center gap-1">
-          <Badge ok={level !== "fail"}>
+          <Badge ok={level !== "fail"} tooltip={tooltip}>
             {level === "headline" ? "headline" : level === "body" ? "body" : "fail"}
           </Badge>
         </div>
@@ -195,12 +221,21 @@ function ApcaBody({
   );
 }
 
-function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
-  return (
+function Badge({
+  ok,
+  tooltip,
+  children,
+}: {
+  ok: boolean;
+  tooltip?: string;
+  children: React.ReactNode;
+}) {
+  const span = (
     <span
+      tabIndex={tooltip ? 0 : undefined}
       aria-label={typeof children === "string" ? `${children} ${ok ? "passes" : "fails"}` : undefined}
       className={cn(
-        "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+        "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider outline-none focus-visible:ring-1 focus-visible:ring-ring",
         ok
           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
           : "bg-red-500/15 text-red-700 dark:text-red-400",
@@ -208,5 +243,12 @@ function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
     >
       {children}
     </span>
+  );
+  if (!tooltip) return span;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{span}</TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
   );
 }

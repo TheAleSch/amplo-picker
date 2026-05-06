@@ -59,7 +59,7 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
             aria-label={p}
             onClick={() => setColor(p)}
             className={cn(
-              "size-5 rounded-sm border border-border outline-none transition-transform",
+              "size-5 cursor-pointer rounded-sm border border-border outline-none transition-transform",
               "focus-visible:ring-2 focus-visible:ring-ring hover:scale-110",
               active && "ring-2 ring-ring",
             )}
@@ -73,7 +73,7 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           aria-label="Add current color to swatches"
           onClick={() => onAdd(color, formatColor(color, "hex"))}
           className={cn(
-            "inline-flex size-5 items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none transition-colors",
+            "inline-flex size-5 cursor-pointer items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none transition-colors",
             "hover:border-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
           )}
         >

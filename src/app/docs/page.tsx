@@ -904,7 +904,7 @@ const PART_ROWS: PropRow[] = [
   {
     name: "<ColorPicker.ContrastReadout>",
     type: "metrics, defaultMetric, showLabel, showValue, showBadges",
-    desc: 'Surfaces one contrast metric at a time. metrics is ("wcag" | "apca")[] (default ["wcag"]); when metrics.length > 1 the readout becomes a button — click to cycle. Toggle showLabel / showValue / showBadges (all default true) to hide the metric name, the numeric value, or the AA/AAA / body/headline / fail pills — set everything but showBadges to false for a minimal pass/fail-only badge.',
+    desc: 'Surfaces one contrast metric at a time. metrics is ("wcag" | "apca")[] (default ["wcag"]); when metrics.length > 1 the readout becomes a button — click to cycle, with a tooltip on the ⇅ icon that names the next metric. Toggle showLabel / showValue / showBadges (all default true) to hide the metric name, the numeric value, or the AA/AAA / body/headline / fail pills — set everything but showBadges to false for a minimal pass/fail-only badge. Each pass/fail badge has its own hover tooltip explaining the threshold (e.g. "Passes WCAG AA — body text needs ≥ 4.5:1").',
     default: "—",
   },
   {

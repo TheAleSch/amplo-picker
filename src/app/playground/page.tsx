@@ -82,13 +82,8 @@ export default function PlaygroundPage() {
     () => parseColor("oklch(0.7 0.18 30)")!,
   );
   const [bg, setBg] = React.useState("#ffffff");
-  const [variant, setVariant] = React.useState<"default" | "compound">(
-    "default",
-  );
   const [areaMode, setAreaMode] = React.useState<AreaMode>("oklch-cl");
   const [formats, setFormats] = React.useState<ColorFormat[]>([...ALL_FORMATS]);
-  const [apca, setApca] = React.useState(true);
-  const [hideEyeDropper, setHideEyeDropper] = React.useState(false);
   const [showWarningLines, setShowWarningLines] = React.useState(true);
   const [parts, setParts] = React.useState<Record<PartKey, boolean>>({
     area: true,
@@ -122,32 +117,9 @@ export default function PlaygroundPage() {
 
   const code = React.useMemo(
     () =>
-      buildSnippet({
-        variant,
-        areaMode,
-        formats,
-        apca,
-        hideEyeDropper,
-        showWarningLines,
-        bg,
-        parts,
-      }),
-    [
-      variant,
-      areaMode,
-      formats,
-      apca,
-      hideEyeDropper,
-      showWarningLines,
-      bg,
-      parts,
-    ],
+      buildSnippet({ areaMode, formats, showWarningLines, bg, parts }),
+    [areaMode, formats, showWarningLines, bg, parts],
   );
-
-  // Default <ColorPicker /> always renders Hue regardless of areaMode, so
-  // pairing oklch-hc with the default layout leaves lightness un-pickable.
-  const defaultModeMismatch =
-    variant === "default" && areaMode === "oklch-hc";
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12">
@@ -168,8 +140,9 @@ export default function PlaygroundPage() {
           </Link>
         </div>
         <p className="max-w-2xl text-muted-foreground">
-          Tweak knobs, toggle parts, copy the generated JSX. State lives in this
-          page only — refreshing resets the canvas.
+          Compose <code className="font-mono">ColorPicker.Root</code> with the
+          parts you want. Toggle, tweak, copy the generated JSX. State lives
+          in this page only — refreshing resets the canvas.
         </p>
       </header>
 
@@ -180,101 +153,67 @@ export default function PlaygroundPage() {
             style={{ background: bg }}
           >
             <div className="w-full max-w-xs">
-              {variant === "default" ? (
-                <ColorPicker
-                  value={color}
-                  onValueChange={(c) => setColor(c)}
-                  areaMode={areaMode}
-                  backgroundColor={bg}
-                  formats={formats}
-                  apca={apca}
-                  hideEyeDropper={hideEyeDropper}
-                  showWarningLines={showWarningLines}
-                />
-              ) : (
-                <ColorPicker.Root
-                  value={color}
-                  onValueChange={(c) => setColor(c)}
-                  backgroundColor={bg}
-                  formats={formats}
-                >
-                  {parts.area && (
-                    <ColorPicker.Area
-                      mode={areaMode}
-                      showWarningLines={showWarningLines}
-                    />
-                  )}
-                  {(parts.preview ||
-                    parts.hue ||
-                    parts.lightness ||
-                    parts.alpha ||
-                    parts.eyeDropper) && (
-                    <div className="flex items-center gap-2">
-                      {parts.preview && <ColorPicker.Preview />}
-                      {(parts.hue || parts.lightness || parts.alpha) && (
-                        <div className="flex flex-1 flex-col gap-1.5">
-                          {parts.hue && <ColorPicker.Hue />}
-                          {parts.lightness && <ColorPicker.Lightness />}
-                          {parts.alpha && <ColorPicker.Alpha />}
-                        </div>
-                      )}
-                      {parts.eyeDropper && <ColorPicker.EyeDropper />}
-                    </div>
-                  )}
-                  {parts.gamutBadge && (
-                    <div className="flex justify-end">
-                      <ColorPicker.GamutBadge />
-                    </div>
-                  )}
-                  {parts.channelInput && <ColorPicker.ChannelInput />}
-                  {(parts.formatSwitcher || parts.input) && (
-                    <div className="flex items-stretch gap-2">
-                      {parts.formatSwitcher && <ColorPicker.FormatSwitcher />}
-                      {parts.input && (
-                        <div className="flex-1">
-                          <ColorPicker.Input />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {parts.contrastReadout && (
-                    <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
-                  )}
-                  {parts.swatches && (
-                    <ColorPicker.Swatches
-                      presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
-                    />
-                  )}
-                </ColorPicker.Root>
-              )}
+              <ColorPicker.Root
+                value={color}
+                onValueChange={(c) => setColor(c)}
+                backgroundColor={bg}
+                formats={formats}
+              >
+                {parts.area && (
+                  <ColorPicker.Area
+                    mode={areaMode}
+                    showWarningLines={showWarningLines}
+                  />
+                )}
+                {(parts.preview ||
+                  parts.hue ||
+                  parts.lightness ||
+                  parts.alpha ||
+                  parts.eyeDropper) && (
+                  <div className="flex items-center gap-2">
+                    {parts.preview && <ColorPicker.Preview />}
+                    {(parts.hue || parts.lightness || parts.alpha) && (
+                      <div className="flex flex-1 flex-col gap-1.5">
+                        {parts.hue && <ColorPicker.Hue />}
+                        {parts.lightness && <ColorPicker.Lightness />}
+                        {parts.alpha && <ColorPicker.Alpha />}
+                      </div>
+                    )}
+                    {parts.eyeDropper && <ColorPicker.EyeDropper />}
+                  </div>
+                )}
+                {parts.gamutBadge && (
+                  <div className="flex justify-end">
+                    <ColorPicker.GamutBadge />
+                  </div>
+                )}
+                {parts.channelInput && <ColorPicker.ChannelInput />}
+                {(parts.formatSwitcher || parts.input) && (
+                  <div className="flex items-stretch gap-2">
+                    {parts.formatSwitcher && <ColorPicker.FormatSwitcher />}
+                    {parts.input && (
+                      <div className="flex-1">
+                        <ColorPicker.Input />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {parts.contrastReadout && (
+                  <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
+                )}
+                {parts.swatches && (
+                  <ColorPicker.Swatches
+                    presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
+                  />
+                )}
+              </ColorPicker.Root>
             </div>
           </div>
-
-          {defaultModeMismatch && (
-            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-              Heads up — the default layout always renders <code className="font-mono">Hue</code>,
-              not <code className="font-mono">Lightness</code>, so{" "}
-              <code className="font-mono">areaMode=&quot;oklch-hc&quot;</code> leaves lightness
-              un-pickable here. Switch to <strong>Compound</strong> and enable{" "}
-              <code className="font-mono">Lightness</code> to drive that axis.
-            </p>
-          )}
 
           <CodeBlock code={code} />
         </div>
 
         <aside className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
-          <Knob label="variant">
-            <SegmentedControl
-              value={variant}
-              onChange={setVariant}
-              options={[
-                { value: "default", label: "Default" },
-                { value: "compound", label: "Compound" },
-              ]}
-            />
-          </Knob>
-
           <Knob label="areaMode">
             <div className="flex flex-col gap-1.5">
               {AREA_MODES.map((m) => (
@@ -327,37 +266,23 @@ export default function PlaygroundPage() {
             <Toggle value={showWarningLines} onChange={setShowWarningLines} />
           </Knob>
 
-          {variant === "default" ? (
-            <>
-              <Knob label="apca">
-                <Toggle value={apca} onChange={setApca} />
-              </Knob>
-              <Knob label="hideEyeDropper">
-                <Toggle
-                  value={hideEyeDropper}
-                  onChange={setHideEyeDropper}
-                />
-              </Knob>
-            </>
-          ) : (
-            <Knob label="parts">
-              <div className="grid grid-cols-2 gap-1.5">
-                {PARTS.map((p) => (
-                  <label
-                    key={p.key}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={parts[p.key]}
-                      onChange={() => togglePart(p.key)}
-                    />
-                    <span className="font-mono text-xs">{p.label}</span>
-                  </label>
-                ))}
-              </div>
-            </Knob>
-          )}
+          <Knob label="parts">
+            <div className="grid grid-cols-2 gap-1.5">
+              {PARTS.map((p) => (
+                <label
+                  key={p.key}
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={parts[p.key]}
+                    onChange={() => togglePart(p.key)}
+                  />
+                  <span className="font-mono text-xs">{p.label}</span>
+                </label>
+              ))}
+            </div>
+          </Knob>
 
           <Knob label="backgroundColor">
             <div className="flex flex-wrap gap-1.5">
@@ -391,41 +316,18 @@ export default function PlaygroundPage() {
 }
 
 function buildSnippet({
-  variant,
   areaMode,
   formats,
-  apca,
-  hideEyeDropper,
   showWarningLines,
   bg,
   parts,
 }: {
-  variant: "default" | "compound";
   areaMode: AreaMode;
   formats: ColorFormat[];
-  apca: boolean;
-  hideEyeDropper: boolean;
   showWarningLines: boolean;
   bg: string;
   parts: Record<PartKey, boolean>;
 }) {
-  const formatsLine =
-    formats.length === ALL_FORMATS.length
-      ? ""
-      : `\n  formats={${JSON.stringify(formats)}}`;
-  const linesLine = showWarningLines ? "" : "\n  showWarningLines={false}";
-
-  if (variant === "default") {
-    const apcaLine = apca ? "\n  apca" : "";
-    const hideEdLine = hideEyeDropper ? "\n  hideEyeDropper" : "";
-    return `<ColorPicker
-  value={color}
-  onValueChange={setColor}
-  areaMode="${areaMode}"
-  backgroundColor=${JSON.stringify(bg)}${formatsLine}${apcaLine}${hideEdLine}${linesLine}
-/>`;
-  }
-
   const lines: string[] = [];
   lines.push(`<ColorPicker.Root`);
   lines.push(`  value={color}`);
@@ -527,35 +429,3 @@ function Toggle({
     </button>
   );
 }
-
-function SegmentedControl<T extends string>({
-  value,
-  onChange,
-  options,
-}: {
-  value: T;
-  onChange: (v: T) => void;
-  options: Array<{ value: T; label: string }>;
-}) {
-  return (
-    <div className="inline-flex rounded-md border border-border p-0.5">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          aria-pressed={value === o.value}
-          className={cn(
-            "rounded px-3 py-1 text-xs font-medium transition-colors",
-            value === o.value
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-

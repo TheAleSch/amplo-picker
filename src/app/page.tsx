@@ -80,13 +80,18 @@ export default function Home() {
       <section className="grid gap-8 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            Default styled
+            Canonical composition
           </h2>
-          <ColorPicker
-            value={color}
-            onValueChange={(next) => setColor(next)}
-            backgroundColor={bg}
-            apca
+          <p className="text-sm text-muted-foreground">
+            Compose <code className="font-mono">ColorPicker.Root</code> with the
+            parts you need. See the <Link href="/docs" className="underline">docs</Link> for the
+            full recipe.
+          </p>
+          <CanonicalPicker
+            color={color}
+            setColor={setColor}
+            bg={bg}
+            areaMode="oklch-cl"
           />
           <pre className="overflow-x-auto rounded-md border border-border bg-muted/40 p-2 font-mono text-xs">
             {formats.oklch}
@@ -102,8 +107,13 @@ export default function Home() {
 
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            Composed (chroma × hue mode)
+            Compose your own (chroma × hue)
           </h2>
+          <p className="text-sm text-muted-foreground">
+            Replace the Hue slider with Lightness when the area is{" "}
+            <code className="font-mono">oklch-hc</code>. Drop ChannelInput,
+            simplify the row, prune Swatches.
+          </p>
           <ColorPicker.Root
             value={color}
             onValueChange={(next) => setColor(next)}
@@ -140,26 +150,24 @@ export default function Home() {
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              <code className="font-mono">areaMode="oklch-cl"</code>
+              <code className="font-mono">{`<ColorPicker.Area mode="oklch-cl" />`}</code>
             </p>
-            <ColorPicker
-              value={color}
-              onValueChange={(next) => setColor(next)}
-              backgroundColor={bg}
+            <CanonicalPicker
+              color={color}
+              setColor={setColor}
+              bg={bg}
               areaMode="oklch-cl"
-              apca
             />
           </div>
           <div className="flex flex-col gap-2">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              <code className="font-mono">areaMode="hsv-sv"</code>
+              <code className="font-mono">{`<ColorPicker.Area mode="hsv-sv" />`}</code>
             </p>
-            <ColorPicker
-              value={color}
-              onValueChange={(next) => setColor(next)}
-              backgroundColor={bg}
+            <CanonicalPicker
+              color={color}
+              setColor={setColor}
+              bg={bg}
               areaMode="hsv-sv"
-              apca
             />
           </div>
         </div>
@@ -312,13 +320,54 @@ function ColorTriggerDemo({
         collisionPadding={8}
         className="w-auto p-0 border-0 bg-transparent shadow-none"
       >
-        <ColorPicker
-          value={color}
-          onValueChange={(next) => setColor(next)}
-          backgroundColor={bg}
-          apca
+        <CanonicalPicker
+          color={color}
+          setColor={setColor}
+          bg={bg}
+          areaMode="oklch-cl"
         />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/**
+ * Demo-site convenience wrapper around the canonical composition. Not part
+ * of the registry — the source of truth for the layout lives on the docs
+ * page as a copy-paste recipe so consumers own it directly.
+ */
+function CanonicalPicker({
+  color,
+  setColor,
+  bg,
+  areaMode,
+}: {
+  color: OklchColor;
+  setColor: (c: OklchColor) => void;
+  bg: string;
+  areaMode: "oklch-cl" | "hsv-sv" | "oklch-hc";
+}) {
+  return (
+    <ColorPicker.Root
+      value={color}
+      onValueChange={(next) => setColor(next)}
+      backgroundColor={bg}
+    >
+      <ColorPicker.Area mode={areaMode} />
+      <div className="flex items-center gap-2">
+        <ColorPicker.Preview />
+        <div className="flex flex-1 flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <ColorPicker.EyeDropper />
+      </div>
+      <div className="flex items-center justify-end">
+        <ColorPicker.GamutBadge />
+      </div>
+      <ColorPicker.ChannelInput />
+      <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
+      <ColorPicker.Swatches />
+    </ColorPicker.Root>
   );
 }

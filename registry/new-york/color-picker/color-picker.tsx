@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { Root, type RootProps } from "./parts/root";
-import { Area, type AreaProps } from "./parts/area";
+import { Root } from "./parts/root";
+import { Area } from "./parts/area";
 import { Hue } from "./parts/hue";
 import { Lightness } from "./parts/lightness";
 import { Alpha } from "./parts/alpha";
@@ -15,62 +14,38 @@ import { ContrastReadout } from "./parts/contrast-readout";
 import { Preview } from "./parts/preview";
 import { EyeDropper } from "./parts/eye-dropper";
 
-export type { ColorFormat, OklchColor, GamutInfo, ContrastResult, Gamut } from "./lib/types";
-export type { UseColorPickerProps, ColorPickerState } from "./hooks/use-color-picker";
+export type {
+  ColorFormat,
+  OklchColor,
+  GamutInfo,
+  ContrastResult,
+  Gamut,
+} from "./lib/types";
+export type {
+  UseColorPickerProps,
+  ColorPickerState,
+} from "./hooks/use-color-picker";
 export { useColorPicker } from "./hooks/use-color-picker";
-export { parseColor, formatColor, formatAll, gamutInfo, toGamut, contrast, apcaContrast, isValidColor } from "./lib/color";
-
-export interface ColorPickerProps extends RootProps {
-  areaMode?: AreaProps["mode"];
-  /** When set, hides the EyeDropper button regardless of browser support. */
-  hideEyeDropper?: boolean;
-  /** Render APCA contrast value alongside WCAG. */
-  apca?: boolean;
-  /**
-   * Show the gamut-cutoff warning lines on the area. Defaults to true.
-   * Hides them when false; no effect when the active render gamut already
-   * has nothing to draw (sRGB output formats).
-   */
-  showWarningLines?: boolean;
-}
+export {
+  parseColor,
+  formatColor,
+  formatAll,
+  gamutInfo,
+  toGamut,
+  contrast,
+  apcaContrast,
+  isValidColor,
+} from "./lib/color";
+export { colorChannels, setColorChannel } from "./lib/channels";
+export type { ChannelDescriptor } from "./lib/channels";
 
 /**
- * Default styled color picker. Renders the full canonical layout.
- * For composition, use <ColorPicker.Root> + the named parts directly.
+ * Compositional color picker. Compose `<ColorPicker.Root>` with the named
+ * parts to build the layout you want. Following shadcn convention there is
+ * no kitchen-sink default component — see the docs for a copy-paste recipe
+ * of the canonical layout.
  */
-function DefaultColorPicker({
-  areaMode = "oklch-cl",
-  hideEyeDropper,
-  apca,
-  showWarningLines,
-  children,
-  ...rootProps
-}: ColorPickerProps) {
-  if (children !== undefined) {
-    return <Root {...rootProps}>{children}</Root>;
-  }
-  return (
-    <Root {...rootProps}>
-      <Area mode={areaMode} showWarningLines={showWarningLines} />
-      <div className="flex items-center gap-2">
-        <Preview />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <Hue />
-          <Alpha />
-        </div>
-        {!hideEyeDropper && <EyeDropper />}
-      </div>
-      <div className="flex items-center justify-end">
-        <GamutBadge />
-      </div>
-      <ChannelInput />
-      <ContrastReadout metrics={apca ? ["wcag", "apca"] : ["wcag"]} />
-      <Swatches />
-    </Root>
-  );
-}
-
-export const ColorPicker = Object.assign(DefaultColorPicker, {
+export const ColorPicker = {
   Root,
   Area,
   Hue,
@@ -84,4 +59,4 @@ export const ColorPicker = Object.assign(DefaultColorPicker, {
   ContrastReadout,
   Preview,
   EyeDropper,
-});
+};

@@ -19,7 +19,6 @@ const TOC = [
   ["usage", "Usage"],
   ["examples", "Examples"],
   ["anatomy", "Anatomy"],
-  ["api-default", "API: <ColorPicker />"],
   ["api-root", "API: <ColorPicker.Root>"],
   ["api-parts", "API: Parts"],
   ["api-hook", "API: useColorPicker hook"],
@@ -90,13 +89,6 @@ export default function DocsPage() {
           <H2 id="examples">Examples</H2>
 
           <Example
-            title="With APCA contrast"
-            description="Surfaces both WCAG and APCA — click the readout to cycle metrics."
-            preview={<HeroExample />}
-            code={HERO_CODE}
-          />
-
-          <Example
             title="HSV-style area"
             description='areaMode="hsv-sv" anchors the top-left corner to white and top-right to fully saturated, like Photoshop or Framer.'
             preview={<HsvExample />}
@@ -104,8 +96,8 @@ export default function DocsPage() {
           />
 
           <Example
-            title="Compose from parts"
-            description="Use ColorPicker.Root + the named parts to rebuild the layout from scratch. Every part reads the same context, so omit, reorder, or duplicate freely."
+            title="Chroma × hue area"
+            description="When the area is oklch-hc, swap the Hue slider for a Lightness slider and prune the parts you don't need."
             preview={<CompoundExample />}
             code={COMPOUND_CODE}
           />
@@ -121,20 +113,12 @@ export default function DocsPage() {
         <section className="flex flex-col gap-4">
           <H2 id="anatomy">Anatomy</H2>
           <p>
-            The default <Code>{"<ColorPicker />"}</Code> renders all parts in a
-            canonical layout. Treat the tree below as the contract for what{" "}
-            <Code>{"<ColorPicker.Root>"}</Code> exposes.
+            Following shadcn convention, there is no kitchen-sink default
+            component — compose <Code>{"<ColorPicker.Root>"}</Code> with the
+            parts you need. The tree below is a complete reference of what the
+            registry ships.
           </p>
           <CodeBlock code={ANATOMY_CODE} />
-        </section>
-
-        <section className="flex flex-col gap-4">
-          <H2 id="api-default">API: {"<ColorPicker />"}</H2>
-          <p>
-            Default styled component. Composes all parts in the canonical
-            layout. Inherits all <Code>{"<ColorPicker.Root>"}</Code> props plus:
-          </p>
-          <PropsTable rows={DEFAULT_PROPS} />
         </section>
 
         <section className="flex flex-col gap-4">
@@ -393,12 +377,7 @@ function HeroExample() {
   );
   return (
     <div className="w-full max-w-xs">
-      <ColorPicker
-        value={color}
-        onValueChange={(next) => setColor(next)}
-        backgroundColor="#ffffff"
-        apca
-      />
+      <CanonicalLayout color={color} setColor={setColor} areaMode="oklch-cl" />
     </div>
   );
 }
@@ -409,14 +388,47 @@ function HsvExample() {
   );
   return (
     <div className="w-full max-w-xs">
-      <ColorPicker
-        value={color}
-        onValueChange={(next) => setColor(next)}
-        backgroundColor="#ffffff"
-        areaMode="hsv-sv"
-        apca
-      />
+      <CanonicalLayout color={color} setColor={setColor} areaMode="hsv-sv" />
     </div>
+  );
+}
+
+/**
+ * Demo-only convenience to render the canonical composition shown in
+ * HERO_CODE. The source of truth is the code string the user copies — this
+ * helper just keeps the live previews readable.
+ */
+function CanonicalLayout({
+  color,
+  setColor,
+  areaMode,
+}: {
+  color: OklchColor;
+  setColor: (c: OklchColor) => void;
+  areaMode: "oklch-cl" | "hsv-sv" | "oklch-hc";
+}) {
+  return (
+    <ColorPicker.Root
+      value={color}
+      onValueChange={(next) => setColor(next)}
+      backgroundColor="#ffffff"
+    >
+      <ColorPicker.Area mode={areaMode} />
+      <div className="flex items-center gap-2">
+        <ColorPicker.Preview />
+        <div className="flex flex-1 flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <ColorPicker.EyeDropper />
+      </div>
+      <div className="flex items-center justify-end">
+        <ColorPicker.GamutBadge />
+      </div>
+      <ColorPicker.ChannelInput />
+      <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
+      <ColorPicker.Swatches />
+    </ColorPicker.Root>
   );
 }
 
@@ -475,12 +487,7 @@ function PopoverExample() {
         collisionPadding={8}
         className="w-auto border-0 bg-transparent p-0 shadow-none"
       >
-        <ColorPicker
-          value={color}
-          onValueChange={(next) => setColor(next)}
-          backgroundColor="#ffffff"
-          apca
-        />
+        <CanonicalLayout color={color} setColor={setColor} areaMode="oklch-cl" />
       </PopoverContent>
     </Popover>
   );
@@ -491,18 +498,32 @@ function PopoverExample() {
 const HERO_CODE = `"use client";
 
 import * as React from "react";
-import { ColorPicker } from "@/components/ui/color-picker/color-picker";
-import { parseColor } from "@/components/ui/color-picker/lib/color";
+import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
 
 export function ColorPickerDemo() {
   const [color, setColor] = React.useState(() => parseColor("oklch(0.7 0.18 30)")!);
   return (
-    <ColorPicker
+    <ColorPicker.Root
       value={color}
       onValueChange={(next) => setColor(next)}
       backgroundColor="#ffffff"
-      apca
-    />
+    >
+      <ColorPicker.Area mode="oklch-cl" />
+      <div className="flex items-center gap-2">
+        <ColorPicker.Preview />
+        <div className="flex flex-1 flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <ColorPicker.EyeDropper />
+      </div>
+      <div className="flex items-center justify-end">
+        <ColorPicker.GamutBadge />
+      </div>
+      <ColorPicker.ChannelInput />
+      <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
+      <ColorPicker.Swatches />
+    </ColorPicker.Root>
   );
 }`;
 
@@ -514,25 +535,42 @@ export function Example() {
   const [color, setColor] = React.useState(() => parseColor("oklch(0.7 0.18 30)")!);
   const [hex, setHex] = React.useState("#cf6f4f");
   return (
-    <ColorPicker
+    <ColorPicker.Root
       value={color}
       onValueChange={(next, _formatted, formats) => {
         setColor(next);
         setHex(formats.hex); // fallback always available
       }}
       backgroundColor="#ffffff"
-      apca
-    />
+    >
+      <ColorPicker.Area />
+      <ColorPicker.Hue />
+      <ColorPicker.ChannelInput />
+    </ColorPicker.Root>
   );
 }`;
 
-const HSV_CODE = `<ColorPicker
+const HSV_CODE = `<ColorPicker.Root
   value={color}
   onValueChange={(next) => setColor(next)}
   backgroundColor="#ffffff"
-  areaMode="hsv-sv"
-  apca
-/>`;
+>
+  <ColorPicker.Area mode="hsv-sv" />
+  <div className="flex items-center gap-2">
+    <ColorPicker.Preview />
+    <div className="flex flex-1 flex-col gap-1.5">
+      <ColorPicker.Hue />
+      <ColorPicker.Alpha />
+    </div>
+    <ColorPicker.EyeDropper />
+  </div>
+  <div className="flex items-center justify-end">
+    <ColorPicker.GamutBadge />
+  </div>
+  <ColorPicker.ChannelInput />
+  <ColorPicker.ContrastReadout metrics={["wcag", "apca"]} />
+  <ColorPicker.Swatches />
+</ColorPicker.Root>`;
 
 const COMPOUND_CODE = `<ColorPicker.Root
   value={color}
@@ -567,12 +605,21 @@ const POPOVER_CODE = `import { Popover, PopoverContent, PopoverTrigger } from "@
     collisionPadding={8}
     className="w-auto p-0 border-0 bg-transparent shadow-none"
   >
-    <ColorPicker
+    <ColorPicker.Root
       value={color}
       onValueChange={(next) => setColor(next)}
       backgroundColor="#ffffff"
-      apca
-    />
+    >
+      <ColorPicker.Area />
+      <div className="flex items-center gap-2">
+        <ColorPicker.Preview />
+        <div className="flex flex-1 flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+      </div>
+      <ColorPicker.ChannelInput />
+    </ColorPicker.Root>
   </PopoverContent>
 </Popover>`;
 
@@ -623,33 +670,6 @@ const UTILS_CODE = `import {
 } from "@/components/ui/color-picker/color-picker";`;
 
 /* ─────────────────────────── API tables ─────────────────────────── */
-
-const DEFAULT_PROPS: PropRow[] = [
-  {
-    name: "areaMode",
-    type: '"oklch-cl" | "hsv-sv" | "oklch-hc"',
-    default: '"oklch-cl"',
-    desc: "Axes used by the 2D area. See <ColorPicker.Area> for details.",
-  },
-  {
-    name: "apca",
-    type: "boolean",
-    default: "false",
-    desc: "Shorthand: when true, the ContrastReadout exposes both WCAG and APCA and the user can click to toggle. For finer control compose the parts directly and use ContrastReadout's `metrics` prop.",
-  },
-  {
-    name: "hideEyeDropper",
-    type: "boolean",
-    default: "false",
-    desc: "Hide the EyeDropper button regardless of browser support.",
-  },
-  {
-    name: "showWarningLines",
-    type: "boolean",
-    default: "true",
-    desc: "Show the gamut-cutoff warning lines on the area. Set to false for a quieter visual when the gamut badge already conveys gamut status.",
-  },
-];
 
 const ROOT_PROPS: PropRow[] = [
   {
@@ -743,7 +763,7 @@ const PART_ROWS: PropRow[] = [
   {
     name: "<ColorPicker.ChannelInput>",
     type: "formats",
-    desc: 'Photoshop-style multi-field input. Renders the format selector + one numeric field per channel (R/G/B/A%, H/S/L/A%, etc.) plus an alpha % field. For "hex" falls back to a single text field. Each numeric field supports ↑/↓ to step (Shift = big step) and accepts a pasted CSS color string from any field. The default <ColorPicker /> uses this in place of FormatSwitcher + Input.',
+    desc: 'Photoshop-style multi-field input. Renders the format selector + one numeric field per channel (R/G/B/A%, H/S/L/A%, etc.) plus an alpha % field. For "hex" falls back to a single text field. Each numeric field supports ↑/↓ to step (Shift = big step) and accepts a pasted CSS color string from any field.',
     default: "—",
   },
   {

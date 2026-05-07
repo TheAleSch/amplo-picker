@@ -189,6 +189,23 @@ const VARIANTS: Array<{
     },
   },
   {
+    name: "Chroma × hue",
+    hint: "areaMode='oklch-hc' puts hue + chroma on the canvas, so swap the Hue slider for a Lightness slider. Mirrors the docs sample.",
+    areaMode: "oklch-hc",
+    channelShowFormat: false,
+    parts: {
+      ...ALL_OFF,
+      gamutBadge: true,
+      contrastReadout: true,
+      area: true,
+      lightness: true,
+      alpha: true,
+      formatSwitcher: true,
+      eyeDropper: true,
+      channelInput: true,
+    },
+  },
+  {
     name: "A11y review",
     hint: "Area + sliders + WCAG/APCA readout. Use when contrast is the main job.",
     parts: {

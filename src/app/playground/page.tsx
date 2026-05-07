@@ -163,7 +163,7 @@ const VARIANTS: Array<{
     name: "Framer",
     hint: "Area + hue/alpha + numeric channels, then format dropdown + eyedropper underneath. Mirrors Framer's color popover.",
     areaMode: "hsv-sv",
-    areaHeight: 260,
+    areaHeight: 140,
     maxWidth: 260,
     channelShowFormat: false,
     formatRowAfterChannel: true,

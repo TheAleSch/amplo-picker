@@ -100,8 +100,25 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [paths, setPaths] = React.useState<string[][]>([]);
+  // Bead position override. The (X, Y) → OKLCH mapping is lossy at the
+  // gamut poles: at l=0 or l=1 every X collapses to chroma 0, so deriving
+  // the bead back from the resulting color always recovers X=0 — making
+  // the bead jump to the left edge when the pointer drags past the top or
+  // bottom. We keep the user's last picked (xn, yn) and render the bead
+  // there. Cleared whenever color changes from a source other than our
+  // own moveTo (e.g. swatch click, controlled value, input typing).
+  const [pickPos, setPickPos] = React.useState<[number, number] | null>(null);
+  const selfSetRef = React.useRef(false);
 
   React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
+
+  React.useEffect(() => {
+    if (selfSetRef.current) {
+      selfSetRef.current = false;
+      return;
+    }
+    setPickPos(null);
+  }, [color]);
 
   // The gradient and warning lines depend only on the axis the mode keeps
   // *fixed* (hue for oklch-cl/hsv-sv, lightness for oklch-hc). Depending on
@@ -136,13 +153,16 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, fixedAxisValue, chromaMax, gamut, showWarningLines, resolution, softProof]);
 
-  const [px, py] = positionFor(mode, color, chromaMax, gamut);
+  const [derivedPx, derivedPy] = positionFor(mode, color, chromaMax, gamut);
+  const [px, py] = pickPos ?? [derivedPx, derivedPy];
 
   const moveTo = React.useCallback(
     (x: number, y: number) => {
       const xn = clamp01(x);
       const yn = clamp01(y);
       const next = sampleAt(mode, color, chromaMax, gamut, xn, yn);
+      setPickPos([xn, yn]);
+      selfSetRef.current = true;
       // With warping every (X, Y) is in-gamut by construction, so toGamut is
       // defensive only — guards against drift at numerical boundaries. When
       // gamut === "none" the user has explicitly opted out of warping and we

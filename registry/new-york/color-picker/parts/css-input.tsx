@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export interface CssInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {}
@@ -26,7 +27,7 @@ export const CssInput = React.forwardRef<HTMLInputElement, CssInputProps>(functi
   };
 
   return (
-    <input
+    <Input
       ref={ref}
       data-slot="color-picker-input"
       type="text"
@@ -51,12 +52,7 @@ export const CssInput = React.forwardRef<HTMLInputElement, CssInputProps>(functi
           setError(false);
         }
       }}
-      className={cn(
-        "h-8 w-full rounded-md border bg-transparent px-2 font-mono text-xs shadow-xs outline-none",
-        "border-input focus-visible:ring-1 focus-visible:ring-ring",
-        error && "border-destructive focus-visible:ring-destructive",
-        className,
-      )}
+      className={cn("h-8 px-2 font-mono text-xs", className)}
       {...rest}
     />
   );

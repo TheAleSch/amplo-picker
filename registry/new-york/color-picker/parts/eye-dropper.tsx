@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Pipette } from "lucide-react";
 import { useColorPickerContext } from "../context";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface EyeDropperLike {
@@ -41,20 +42,18 @@ export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(f
   };
 
   return (
-    <button
+    <Button
       ref={ref}
       data-slot="color-picker-eye-dropper"
       type="button"
+      variant="outline"
+      size="icon-sm"
       aria-label="Pick color from screen"
       onClick={onClick}
-      className={cn(
-        "inline-flex size-8 cursor-pointer items-center justify-center rounded-md border border-input bg-transparent text-sm font-medium shadow-xs outline-none transition-colors",
-        "hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
-        className,
-      )}
+      className={cn("cursor-pointer", className)}
       {...rest}
     >
       <Pipette className="size-4" />
-    </button>
+    </Button>
   );
 });

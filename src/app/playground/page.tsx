@@ -156,7 +156,7 @@ const VARIANTS: Array<{
   {
     name: "Framer",
     hint: "Area + hue/alpha + numeric channels, then format dropdown + eyedropper underneath. Mirrors Framer's color popover.",
-    areaMode: "oklch-cl",
+    areaMode: "hsv-sv",
     channelShowFormat: false,
     formatRowAfterChannel: true,
     parts: {

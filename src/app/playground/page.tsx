@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
-import { parseColor } from "@/registry/new-york/color-picker/lib/color";
+import { parseColor, formatColor } from "@/registry/new-york/color-picker/lib/color";
 import type {
   ColorFormat,
   OklchColor,
@@ -39,13 +39,6 @@ const AREA_MODES: Array<{ value: AreaMode; label: string; hint: string }> = [
     label: "oklch-hc",
     hint: "Hue × chroma. Pair with Lightness.",
   },
-];
-
-const BG_PRESETS = [
-  "#ffffff",
-  "#0a0a0a",
-  "oklch(0.95 0.02 250)",
-  "oklch(0.2 0.03 30)",
 ];
 
 type PartKey =
@@ -225,9 +218,9 @@ const PARTS: Array<{ key: PartKey; label: string }> = [
 
 export default function PlaygroundPage() {
   const [color, setColor] = React.useState<OklchColor>(
-    () => parseColor("oklch(0.7 0.18 30)")!,
+    () => parseColor("#2a2a2a")!,
   );
-  const [bg, setBg] = React.useState("#ffffff");
+  const bg = React.useMemo(() => formatColor(color, "hex"), [color]);
   const [areaMode, setAreaMode] = React.useState<AreaMode>("oklch-cl");
   const [formats, setFormats] = React.useState<ColorFormat[]>([...ALL_FORMATS]);
   const [defaultFormat, setDefaultFormat] = React.useState<ColorFormat>("p3");
@@ -260,8 +253,8 @@ export default function PlaygroundPage() {
     VARIANTS[0].eyedropperBesideSliders ?? false,
   );
   const [parts, setParts] = React.useState<PartsState>(VARIANTS[0].parts);
-  const [containerMaxWidth, setContainerMaxWidth] = React.useState<number>(
-    VARIANTS[0].maxWidth ?? DEFAULT_MAX_WIDTH,
+  const [containerMaxWidth, setContainerMaxWidth] = React.useState<number | undefined>(
+    VARIANTS[0].maxWidth,
   );
   const [areaHeight, setAreaHeight] = React.useState<number | undefined>(
     VARIANTS[0].areaHeight,
@@ -381,7 +374,7 @@ export default function PlaygroundPage() {
                       setContrastShowBadges(v.contrastShowBadges);
                     setFormatRowAfterChannel(v.formatRowAfterChannel ?? false);
                     setEyedropperBesideSliders(v.eyedropperBesideSliders ?? false);
-                    setContainerMaxWidth(v.maxWidth ?? DEFAULT_MAX_WIDTH);
+                    setContainerMaxWidth(v.maxWidth);
                     setAreaHeight(v.areaHeight);
                   }}
                   title={v.hint}
@@ -401,7 +394,17 @@ export default function PlaygroundPage() {
             className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
             style={{ background: bg }}
           >
-            <div className="w-full" style={{ maxWidth: containerMaxWidth }}>
+            <div
+              style={
+                containerMaxWidth !== undefined
+                  ? { width: "100%", maxWidth: containerMaxWidth }
+                  : {
+                      width: "fit-content",
+                      minWidth: DEFAULT_MAX_WIDTH,
+                      maxWidth: "100%",
+                    }
+              }
+            >
               <ColorPicker.Root
                 value={color}
                 onValueChange={(c) => setColor(c)}
@@ -643,29 +646,14 @@ export default function PlaygroundPage() {
           </Knob>
 
           <Knob label="backgroundColor">
-            <div className="flex flex-wrap gap-1.5">
-              {BG_PRESETS.map((b) => {
-                const isLight = b === "#ffffff" || b.startsWith("oklch(0.95");
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setBg(b)}
-                    aria-pressed={bg === b}
-                    className={cn(
-                      "rounded border px-2 py-1 font-mono text-[10px]",
-                      bg === b ? "border-foreground" : "border-border",
-                    )}
-                    style={{
-                      background: b,
-                      color: isLight ? "#000" : "#fff",
-                    }}
-                  >
-                    {b}
-                  </button>
-                );
-              })}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Tracks the picker output. Drag the area or sliders to change it.
+            </p>
+            <div
+              className="mt-1 h-8 rounded-md border border-border"
+              style={{ background: bg }}
+              aria-label={`Background ${bg}`}
+            />
           </Knob>
         </aside>
       </div>

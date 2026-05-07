@@ -140,8 +140,8 @@ const VARIANTS: Array<{
   },
   {
     name: "Minimal",
-    hint: "Area + hue + CSS string field. Smallest still-useful picker.",
-    parts: { ...ALL_OFF, area: true, hue: true, input: true },
+    hint: "Area + hue. Smallest still-useful picker.",
+    parts: { ...ALL_OFF, area: true, hue: true },
   },
   {
     name: "Sliders only",

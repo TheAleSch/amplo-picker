@@ -86,23 +86,6 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
 ) {
   const { color, setColor, format } = useColorPickerContext();
   const gamut: AreaGamut = gamutProp ?? libGamutFromFormat(format);
-  // The render gamut can never exceed what the *output canvas* can encode.
-  // On a P3-capable display we paint into a display-p3 canvas (cap = p3); on
-  // narrower displays we paint into a default (sRGB) canvas (cap = srgb).
-  // Asking for `rec2020` on a P3 monitor used to walk OKLCH samples past P3
-  // and let `srgbEncode` clip each channel independently — that produced
-  // hue-shifted, posterized strips at the edge that don't correspond to any
-  // real Rec2020 color. Capping the render gamut here keeps every painted
-  // pixel honest. Warning-line drawing inherits the same cap so we don't draw
-  // a P3 boundary inside what's already a P3 canvas.
-  const effectiveGamut: AreaGamut =
-    gamut === "none"
-      ? "none"
-      : SUPPORTS_P3
-        ? gamut === "rec2020"
-          ? "p3"
-          : gamut
-        : "srgb";
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [paths, setPaths] = React.useState<string[][]>([]);
@@ -128,40 +111,40 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const ctx = canvas.getContext("2d", ctx2dOpts);
     if (!ctx) return;
     const img = ctx.createImageData(w, h);
-    paintGradient(img, w, h, mode, color, chromaMax, effectiveGamut, SUPPORTS_P3);
+    paintGradient(img, w, h, mode, color, chromaMax, gamut, SUPPORTS_P3);
     ctx.putImageData(img, 0, 0);
-    if (effectiveGamut === "none" || !showWarningLines) {
+    if (gamut === "none" || !showWarningLines) {
       setPaths([]);
     } else {
       setPaths(
-        warningGamuts(effectiveGamut).map((g) =>
-          computeGamutPaths(mode, color, chromaMax, g, effectiveGamut),
+        warningGamuts(gamut).map((g) =>
+          computeGamutPaths(mode, color, chromaMax, g, gamut),
         ),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, fixedAxisValue, chromaMax, effectiveGamut, showWarningLines, resolution]);
+  }, [mode, fixedAxisValue, chromaMax, gamut, showWarningLines, resolution]);
 
-  const [px, py] = positionFor(mode, color, chromaMax, effectiveGamut);
+  const [px, py] = positionFor(mode, color, chromaMax, gamut);
 
   const moveTo = React.useCallback(
     (x: number, y: number) => {
       const xn = clamp01(x);
       const yn = clamp01(y);
-      const next = sampleAt(mode, color, chromaMax, effectiveGamut, xn, yn);
+      const next = sampleAt(mode, color, chromaMax, gamut, xn, yn);
       // With warping every (X, Y) is in-gamut by construction, so toGamut is
       // defensive only — guards against drift at numerical boundaries. When
-      // effectiveGamut === "none" the user has explicitly opted out of warping
-      // and we skip clamping entirely (raw OKLCH plane).
-      if (effectiveGamut !== "none") {
+      // gamut === "none" the user has explicitly opted out of warping and we
+      // skip clamping entirely (raw OKLCH plane).
+      if (gamut !== "none") {
         const targetHue = next.h;
-        const clamped = toGamut(next, effectiveGamut as Gamut);
+        const clamped = toGamut(next, gamut as Gamut);
         setColor({ ...clamped, h: targetHue });
       } else {
         setColor(next);
       }
     },
-    [mode, chromaMax, color, setColor, effectiveGamut],
+    [mode, chromaMax, color, setColor, gamut],
   );
 
   const handlePointer = React.useCallback(
@@ -221,7 +204,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     moveTo(nx, ny);
   };
 
-  const valueText = ariaValueTextFor(mode, color, chromaMax, effectiveGamut);
+  const valueText = ariaValueTextFor(mode, color, chromaMax, gamut);
 
   return (
     <div

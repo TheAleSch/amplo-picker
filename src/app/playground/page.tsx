@@ -206,11 +206,6 @@ const VARIANTS: Array<{
       contrastReadout: true,
     },
   },
-  {
-    name: "Brand swatches",
-    hint: "Swatches grid only — surface a fixed palette for token picking.",
-    parts: { ...ALL_OFF, preview: true, swatches: true, input: true },
-  },
 ];
 
 const PARTS: Array<{ key: PartKey; label: string }> = [

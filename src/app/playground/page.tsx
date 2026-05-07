@@ -220,7 +220,11 @@ export default function PlaygroundPage() {
   const [color, setColor] = React.useState<OklchColor>(
     () => parseColor("#2a2a2a")!,
   );
-  const bg = React.useMemo(() => formatColor(color, "hex"), [color]);
+  const [activeFormat, setActiveFormat] = React.useState<ColorFormat>("p3");
+  const bg = React.useMemo(
+    () => formatColor(color, activeFormat),
+    [color, activeFormat],
+  );
   const [areaMode, setAreaMode] = React.useState<AreaMode>("oklch-cl");
   const [formats, setFormats] = React.useState<ColorFormat[]>([...ALL_FORMATS]);
   const [defaultFormat, setDefaultFormat] = React.useState<ColorFormat>("p3");
@@ -350,6 +354,7 @@ export default function PlaygroundPage() {
                     if (v.areaMode) setAreaMode(v.areaMode);
                     if (v.defaultFormat) {
                       setDefaultFormat(v.defaultFormat);
+                      setActiveFormat(v.defaultFormat);
                       if (!formats.includes(v.defaultFormat)) {
                         setFormats((prev) =>
                           [...prev, v.defaultFormat!].sort(
@@ -410,7 +415,8 @@ export default function PlaygroundPage() {
                 onValueChange={(c) => setColor(c)}
                 backgroundColor={bg}
                 formats={formats}
-                defaultFormat={defaultFormat}
+                format={activeFormat}
+                onFormatChange={setActiveFormat}
               >
                 {(parts.gamutBadge ||
                   (parts.contrastReadout && contrastMetrics.length > 0)) && (
@@ -558,6 +564,7 @@ export default function PlaygroundPage() {
               onChange={(e) => {
                 const next = e.target.value as ColorFormat;
                 setDefaultFormat(next);
+                setActiveFormat(next);
                 if (!formats.includes(next)) {
                   setFormats((prev) =>
                     [...prev, next].sort(

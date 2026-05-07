@@ -100,6 +100,13 @@ export default function DocsPage() {
           />
 
           <Example
+            title="Soft-proof out-of-display colors"
+            description={SOFT_PROOF_DESCRIPTION}
+            preview={<SoftProofExample />}
+            code={SOFT_PROOF_CODE}
+          />
+
+          <Example
             title="Inside a Popover trigger"
             description="Wrap the picker in a button-driven popover when screen real estate matters. Radix collision detection picks the best side automatically."
             preview={<PopoverExample />}
@@ -442,6 +449,47 @@ function CompoundExample() {
   );
 }
 
+function SoftProofExample() {
+  const [a, setA] = React.useState<OklchColor>(
+    () => parseColor("oklch(0.7 0.32 30)")!,
+  );
+  const [b, setB] = React.useState<OklchColor>(
+    () => parseColor("oklch(0.7 0.32 30)")!,
+  );
+  return (
+    <div className="flex w-full flex-col gap-3 sm:flex-row">
+      <div className="flex flex-1 flex-col gap-2">
+        <span className="text-xs font-mono text-muted-foreground">
+          softProof off (per-channel clip)
+        </span>
+        <ColorPicker.Root
+          value={a}
+          onValueChange={(c) => setA(c)}
+          backgroundColor="#ffffff"
+          defaultFormat="oklch"
+        >
+          <ColorPicker.Area gamut="rec2020" />
+          <ColorPicker.Hue />
+        </ColorPicker.Root>
+      </div>
+      <div className="flex flex-1 flex-col gap-2">
+        <span className="text-xs font-mono text-muted-foreground">
+          softProof on (chroma reduced in OKLCH)
+        </span>
+        <ColorPicker.Root
+          value={b}
+          onValueChange={(c) => setB(c)}
+          backgroundColor="#ffffff"
+          defaultFormat="oklch"
+        >
+          <ColorPicker.Area gamut="rec2020" softProof />
+          <ColorPicker.Hue />
+        </ColorPicker.Root>
+      </div>
+    </div>
+  );
+}
+
 function PopoverExample() {
   const [color, setColor] = React.useState<OklchColor>(
     () => parseColor("oklch(0.7 0.18 30)")!,
@@ -640,6 +688,18 @@ const COMPOUND_CODE = `<ColorPicker.Root
   <ColorPicker.ChannelInput showFormat={false} />
 </ColorPicker.Root>`;
 
+const SOFT_PROOF_DESCRIPTION =
+  "When the render gamut exceeds your monitor's (e.g. rec2020 on a P3 display), unrenderable colors fall back to per-channel RGB clipping by default — that produces a hue-shifted, posterized strip near the canvas edge that doesn't correspond to any real wide-gamut color. softProof flips the strategy: out-of-display samples are chroma-reduced in OKLCH, preserving hue and lightness while the chroma envelope flattens to your monitor's surface. Same OKLCH value gets committed when you click — the proof only changes how unrenderable regions are *painted*, not how they're authored. Compare the two pickers below; differences are clearest at the right edge in rec2020 mode.";
+
+const SOFT_PROOF_CODE = `<ColorPicker.Root
+  value={color}
+  onValueChange={setColor}
+  defaultFormat="oklch"
+>
+  <ColorPicker.Area gamut="rec2020" softProof />
+  <ColorPicker.Hue />
+</ColorPicker.Root>`;
+
 const POPOVER_CODE = `import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 <Popover>
@@ -806,8 +866,8 @@ const ROOT_PROPS: PropRow[] = [
 const PART_ROWS: PropRow[] = [
   {
     name: "<ColorPicker.Area>",
-    type: "mode, chromaMax, gamut, showWarningLines, resolution",
-    desc: 'mode picks the axes: oklch-cl (Y = OKLCH lightness, top row is white), hsv-sv (Y = HSV-style "value", top-left = white, top-right = saturated), oklch-hc (X = hue, Y = chroma — pair with ColorPicker.Lightness). gamut controls the render gamut and warning lines: "srgb", "p3", "rec2020", "none". Defaults to the gamut implied by the active output format. showWarningLines (default true) toggles the cutoff lines without changing the render gamut. Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PageUp/Down.',
+    type: "mode, chromaMax, gamut, showWarningLines, resolution, softProof",
+    desc: 'mode picks the axes: oklch-cl (Y = OKLCH lightness, top row is white), hsv-sv (Y = HSV-style "value", top-left = white, top-right = saturated), oklch-hc (X = hue, Y = chroma — pair with ColorPicker.Lightness). gamut controls the render gamut and warning lines: "srgb", "p3", "rec2020", "none". Defaults to the gamut implied by the active output format. showWarningLines (default true) toggles the cutoff lines without changing the render gamut. softProof (default false) chroma-reduces out-of-display colors in OKLCH instead of letting srgbEncode per-channel-clip them — hue and lightness stay true past the display gamut at the cost of a flatter chroma boundary. Useful when render gamut exceeds the user\'s display (e.g. rec2020 on a P3 monitor) and you\'d rather see a hue-faithful soft proof than a hue-shifted clip. Keyboard: arrows ±1%, Shift+arrows ±10%, Home/End, PageUp/Down.',
     default: "—",
   },
   {

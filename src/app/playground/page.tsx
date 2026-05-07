@@ -173,10 +173,11 @@ const VARIANTS: Array<{
   {
     name: "Figma",
     hint: "Contrast on top, area, eyedropper beside hue + alpha rail, format inline with channels. Mirrors Figma's color popover.",
-    areaMode: "oklch-cl",
+    areaMode: "hsv-sv",
     channelShowFormat: true,
     eyedropperBesideSliders: true,
     maxWidth: 240,
+    areaHeight: 216,
     parts: {
       ...ALL_OFF,
       contrastReadout: true,

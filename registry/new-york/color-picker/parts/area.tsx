@@ -52,6 +52,16 @@ export interface AreaProps extends React.HTMLAttributes<HTMLDivElement> {
   showWarningLines?: boolean;
   /** Render resolution of the gradient canvas. Higher = sharper, slower. Default 160. */
   resolution?: number;
+  /**
+   * Soft-proof out-of-display colors instead of per-channel clipping them.
+   * When the active render gamut exceeds the display's (e.g. `gamut="rec2020"`
+   * on a P3 monitor), pixels past the display gamut are chroma-reduced in
+   * OKLCH to the display surface — preserving hue and lightness, flattening
+   * chroma. The default (false) preserves the legacy per-channel clip, which
+   * is cheaper but introduces hue shifts and posterization in unrenderable
+   * regions. Off by default to keep first-paint cost identical to before.
+   */
+  softProof?: boolean;
 }
 
 /** Which gamuts get a warning line drawn inside the active render gamut. */
@@ -79,6 +89,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     gamut: gamutProp,
     showWarningLines = true,
     resolution = 160,
+    softProof = false,
     className,
     ...rest
   },
@@ -111,7 +122,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const ctx = canvas.getContext("2d", ctx2dOpts);
     if (!ctx) return;
     const img = ctx.createImageData(w, h);
-    paintGradient(img, w, h, mode, color, chromaMax, gamut, SUPPORTS_P3);
+    paintGradient(img, w, h, mode, color, chromaMax, gamut, SUPPORTS_P3, softProof);
     ctx.putImageData(img, 0, 0);
     if (gamut === "none" || !showWarningLines) {
       setPaths([]);
@@ -123,7 +134,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, fixedAxisValue, chromaMax, gamut, showWarningLines, resolution]);
+  }, [mode, fixedAxisValue, chromaMax, gamut, showWarningLines, resolution, softProof]);
 
   const [px, py] = positionFor(mode, color, chromaMax, gamut);
 
@@ -421,9 +432,27 @@ function paintGradient(
   chromaMax: number,
   gamut: AreaGamut,
   canvasIsP3: boolean,
+  softProof: boolean,
 ) {
   const data = img.data;
   const ctx = buildWarpContext(mode, base, gamut, w, h);
+  // Soft-proof: build a parallel max-chroma context keyed to the *display*
+  // gamut. Per pixel we'll clamp chroma down to this surface so out-of-display
+  // OKLCH samples render as their hue/lightness-faithful gamut-mapped twin
+  // instead of a per-channel-clipped fake. Skipping the displayCtx entirely
+  // when render gamut already fits inside the display avoids a useless second
+  // LUT. "none" gamut opts out of warping in general, so soft-proof is a no-op.
+  const displayCap: AreaGamut =
+    gamut === "none"
+      ? "none"
+      : canvasIsP3
+        ? "p3"
+        : "srgb";
+  const needsSoftProof =
+    softProof && gamut !== "none" && isWiderThan(gamut, displayCap);
+  const displayCtx: WarpContext | null = needsSoftProof
+    ? buildWarpContext(mode, base, displayCap, w, h)
+    : null;
 
   for (let yPx = 0; yPx < h; yPx++) {
     const yn = yPx / (h - 1);
@@ -431,14 +460,53 @@ function paintGradient(
       const xn = xPx / (w - 1);
 
       const [l, c, hue] = warpedSample(ctx, mode, base, chromaMax, xn, yn, xPx, yPx);
+      const cClamped = displayCtx
+        ? Math.min(c, displayMaxChroma(displayCtx, mode, l, xPx, yPx))
+        : c;
 
-      const lin = oklchToLinearSrgb(l, c, hue);
+      const lin = oklchToLinearSrgb(l, cClamped, hue);
       const targetLin = canvasIsP3 ? linSrgbToLinP3(lin) : lin;
       const idx = (yPx * w + xPx) * 4;
       data[idx] = clampByte(srgbEncode(targetLin.r) * 255);
       data[idx + 1] = clampByte(srgbEncode(targetLin.g) * 255);
       data[idx + 2] = clampByte(srgbEncode(targetLin.b) * 255);
       data[idx + 3] = 255;
+    }
+  }
+}
+
+function isWiderThan(a: AreaGamut, b: AreaGamut): boolean {
+  const rank: Record<AreaGamut, number> = { none: 99, rec2020: 3, p3: 2, srgb: 1 };
+  return rank[a] > rank[b];
+}
+
+/**
+ * Read the display-gamut max chroma at this pixel using the soft-proof warp
+ * context. For oklch-cl/oklch-hc the precomputed 1D LUT is row-/column-keyed.
+ * For hsv-sv we evaluate the OKHSV-ish triangle around the locked-hue cusp:
+ * chroma rises linearly from 0 at l=0 to cusp.c at l=cusp.l, then falls back
+ * to 0 at l=1. That matches how `warpedSample` already builds hsv-sv samples,
+ * so the clamp is consistent with the warp.
+ */
+function displayMaxChroma(
+  ctx: WarpContext,
+  mode: AreaMode,
+  l: number,
+  xPx: number,
+  yPx: number,
+): number {
+  switch (ctx.kind) {
+    case "none":
+      return Number.POSITIVE_INFINITY;
+    case "lut-y":
+      return ctx.lut[yPx];
+    case "lut-x":
+      return ctx.lut[xPx];
+    case "cusp": {
+      if (mode !== "hsv-sv") return Number.POSITIVE_INFINITY;
+      const { l: cl, c: cc } = ctx.cusp;
+      if (l <= cl) return cc * (l / Math.max(cl, 1e-6));
+      return cc * ((1 - l) / Math.max(1 - cl, 1e-6));
     }
   }
 }

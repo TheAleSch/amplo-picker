@@ -247,6 +247,7 @@ export default function PlaygroundPage() {
   const [formats, setFormats] = React.useState<ColorFormat[]>([...ALL_FORMATS]);
   const [defaultFormat, setDefaultFormat] = React.useState<ColorFormat>("p3");
   const [showWarningLines, setShowWarningLines] = React.useState(true);
+  const [softProof, setSoftProof] = React.useState(false);
   // Initial display knob state mirrors VARIANTS[0] (Canonical = Hero) so the
   // first paint matches the active variant tab.
   const [showChannelFormat, setShowChannelFormat] = React.useState(
@@ -304,6 +305,7 @@ export default function PlaygroundPage() {
         formats,
         defaultFormat,
         showWarningLines,
+        softProof,
         showChannelFormat,
         contrastMetrics,
         contrastShowLabel,
@@ -320,6 +322,7 @@ export default function PlaygroundPage() {
       formats,
       defaultFormat,
       showWarningLines,
+      softProof,
       showChannelFormat,
       contrastMetrics,
       contrastShowLabel,
@@ -460,6 +463,7 @@ export default function PlaygroundPage() {
                   <ColorPicker.Area
                     mode={areaMode}
                     showWarningLines={showWarningLines}
+                    softProof={softProof}
                     style={areaHeight ? { height: areaHeight } : undefined}
                   />
                 )}
@@ -605,6 +609,15 @@ export default function PlaygroundPage() {
             <Toggle value={showWarningLines} onChange={setShowWarningLines} />
           </Knob>
 
+          <Knob label="softProof">
+            <Toggle value={softProof} onChange={setSoftProof} />
+            <p className="text-xs text-muted-foreground">
+              Chroma-reduce out-of-display colors in OKLCH instead of
+              per-channel clipping. Hue stays true past the display gamut at
+              the cost of a flatter chroma boundary.
+            </p>
+          </Knob>
+
           <Knob label="ChannelInput.showFormat">
             <Toggle value={showChannelFormat} onChange={setShowChannelFormat} />
           </Knob>
@@ -695,6 +708,7 @@ function buildSnippet({
   formats,
   defaultFormat,
   showWarningLines,
+  softProof,
   showChannelFormat,
   contrastMetrics,
   contrastShowLabel,
@@ -710,6 +724,7 @@ function buildSnippet({
   formats: ColorFormat[];
   defaultFormat: ColorFormat;
   showWarningLines: boolean;
+  softProof: boolean;
   showChannelFormat: boolean;
   contrastMetrics: ("wcag" | "apca")[];
   contrastShowLabel: boolean;
@@ -753,7 +768,11 @@ function buildSnippet({
   }
 
   if (parts.area) {
-    const areaProps = `mode="${areaMode}"${showWarningLines ? "" : " showWarningLines={false}"}`;
+    const areaProps = [
+      `mode="${areaMode}"`,
+      showWarningLines ? "" : " showWarningLines={false}",
+      softProof ? " softProof" : "",
+    ].join("");
     lines.push(`  <ColorPicker.Area ${areaProps} />`);
   }
 

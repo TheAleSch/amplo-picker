@@ -91,7 +91,13 @@ interface VariantOverrides {
   formatRowAfterChannel?: boolean;
   /** Render the eyedropper inline to the LEFT of the slider stack (Figma-style). */
   eyedropperBesideSliders?: boolean;
+  /** Override the picker container max width (px). Defaults to DEFAULT_MAX_WIDTH. */
+  maxWidth?: number;
+  /** Override the Area part height (px). Falls back to the Area default when undefined. */
+  areaHeight?: number;
 }
+
+const DEFAULT_MAX_WIDTH = 320;
 
 const VARIANTS: Array<{
   name: string;
@@ -157,6 +163,8 @@ const VARIANTS: Array<{
     name: "Framer",
     hint: "Area + hue/alpha + numeric channels, then format dropdown + eyedropper underneath. Mirrors Framer's color popover.",
     areaMode: "hsv-sv",
+    areaHeight: 260,
+    maxWidth: 260,
     channelShowFormat: false,
     formatRowAfterChannel: true,
     parts: {
@@ -175,6 +183,7 @@ const VARIANTS: Array<{
     areaMode: "oklch-cl",
     channelShowFormat: true,
     eyedropperBesideSliders: true,
+    maxWidth: 240,
     parts: {
       ...ALL_OFF,
       contrastReadout: true,
@@ -256,6 +265,12 @@ export default function PlaygroundPage() {
     VARIANTS[0].eyedropperBesideSliders ?? false,
   );
   const [parts, setParts] = React.useState<PartsState>(VARIANTS[0].parts);
+  const [containerMaxWidth, setContainerMaxWidth] = React.useState<number>(
+    VARIANTS[0].maxWidth ?? DEFAULT_MAX_WIDTH,
+  );
+  const [areaHeight, setAreaHeight] = React.useState<number | undefined>(
+    VARIANTS[0].areaHeight,
+  );
 
   const toggleFormat = (f: ColorFormat) => {
     setFormats((prev) => {
@@ -371,6 +386,8 @@ export default function PlaygroundPage() {
                       setContrastShowBadges(v.contrastShowBadges);
                     setFormatRowAfterChannel(v.formatRowAfterChannel ?? false);
                     setEyedropperBesideSliders(v.eyedropperBesideSliders ?? false);
+                    setContainerMaxWidth(v.maxWidth ?? DEFAULT_MAX_WIDTH);
+                    setAreaHeight(v.areaHeight);
                   }}
                   title={v.hint}
                   className={cn(
@@ -389,7 +406,7 @@ export default function PlaygroundPage() {
             className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
             style={{ background: bg }}
           >
-            <div className="w-full max-w-xs">
+            <div className="w-full" style={{ maxWidth: containerMaxWidth }}>
               <ColorPicker.Root
                 value={color}
                 onValueChange={(c) => setColor(c)}
@@ -421,6 +438,7 @@ export default function PlaygroundPage() {
                   <ColorPicker.Area
                     mode={areaMode}
                     showWarningLines={showWarningLines}
+                    style={areaHeight ? { height: areaHeight } : undefined}
                   />
                 )}
                 {parts.preview && <ColorPicker.Preview />}

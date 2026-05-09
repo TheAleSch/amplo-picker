@@ -37,17 +37,21 @@ export const AngleDial = React.forwardRef<HTMLDivElement, AngleDialProps>(
     };
 
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-      e.currentTarget.setPointerCapture(e.pointerId);
+      // Snapshot the element reference up front — React nulls e.currentTarget
+      // once the synchronous handler returns, so reading it inside the
+      // pointermove / pointerup closures would throw and leak listeners.
+      const target = e.currentTarget;
+      target.setPointerCapture(e.pointerId);
       setAngle(fromEvent(e.clientX, e.clientY));
       const onMove = (ev: PointerEvent) =>
         setAngle(fromEvent(ev.clientX, ev.clientY));
       const onUp = (ev: PointerEvent) => {
-        e.currentTarget.releasePointerCapture(ev.pointerId);
-        e.currentTarget.removeEventListener("pointermove", onMove);
-        e.currentTarget.removeEventListener("pointerup", onUp);
+        target.releasePointerCapture(ev.pointerId);
+        target.removeEventListener("pointermove", onMove);
+        target.removeEventListener("pointerup", onUp);
       };
-      e.currentTarget.addEventListener("pointermove", onMove);
-      e.currentTarget.addEventListener("pointerup", onUp);
+      target.addEventListener("pointermove", onMove);
+      target.addEventListener("pointerup", onUp);
     };
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

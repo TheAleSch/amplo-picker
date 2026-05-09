@@ -28,17 +28,18 @@ export const CenterPad = React.forwardRef<HTMLDivElement, CenterPadProps>(
     };
 
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-      e.currentTarget.setPointerCapture(e.pointerId);
+      const target = e.currentTarget;
+      target.setPointerCapture(e.pointerId);
       ctx.setCenter(fromEvent(e.clientX, e.clientY));
       const onMove = (ev: PointerEvent) =>
         ctx.setCenter(fromEvent(ev.clientX, ev.clientY));
       const onUp = (ev: PointerEvent) => {
-        e.currentTarget.releasePointerCapture(ev.pointerId);
-        e.currentTarget.removeEventListener("pointermove", onMove);
-        e.currentTarget.removeEventListener("pointerup", onUp);
+        target.releasePointerCapture(ev.pointerId);
+        target.removeEventListener("pointermove", onMove);
+        target.removeEventListener("pointerup", onUp);
       };
-      e.currentTarget.addEventListener("pointermove", onMove);
-      e.currentTarget.addEventListener("pointerup", onUp);
+      target.addEventListener("pointermove", onMove);
+      target.addEventListener("pointerup", onUp);
     };
 
     const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

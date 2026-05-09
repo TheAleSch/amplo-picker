@@ -6,6 +6,11 @@ import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 import {
+  GradientPicker,
+  DEFAULT_LINEAR,
+} from "@/registry/new-york/color-picker/fill-picker";
+import type { Gradient } from "@/registry/new-york/color-picker/fill-picker";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -19,6 +24,7 @@ const TOC = [
   ["installation", "Installation"],
   ["usage", "Usage"],
   ["examples", "Examples"],
+  ["gradient-picker", "Gradient picker"],
   ["anatomy", "Anatomy"],
   ["api-root", "API: <ColorPicker.Root>"],
   ["api-parts", "API: Parts"],
@@ -118,6 +124,39 @@ export default function DocsPage() {
             description="Lift the presets array and pass onAdd — the consumer owns persistence. Below is a localStorage demo; swap setItem for fetch() to save server-side."
             preview={<SavedSwatchesExample />}
             code={SAVED_SWATCHES_CODE}
+          />
+        </section>
+
+        <section className="flex flex-col gap-6">
+          <H2 id="gradient-picker">Gradient picker</H2>
+          <p>
+            <Code>{"<GradientPicker.Root>"}</Code> manages a{" "}
+            <Code>Gradient</Code> value (linear, radial, or conic) and exposes
+            the same composable part pattern as the color picker. Combine it
+            with <Code>{"<ColorPicker.*>"}</Code> parts inside{" "}
+            <Code>{"<GradientPicker.StopColor>"}</Code> to build any depth of
+            stop-color editor you need.
+          </p>
+
+          <Example
+            title="Compact"
+            description="A gradient bar with a type switcher and a lightweight Hue + ChannelInput stop editor — the minimum viable gradient picker."
+            preview={<GradientCompactDemo />}
+            code={GRADIENT_COMPACT_CODE}
+          />
+
+          <Example
+            title="Full"
+            description="All gradient parts composed together: type switcher, bar, angle dial, center pad, radial shape, stop list, full color editor, interpolation switcher, and presets."
+            preview={<GradientFullDemo />}
+            code={GRADIENT_FULL_CODE}
+          />
+
+          <Example
+            title="Bar-only"
+            description="Just the gradient bar — useful as an inline preview strip or when you want to drive a fully custom stop-editing UI yourself."
+            preview={<GradientBarOnlyDemo />}
+            code={GRADIENT_BAR_ONLY_CODE}
           />
         </section>
 
@@ -573,6 +612,57 @@ function SavedSwatchesExample() {
   );
 }
 
+function GradientCompactDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <div className="w-full max-w-xs">
+      <GradientPicker.Root value={g} onValueChange={setG}>
+        <GradientPicker.Bar />
+        <GradientPicker.TypeSwitcher />
+        <GradientPicker.StopColor>
+          <ColorPicker.Hue />
+          <ColorPicker.ChannelInput />
+        </GradientPicker.StopColor>
+      </GradientPicker.Root>
+    </div>
+  );
+}
+
+function GradientFullDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <div className="w-full max-w-xs">
+      <GradientPicker.Root value={g} onValueChange={setG}>
+        <GradientPicker.TypeSwitcher />
+        <GradientPicker.Bar />
+        <GradientPicker.AngleDial />
+        <GradientPicker.CenterPad />
+        <GradientPicker.RadialShape />
+        <GradientPicker.StopList />
+        <GradientPicker.StopColor>
+          <ColorPicker.Area />
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+          <ColorPicker.ChannelInput />
+        </GradientPicker.StopColor>
+        <GradientPicker.InterpSwitcher />
+        <GradientPicker.Presets />
+      </GradientPicker.Root>
+    </div>
+  );
+}
+
+function GradientBarOnlyDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <div className="w-full max-w-xs">
+      <GradientPicker.Root value={g} onValueChange={setG}>
+        <GradientPicker.Bar />
+      </GradientPicker.Root>
+    </div>
+  );
+}
+
 /* ─────────────────────────── Code strings ─────────────────────────── */
 
 const HERO_CODE = `"use client";
@@ -766,6 +856,80 @@ export function PickerWithSavedSwatches() {
         }}
       />
     </ColorPicker.Root>
+  );
+}`;
+
+const GRADIENT_COMPACT_CODE = `"use client";
+
+import * as React from "react";
+import {
+  ColorPicker,
+  GradientPicker,
+  DEFAULT_LINEAR,
+} from "@/components/ui/color-picker/fill-picker";
+import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+
+export function GradientCompactDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <GradientPicker.Root value={g} onValueChange={setG}>
+      <GradientPicker.Bar />
+      <GradientPicker.TypeSwitcher />
+      <GradientPicker.StopColor>
+        <ColorPicker.Hue />
+        <ColorPicker.ChannelInput />
+      </GradientPicker.StopColor>
+    </GradientPicker.Root>
+  );
+}`;
+
+const GRADIENT_FULL_CODE = `"use client";
+
+import * as React from "react";
+import {
+  ColorPicker,
+  GradientPicker,
+  DEFAULT_LINEAR,
+} from "@/components/ui/color-picker/fill-picker";
+import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+
+export function GradientFullDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <GradientPicker.Root value={g} onValueChange={setG}>
+      <GradientPicker.TypeSwitcher />
+      <GradientPicker.Bar />
+      <GradientPicker.AngleDial />
+      <GradientPicker.CenterPad />
+      <GradientPicker.RadialShape />
+      <GradientPicker.StopList />
+      <GradientPicker.StopColor>
+        <ColorPicker.Area />
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
+        <ColorPicker.ChannelInput />
+      </GradientPicker.StopColor>
+      <GradientPicker.InterpSwitcher />
+      <GradientPicker.Presets />
+    </GradientPicker.Root>
+  );
+}`;
+
+const GRADIENT_BAR_ONLY_CODE = `"use client";
+
+import * as React from "react";
+import {
+  GradientPicker,
+  DEFAULT_LINEAR,
+} from "@/components/ui/color-picker/fill-picker";
+import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+
+export function GradientBarOnlyDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <GradientPicker.Root value={g} onValueChange={setG}>
+      <GradientPicker.Bar />
+    </GradientPicker.Root>
   );
 }`;
 

@@ -105,7 +105,7 @@
         {
           "path": "registry/new-york/color-picker/color-picker.tsx",
           "type": "registry:ui",
-          "target": "components/ui/fill-picker/fill-picker.tsx"
+          "target": "components/ui/fill-picker/color-picker.tsx"
         },
         {
           "path": "registry/new-york/color-picker/lib/gradient.ts",

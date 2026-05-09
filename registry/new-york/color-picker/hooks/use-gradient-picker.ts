@@ -102,9 +102,16 @@ export function useGradientPicker(
     () => internal.stops[0]?.id ?? "",
   );
 
+  // Track the last gradient we emitted upward so the controlled-sync effect can
+  // ignore echoes (parent re-renders with the same gradient we just sent).
+  // Without this, every emit triggers a controlled-sync that builds a new
+  // internal state object, which re-triggers the emit effect → infinite loop.
+  const lastEmittedRef = React.useRef<Gradient | null>(null);
+
   // Sync controlled value into internal state, preserving stop ids when possible.
   React.useEffect(() => {
     if (!isControlled || !value) return;
+    if (value === lastEmittedRef.current) return;
     setInternal((prev) => {
       if (
         prev.gradient.type === value.type &&
@@ -131,6 +138,7 @@ export function useGradientPicker(
     }
     if (!onValueChange) return;
     const clean = toPublicGradient(internal);
+    lastEmittedRef.current = clean;
     onValueChange(clean, formatGradient(clean));
   }, [internal, onValueChange]);
 

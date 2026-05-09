@@ -120,13 +120,19 @@ export function useGradientPicker(
     });
   }, [isControlled, value]);
 
-  const emit = React.useCallback(
-    (next: InternalState) => {
-      const clean = toPublicGradient(next);
-      onValueChange?.(clean, formatGradient(clean));
-    },
-    [onValueChange],
-  );
+  // Emit onValueChange whenever internal state changes (but not on first render).
+  // Decoupled from setters so StrictMode double-invocation of updaters doesn't
+  // fire the callback twice.
+  const isFirstRenderRef = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    if (!onValueChange) return;
+    const clean = toPublicGradient(internal);
+    onValueChange(clean, formatGradient(clean));
+  }, [internal, onValueChange]);
 
   // ---- Gradient-level setters ----------------------------------------------
 
@@ -135,10 +141,8 @@ export function useGradientPicker(
       const internalNext = attachIds(next);
       setInternal(internalNext);
       setSelectedStopId(internalNext.stops[0]?.id ?? "");
-      const clean = toPublicGradient(internalNext);
-      onValueChange?.(clean, formatGradient(clean));
     },
-    [onValueChange],
+    [],
   );
 
   const setType = React.useCallback(
@@ -150,100 +154,87 @@ export function useGradientPicker(
           gradient: { ...fallback, interp: prev.gradient.interp } as Gradient,
           stops: prev.stops,
         };
-        emit(next);
         return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setAngle = React.useCallback(
     (angleDeg: number) => {
       setInternal((prev) => {
         if (prev.gradient.type !== "linear") return prev;
-        const next: InternalState = {
+        return {
           gradient: { ...(prev.gradient as LinearGradient), angle: angleDeg },
           stops: prev.stops,
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setStartAngle = React.useCallback(
     (angleDeg: number) => {
       setInternal((prev) => {
         if (prev.gradient.type !== "conic") return prev;
-        const next: InternalState = {
+        return {
           gradient: { ...(prev.gradient as ConicGradient), startAngle: angleDeg },
           stops: prev.stops,
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setCenter = React.useCallback(
     (xy: { x: number; y: number }) => {
       setInternal((prev) => {
         if (prev.gradient.type === "linear") return prev;
-        const next: InternalState = {
+        return {
           gradient: { ...(prev.gradient as RadialGradient | ConicGradient), center: xy },
           stops: prev.stops,
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setInterp = React.useCallback(
     (interp: GradientInterp) => {
       setInternal((prev) => {
-        const next: InternalState = {
+        return {
           gradient: { ...prev.gradient, interp } as Gradient,
           stops: prev.stops,
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setRadialShape = React.useCallback(
     (shape: "circle" | "ellipse") => {
       setInternal((prev) => {
         if (prev.gradient.type !== "radial") return prev;
-        const next: InternalState = {
+        return {
           gradient: { ...(prev.gradient as RadialGradient), shape },
           stops: prev.stops,
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setRadialSize = React.useCallback(
     (size: "closest-side" | "farthest-corner") => {
       setInternal((prev) => {
         if (prev.gradient.type !== "radial") return prev;
-        const next: InternalState = {
+        return {
           gradient: { ...(prev.gradient as RadialGradient), size },
           stops: prev.stops,
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   // ---- Stop setters --------------------------------------------------------
@@ -255,37 +246,34 @@ export function useGradientPicker(
       const id = nextId();
       const fallback: OklchColor = { l: 0.5, c: 0, h: 0, alpha: 1 };
       setInternal((prev) => {
-        const next: InternalState = {
+        return {
           gradient: prev.gradient,
           stops: sortByPosition([
             ...prev.stops,
             { id, position, color: color ?? fallback },
           ]),
         };
-        emit(next);
-        return next;
       });
       setSelectedStopId(id);
       return id;
     },
-    [emit],
+    [],
   );
 
   const removeStop = React.useCallback(
     (id: string) => {
+      let nextSelId: string | null = null;
       setInternal((prev) => {
         if (prev.stops.length <= 1) return prev;
         const idx = prev.stops.findIndex((s) => s.id === id);
         if (idx === -1) return prev;
         const filtered = prev.stops.filter((s) => s.id !== id);
-        const next: InternalState = { gradient: prev.gradient, stops: filtered };
-        emit(next);
-        const nextSel = filtered[Math.min(idx, filtered.length - 1)].id;
-        setSelectedStopId(nextSel);
-        return next;
+        nextSelId = filtered[Math.min(idx, filtered.length - 1)].id;
+        return { gradient: prev.gradient, stops: filtered };
       });
+      if (nextSelId !== null) setSelectedStopId(nextSelId);
     },
-    [emit],
+    [],
   );
 
   const moveStop = React.useCallback(
@@ -297,43 +285,37 @@ export function useGradientPicker(
         const others = prev.stops.filter((s) => s.id !== id);
         const moved = prev.stops.find((s) => s.id === id);
         if (!moved) return prev;
-        const next: InternalState = {
+        return {
           gradient: prev.gradient,
           stops: sortByPosition([...others, { ...moved, position: clamped }]),
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setStopColor = React.useCallback(
     (id: string, color: OklchColor) => {
       setInternal((prev) => {
-        const next: InternalState = {
+        return {
           gradient: prev.gradient,
           stops: prev.stops.map((s) => (s.id === id ? { ...s, color } : s)),
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   const setStopHint = React.useCallback(
     (id: string, hint: number | undefined) => {
       setInternal((prev) => {
-        const next: InternalState = {
+        return {
           gradient: prev.gradient,
           stops: prev.stops.map((s) => (s.id === id ? { ...s, hint } : s)),
         };
-        emit(next);
-        return next;
       });
     },
-    [emit],
+    [],
   );
 
   // ---- Derived values ------------------------------------------------------

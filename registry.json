@@ -106,6 +106,106 @@
           "path": "registry/new-york/color-picker/color-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/fill-picker.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/lib/gradient.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/lib/gradient.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/hooks/use-gradient-picker.ts",
+          "type": "registry:hook",
+          "target": "components/ui/fill-picker/hooks/use-gradient-picker.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/hooks/use-fill-picker.ts",
+          "type": "registry:hook",
+          "target": "components/ui/fill-picker/hooks/use-fill-picker.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/contexts/fill.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/contexts/fill.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/contexts/gradient.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/contexts/gradient.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/root.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/root.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/tabs.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/pane.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/pane.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/root.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/root.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/bar.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/type-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/type-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/angle-dial.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/angle-dial.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/center-pad.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/center-pad.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/radial-shape.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/radial-shape.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/stop-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/stop-list.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/stop-color.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/stop-color.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/interp-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/interp-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/presets.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/presets.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/css-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/css-input.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/fill-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/fill-picker.tsx"
         }
       ]
     }

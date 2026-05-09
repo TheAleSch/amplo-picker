@@ -15,14 +15,14 @@ describe("GradientPicker.Bar", () => {
     expect(handles).toHaveLength(DEFAULT_LINEAR.stops.length);
   });
 
-  it("the selected handle has aria-pressed=true", () => {
+  it("the selected handle has aria-current=true", () => {
     render(
       <Root defaultValue={DEFAULT_LINEAR}>
         <Bar />
       </Root>,
     );
     const handles = screen.getAllByRole("slider");
-    const selected = handles.filter((h) => h.getAttribute("aria-pressed") === "true");
+    const selected = handles.filter((h) => h.getAttribute("aria-current") === "true");
     expect(selected).toHaveLength(1);
   });
 });

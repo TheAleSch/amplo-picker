@@ -115,7 +115,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(s.position * 100)}
-            aria-pressed={selected}
+            aria-current={selected ? "true" : undefined}
             tabIndex={0}
             onPointerDown={startStopDrag(s.id)}
             onFocus={() => ctx.selectStop(s.id)}

@@ -268,20 +268,17 @@ automatically.
 
 ## Backward compatibility
 
-- `<ColorPicker.Root>` keeps current signature
-  (`value: OklchColor`, `onValueChange(c, hex)`).
-- Internally re-implemented as a wrapper:
-  ```tsx
-  <FillPicker.Root
-    value={{ kind: "color", color: value }}
-    onValueChange={(f) => f.kind === "color" && cb(f.color, ...)}
-    mode="color"
-  >
-    <FillPicker.Pane mode="color">{children}</FillPicker.Pane>
-  </FillPicker.Root>
-  ```
-- All existing `ColorPicker.Area / Hue / etc.` work unchanged inside the new
-  shell because `ColorPickerContext` is still mounted by the Pane.
+- `<ColorPicker.Root>` keeps current signature unchanged
+  (`value: OklchColor`, `onValueChange(c, hex)`). Its existing implementation
+  (call `useColorPicker`, provide `ColorPickerContext`) stays as-is.
+- `<FillPicker.Pane mode="color">` and `<GradientPicker.StopColor>` are
+  additional independent mount points for the same pattern: each calls
+  `useColorPicker` with a value bound to its own slice of state
+  (`fill.color` and `selectedStop.color` respectively), and provides
+  `ColorPickerContext` for its children. Three sibling mount sites of the
+  same hook, no shared provider extraction needed.
+- All existing `ColorPicker.Area / Hue / etc.` work unchanged inside any of
+  the three mount sites — they only depend on `ColorPickerContext`.
 - Existing demo (`Hero`) needs zero changes.
 - Existing tests stay green.
 

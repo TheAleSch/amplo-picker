@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   formatGradient,
+  parseGradient,
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
@@ -57,5 +58,37 @@ describe("formatGradient", () => {
     expect(formatGradient(g)).toBe(
       "linear-gradient(in oklch 90deg, oklch(1 0 0 / 0.5) 0%, oklch(0 0 0) 100%)",
     );
+  });
+});
+
+describe("parseGradient", () => {
+  it("round-trips a default linear gradient", () => {
+    const css = formatGradient(DEFAULT_LINEAR);
+    const parsed = parseGradient(css);
+    expect(parsed).toEqual(DEFAULT_LINEAR);
+  });
+
+  it("round-trips a radial gradient", () => {
+    const css = formatGradient(DEFAULT_RADIAL);
+    expect(parseGradient(css)).toEqual(DEFAULT_RADIAL);
+  });
+
+  it("round-trips a conic gradient", () => {
+    const css = formatGradient(DEFAULT_CONIC);
+    expect(parseGradient(css)).toEqual(DEFAULT_CONIC);
+  });
+
+  it("returns null for non-gradient input", () => {
+    expect(parseGradient("oklch(0.5 0.1 30)")).toBeNull();
+    expect(parseGradient("not a gradient")).toBeNull();
+  });
+
+  it("parses hex stops as OKLCH", () => {
+    const parsed = parseGradient("linear-gradient(90deg, #ffffff 0%, #000000 100%)");
+    expect(parsed).not.toBeNull();
+    expect(parsed!.type).toBe("linear");
+    expect(parsed!.stops).toHaveLength(2);
+    expect(parsed!.stops[0].position).toBe(0);
+    expect(parsed!.stops[1].position).toBe(1);
   });
 });

@@ -1,5 +1,5 @@
 import type { OklchColor } from "./types";
-import { formatColor } from "./color";
+import { formatColor, parseColor } from "./color";
 
 export type GradientType = "linear" | "radial" | "conic";
 
@@ -122,4 +122,157 @@ export function formatGradient(g: Gradient): string {
   // conic
   const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
   return `conic-gradient(from ${trim(g.startAngle)}deg ${center} ${interp}, ${formatStops(g.stops)})`;
+}
+
+// ---------------------------------------------------------------------------
+// parseGradient — inverse of formatGradient
+// ---------------------------------------------------------------------------
+
+const FN_RE = /^(linear|radial|conic)-gradient\((.*)\)$/is;
+
+/** Split on commas that are not nested inside parentheses. */
+function splitTopLevel(input: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let buf = "";
+  for (const ch of input) {
+    if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    if (ch === "," && depth === 0) {
+      out.push(buf.trim());
+      buf = "";
+    } else {
+      buf += ch;
+    }
+  }
+  if (buf.trim()) out.push(buf.trim());
+  return out;
+}
+
+/**
+ * Extract `in <space>[ longer hue]` from anywhere within a string.
+ * Returns the parsed interp and the string with the `in …` clause removed.
+ */
+function extractInterp(s: string): { interp: GradientInterp; rest: string } {
+  const m = s.match(/\bin\s+(hsl)\s+longer\s+hue\b/i);
+  if (m) {
+    return { interp: "hsl-longer", rest: s.replace(m[0], "").trim() };
+  }
+  const m2 = s.match(/\bin\s+([a-z0-9-]+)\b/i);
+  if (!m2) return { interp: "oklch", rest: s };
+  const space = m2[1].toLowerCase();
+  let interp: GradientInterp = "oklch";
+  if (space === "oklch") interp = "oklch";
+  else if (space === "oklab") interp = "oklab";
+  else if (space === "srgb") interp = "srgb";
+  else if (space === "hsl") interp = "hsl";
+  return { interp, rest: s.replace(m2[0], "").trim() };
+}
+
+function parseStops(parts: string[]): GradientStop[] | null {
+  const stops: GradientStop[] = [];
+  for (const p of parts) {
+    // Bare percentage hint: `30%`
+    const hintMatch = p.match(/^(-?\d+(?:\.\d+)?)%$/);
+    if (hintMatch) {
+      if (stops.length === 0) return null; // hint can't lead
+      stops[stops.length - 1].hint = parseFloat(hintMatch[1]) / 100;
+      continue;
+    }
+    // Color + optional position: `oklch(…) 50%` or just `oklch(…)`
+    const m = p.match(/^(.*?)\s+(-?\d+(?:\.\d+)?)%$/);
+    let colorStr = p;
+    let position: number | null = null;
+    if (m) {
+      colorStr = m[1].trim();
+      position = parseFloat(m[2]) / 100;
+    }
+    const color = parseColor(colorStr);
+    if (!color) return null;
+    stops.push({
+      color,
+      position: position ?? (stops.length === 0 ? 0 : 1),
+    });
+  }
+  return stops.length >= 1 ? stops : null;
+}
+
+export function parseGradient(input: string): Gradient | null {
+  const trimmed = input.trim();
+  const m = trimmed.match(FN_RE);
+  if (!m) return null;
+
+  const type = m[1].toLowerCase() as GradientType;
+  const parts = splitTopLevel(m[2]);
+  if (parts.length === 0) return null;
+
+  if (type === "linear") {
+    // parts[0] for formatGradient output: "in oklch 90deg"
+    // For a hand-written gradient without interp: "90deg" or absent (just stops)
+    const { interp, rest } = extractInterp(parts[0]);
+    let angle = 180; // CSS default
+    let stopParts = parts.slice(1);
+
+    const angleMatch = rest.match(/^(-?\d+(?:\.\d+)?)deg$/i);
+    if (angleMatch) {
+      angle = parseFloat(angleMatch[1]);
+    } else if (rest.length > 0) {
+      // rest wasn't an angle — treat it as the first stop
+      stopParts = [rest, ...stopParts];
+    }
+
+    const stops = parseStops(stopParts);
+    if (!stops) return null;
+    return { type: "linear", angle, interp, stops };
+  }
+
+  if (type === "radial") {
+    // formatGradient output parts[0]: "circle farthest-corner at 50% 50% in oklch"
+    const { interp, rest } = extractInterp(parts[0]);
+    const head = rest;
+    const stopParts = parts.slice(1);
+
+    let shape: "circle" | "ellipse" = "ellipse";
+    let size: "closest-side" | "farthest-corner" = "farthest-corner";
+    let cx = 0.5;
+    let cy = 0.5;
+
+    if (/\bcircle\b/i.test(head)) shape = "circle";
+    else if (/\bellipse\b/i.test(head)) shape = "ellipse";
+    if (/\bclosest-side\b/i.test(head)) size = "closest-side";
+    else if (/\bfarthest-corner\b/i.test(head)) size = "farthest-corner";
+
+    const atMatch = head.match(/\bat\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/i);
+    if (atMatch) {
+      cx = parseFloat(atMatch[1]) / 100;
+      cy = parseFloat(atMatch[2]) / 100;
+    }
+
+    const stops = parseStops(stopParts);
+    if (!stops) return null;
+    return { type: "radial", shape, size, center: { x: cx, y: cy }, interp, stops };
+  }
+
+  // conic
+  // formatGradient output parts[0]: "from 0deg at 50% 50% in oklch"
+  const { interp, rest } = extractInterp(parts[0]);
+  const head = rest;
+  const stopParts = parts.slice(1);
+
+  let startAngle = 0;
+  let cx = 0.5;
+  let cy = 0.5;
+
+  const fromMatch = head.match(/\bfrom\s+(-?\d+(?:\.\d+)?)deg\b/i);
+  if (fromMatch) startAngle = parseFloat(fromMatch[1]);
+
+  const atMatch = head.match(/\bat\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/i);
+  if (atMatch) {
+    cx = parseFloat(atMatch[1]) / 100;
+    cy = parseFloat(atMatch[2]) / 100;
+  }
+
+  const stops = parseStops(stopParts);
+  if (!stops) return null;
+  return { type: "conic", startAngle, center: { x: cx, y: cy }, interp, stops };
 }

@@ -1,0 +1,368 @@
+"use client";
+
+import * as React from "react";
+import {
+  DEFAULT_LINEAR,
+  DEFAULT_RADIAL,
+  DEFAULT_CONIC,
+  formatGradient,
+  type Gradient,
+  type GradientInterp,
+  type GradientStop,
+  type GradientType,
+  type LinearGradient,
+  type RadialGradient,
+  type ConicGradient,
+} from "../lib/gradient";
+import type { OklchColor } from "../lib/types";
+
+let __idCounter = 0;
+const nextId = () => `s${++__idCounter}`;
+
+// ---- Internal types --------------------------------------------------------
+
+interface InternalStop extends GradientStop {
+  id: string;
+}
+
+// We store gradient config and stops separately so TypeScript always sees
+// stops as InternalStop[] without needing to narrow through a discriminated union.
+interface InternalState {
+  // The gradient without stops — used as a base for type-specific properties.
+  // We keep the full gradient object and overlay stops separately.
+  gradient: Gradient;
+  stops: InternalStop[];
+}
+
+// ---- Helpers ---------------------------------------------------------------
+
+function attachIds(g: Gradient): InternalState {
+  return {
+    gradient: g,
+    stops: g.stops.map((s) => ({ ...s, id: nextId() })),
+  };
+}
+
+function toPublicGradient(s: InternalState): Gradient {
+  const stops: GradientStop[] = s.stops.map(({ id: _id, ...rest }) => rest);
+  return { ...s.gradient, stops } as Gradient;
+}
+
+function sortByPosition(stops: InternalStop[]): InternalStop[] {
+  return [...stops].sort((a, b) => a.position - b.position);
+}
+
+function defaultsForType(type: GradientType): Gradient {
+  if (type === "linear") return DEFAULT_LINEAR;
+  if (type === "radial") return DEFAULT_RADIAL;
+  return DEFAULT_CONIC;
+}
+
+// ---- Public API types -------------------------------------------------------
+
+export interface UseGradientPickerProps {
+  value?: Gradient;
+  defaultValue?: Gradient;
+  onValueChange?: (gradient: Gradient, css: string) => void;
+}
+
+export interface GradientPickerState {
+  gradient: Gradient;
+  stops: InternalStop[];
+  selectedStopId: string;
+  selectedStop: InternalStop | null;
+  setGradient: (next: Gradient) => void;
+  setType: (type: GradientType) => void;
+  setAngle: (angleDeg: number) => void;
+  setStartAngle: (angleDeg: number) => void;
+  setCenter: (xy: { x: number; y: number }) => void;
+  setInterp: (interp: GradientInterp) => void;
+  setRadialShape: (shape: "circle" | "ellipse") => void;
+  setRadialSize: (size: "closest-side" | "farthest-corner") => void;
+  selectStop: (id: string) => void;
+  addStop: (position: number, color?: OklchColor) => string;
+  removeStop: (id: string) => void;
+  moveStop: (id: string, position: number) => void;
+  setStopColor: (id: string, color: OklchColor) => void;
+  setStopHint: (id: string, hint: number | undefined) => void;
+}
+
+// ---- Hook ------------------------------------------------------------------
+
+export function useGradientPicker(
+  props: UseGradientPickerProps = {},
+): GradientPickerState {
+  const { value, defaultValue, onValueChange } = props;
+  const isControlled = value !== undefined;
+
+  const [internal, setInternal] = React.useState<InternalState>(() =>
+    attachIds(value ?? defaultValue ?? DEFAULT_LINEAR),
+  );
+  const [selectedStopId, setSelectedStopId] = React.useState<string>(
+    () => internal.stops[0]?.id ?? "",
+  );
+
+  // Sync controlled value into internal state, preserving stop ids when possible.
+  React.useEffect(() => {
+    if (!isControlled || !value) return;
+    setInternal((prev) => {
+      if (
+        prev.gradient.type === value.type &&
+        prev.stops.length === value.stops.length &&
+        prev.stops.every((s, i) => s.position === value.stops[i].position)
+      ) {
+        return {
+          gradient: value,
+          stops: prev.stops.map((s, i) => ({ ...value.stops[i], id: s.id })),
+        };
+      }
+      return attachIds(value);
+    });
+  }, [isControlled, value]);
+
+  const emit = React.useCallback(
+    (next: InternalState) => {
+      const clean = toPublicGradient(next);
+      onValueChange?.(clean, formatGradient(clean));
+    },
+    [onValueChange],
+  );
+
+  // ---- Gradient-level setters ----------------------------------------------
+
+  const setGradient = React.useCallback(
+    (next: Gradient) => {
+      const internalNext = attachIds(next);
+      setInternal(internalNext);
+      setSelectedStopId(internalNext.stops[0]?.id ?? "");
+      const clean = toPublicGradient(internalNext);
+      onValueChange?.(clean, formatGradient(clean));
+    },
+    [onValueChange],
+  );
+
+  const setType = React.useCallback(
+    (type: GradientType) => {
+      setInternal((prev) => {
+        if (prev.gradient.type === type) return prev;
+        const fallback = defaultsForType(type);
+        const next: InternalState = {
+          gradient: { ...fallback, interp: prev.gradient.interp } as Gradient,
+          stops: prev.stops,
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setAngle = React.useCallback(
+    (angleDeg: number) => {
+      setInternal((prev) => {
+        if (prev.gradient.type !== "linear") return prev;
+        const next: InternalState = {
+          gradient: { ...(prev.gradient as LinearGradient), angle: angleDeg },
+          stops: prev.stops,
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setStartAngle = React.useCallback(
+    (angleDeg: number) => {
+      setInternal((prev) => {
+        if (prev.gradient.type !== "conic") return prev;
+        const next: InternalState = {
+          gradient: { ...(prev.gradient as ConicGradient), startAngle: angleDeg },
+          stops: prev.stops,
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setCenter = React.useCallback(
+    (xy: { x: number; y: number }) => {
+      setInternal((prev) => {
+        if (prev.gradient.type === "linear") return prev;
+        const next: InternalState = {
+          gradient: { ...(prev.gradient as RadialGradient | ConicGradient), center: xy },
+          stops: prev.stops,
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setInterp = React.useCallback(
+    (interp: GradientInterp) => {
+      setInternal((prev) => {
+        const next: InternalState = {
+          gradient: { ...prev.gradient, interp } as Gradient,
+          stops: prev.stops,
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setRadialShape = React.useCallback(
+    (shape: "circle" | "ellipse") => {
+      setInternal((prev) => {
+        if (prev.gradient.type !== "radial") return prev;
+        const next: InternalState = {
+          gradient: { ...(prev.gradient as RadialGradient), shape },
+          stops: prev.stops,
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setRadialSize = React.useCallback(
+    (size: "closest-side" | "farthest-corner") => {
+      setInternal((prev) => {
+        if (prev.gradient.type !== "radial") return prev;
+        const next: InternalState = {
+          gradient: { ...(prev.gradient as RadialGradient), size },
+          stops: prev.stops,
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  // ---- Stop setters --------------------------------------------------------
+
+  const selectStop = React.useCallback((id: string) => setSelectedStopId(id), []);
+
+  const addStop = React.useCallback(
+    (position: number, color?: OklchColor): string => {
+      const id = nextId();
+      const fallback: OklchColor = { l: 0.5, c: 0, h: 0, alpha: 1 };
+      setInternal((prev) => {
+        const next: InternalState = {
+          gradient: prev.gradient,
+          stops: sortByPosition([
+            ...prev.stops,
+            { id, position, color: color ?? fallback },
+          ]),
+        };
+        emit(next);
+        return next;
+      });
+      setSelectedStopId(id);
+      return id;
+    },
+    [emit],
+  );
+
+  const removeStop = React.useCallback(
+    (id: string) => {
+      setInternal((prev) => {
+        if (prev.stops.length <= 1) return prev;
+        const idx = prev.stops.findIndex((s) => s.id === id);
+        if (idx === -1) return prev;
+        const filtered = prev.stops.filter((s) => s.id !== id);
+        const next: InternalState = { gradient: prev.gradient, stops: filtered };
+        emit(next);
+        const nextSel = filtered[Math.min(idx, filtered.length - 1)].id;
+        setSelectedStopId(nextSel);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const moveStop = React.useCallback(
+    (id: string, position: number) => {
+      const clamped = Math.max(0, Math.min(1, position));
+      setInternal((prev) => {
+        // Move the target stop to the end before sorting so that in a position
+        // tie it sorts after existing stops at that position (stable sort).
+        const others = prev.stops.filter((s) => s.id !== id);
+        const moved = prev.stops.find((s) => s.id === id);
+        if (!moved) return prev;
+        const next: InternalState = {
+          gradient: prev.gradient,
+          stops: sortByPosition([...others, { ...moved, position: clamped }]),
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setStopColor = React.useCallback(
+    (id: string, color: OklchColor) => {
+      setInternal((prev) => {
+        const next: InternalState = {
+          gradient: prev.gradient,
+          stops: prev.stops.map((s) => (s.id === id ? { ...s, color } : s)),
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  const setStopHint = React.useCallback(
+    (id: string, hint: number | undefined) => {
+      setInternal((prev) => {
+        const next: InternalState = {
+          gradient: prev.gradient,
+          stops: prev.stops.map((s) => (s.id === id ? { ...s, hint } : s)),
+        };
+        emit(next);
+        return next;
+      });
+    },
+    [emit],
+  );
+
+  // ---- Derived values ------------------------------------------------------
+
+  const selectedStop = React.useMemo(
+    () => internal.stops.find((s) => s.id === selectedStopId) ?? null,
+    [internal.stops, selectedStopId],
+  );
+
+  const cleanGradient = React.useMemo(() => toPublicGradient(internal), [internal]);
+
+  return {
+    gradient: cleanGradient,
+    stops: internal.stops,
+    selectedStopId,
+    selectedStop,
+    setGradient,
+    setType,
+    setAngle,
+    setStartAngle,
+    setCenter,
+    setInterp,
+    setRadialShape,
+    setRadialSize,
+    selectStop,
+    addStop,
+    removeStop,
+    moveStop,
+    setStopColor,
+    setStopHint,
+  };
+}

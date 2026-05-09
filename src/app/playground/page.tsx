@@ -3,6 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
+import {
+  GradientPicker,
+  DEFAULT_LINEAR,
+  formatGradient,
+  type Gradient,
+} from "@/registry/new-york/color-picker/fill-picker";
 import { parseColor, formatColor } from "@/registry/new-york/color-picker/lib/color";
 import type {
   ColorFormat,
@@ -282,6 +288,10 @@ export default function PlaygroundPage() {
   const [areaHeight, setAreaHeight] = React.useState<number | undefined>(
     VARIANTS[0].areaHeight,
   );
+  const [fillMode, setFillMode] = React.useState<"color" | "gradient">("color");
+  const [gradient, setGradient] = React.useState<Gradient>(DEFAULT_LINEAR);
+  const gradientCss = React.useMemo(() => formatGradient(gradient), [gradient]);
+  const previewBg = fillMode === "gradient" ? gradientCss : bg;
 
   const toggleFormat = (f: ColorFormat) => {
     setFormats((prev) => {
@@ -361,8 +371,44 @@ export default function PlaygroundPage() {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+      <div
+        className={cn(
+          "grid gap-6 lg:items-start",
+          fillMode === "color"
+            ? "lg:grid-cols-[minmax(0,1fr)_320px]"
+            : "lg:grid-cols-1",
+        )}
+      >
         <div className="flex min-w-0 flex-col gap-4">
+          <div
+            role="tablist"
+            aria-label="Fill mode"
+            className="inline-flex w-fit items-center gap-1 rounded-md bg-muted p-1"
+          >
+            {(["color", "gradient"] as const).map((m) => {
+              const active = fillMode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  data-state={active ? "active" : "inactive"}
+                  onClick={() => setFillMode(m)}
+                  className={cn(
+                    "rounded-sm px-3 py-1 text-xs font-medium outline-none transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-ring",
+                    active
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {m === "color" ? "Solid" : "Gradient"}
+                </button>
+              );
+            })}
+          </div>
+          {fillMode === "color" && (
           <div className="flex flex-wrap items-center gap-1.5">
             {VARIANTS.map((v) => {
               const active = partsEqual(parts, v.parts);
@@ -416,9 +462,10 @@ export default function PlaygroundPage() {
               );
             })}
           </div>
+          )}
           <div
             className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
-            style={{ background: bg }}
+            style={{ background: previewBg }}
           >
             <div
               style={
@@ -431,6 +478,7 @@ export default function PlaygroundPage() {
                     }
               }
             >
+              {fillMode === "color" && (
               <ColorPicker.Root
                 value={color}
                 onValueChange={(c) => setColor(c)}
@@ -525,12 +573,37 @@ export default function PlaygroundPage() {
                   />
                 )}
               </ColorPicker.Root>
+              )}
+              {fillMode === "gradient" && (
+                <GradientPicker.Root value={gradient} onValueChange={setGradient}>
+                  <GradientPicker.TypeSwitcher />
+                  <GradientPicker.Bar />
+                  <GradientPicker.AngleDial />
+                  <GradientPicker.CenterPad />
+                  <GradientPicker.RadialShape />
+                  <GradientPicker.StopList />
+                  <GradientPicker.StopColor>
+                    <ColorPicker.Area />
+                    <ColorPicker.Hue />
+                    <ColorPicker.Alpha />
+                    <ColorPicker.ChannelInput />
+                  </GradientPicker.StopColor>
+                  <GradientPicker.InterpSwitcher />
+                  <GradientPicker.Presets />
+                  <GradientPicker.CssInput />
+                </GradientPicker.Root>
+              )}
             </div>
           </div>
 
-          <CodeBlock code={code} />
+          {fillMode === "color" ? (
+            <CodeBlock code={code} />
+          ) : (
+            <CodeBlock code={gradientCss} />
+          )}
         </div>
 
+        {fillMode === "color" && (
         <aside className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
           <Knob label="areaMode">
             <div className="flex flex-col gap-1.5">
@@ -694,6 +767,7 @@ export default function PlaygroundPage() {
             />
           </Knob>
         </aside>
+        )}
       </div>
     </main>
   );

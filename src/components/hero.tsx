@@ -7,7 +7,12 @@ import { GodRayCanvas } from "./godray-canvas";
 import { InstallTabs } from "./install-tabs";
 import { CopyForAi } from "./copy-for-ai";
 import { AMPLO_MARK_PATH, AMPLO_MARK_VIEWBOX } from "./amplo-mark";
-import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
+import {
+  ColorPicker,
+  FillPicker,
+  GradientPicker,
+  type Fill,
+} from "@/registry/new-york/color-picker/fill-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 
@@ -267,9 +272,10 @@ function TunerSlider({
 }
 
 function HeroPicker() {
-  const [color, setColor] = React.useState<OklchColor>(
-    () => parseColor("oklch(0.7 0.18 30)")!,
-  );
+  const [fill, setFill] = React.useState<Fill>(() => ({
+    kind: "color",
+    color: parseColor("oklch(0.7 0.18 30)")!,
+  }));
   const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
   const swatches = React.useMemo(
     () => [...P3_VIVID_PRESETS, ...savedSwatches],
@@ -278,34 +284,61 @@ function HeroPicker() {
   const addSwatch = React.useCallback((_c: OklchColor, hex: string) => {
     setSavedSwatches((prev) => (prev.includes(hex) ? prev : [...prev, hex]));
   }, []);
+
   return (
-    <ColorPicker.Root
-      value={color}
-      onValueChange={setColor}
-      backgroundColor="#0a0a0a"
-      className="w-full max-w-70"
+    <FillPicker.Root
+      value={fill}
+      onValueChange={setFill}
+      className="w-full max-w-70 gap-3"
     >
-      <div className="flex items-stretch gap-2">
-        <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
-        <ColorPicker.ContrastReadout
-          metrics={["wcag", "apca"]}
-          showLabel={false}
-          showValue={false}
-          className="w-auto flex-1 justify-center"
-        />
-      </div>
-      <ColorPicker.Area mode="oklch-cl" />
-      <div className="flex flex-col gap-1.5">
-        <ColorPicker.Hue />
-        <ColorPicker.Alpha />
-      </div>
-      <div className="flex items-center gap-2">
-        <ColorPicker.FormatSwitcher className="flex-1" />
-        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
-      </div>
-      <ColorPicker.ChannelInput showFormat={false} />
-      <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
-    </ColorPicker.Root>
+      <FillPicker.Tabs className="self-stretch">
+        <FillPicker.Tab mode="color" className="flex-1">
+          Solid
+        </FillPicker.Tab>
+        <FillPicker.Tab mode="gradient" className="flex-1">
+          Gradient
+        </FillPicker.Tab>
+      </FillPicker.Tabs>
+
+      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
+        <div className="flex items-stretch gap-2">
+          <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+          <ColorPicker.ContrastReadout
+            metrics={["wcag", "apca"]}
+            showLabel={false}
+            showValue={false}
+            className="w-auto flex-1 justify-center"
+          />
+        </div>
+        <ColorPicker.Area mode="oklch-cl" />
+        <div className="flex flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <div className="flex items-center gap-2">
+          <ColorPicker.FormatSwitcher className="flex-1" />
+          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+        </div>
+        <ColorPicker.ChannelInput showFormat={false} />
+        <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
+      </FillPicker.Pane>
+
+      <FillPicker.Pane mode="gradient" className="flex flex-col gap-3">
+        <GradientPicker.TypeSwitcher />
+        <GradientPicker.Bar />
+        <GradientPicker.AngleDial />
+        <GradientPicker.CenterPad />
+        <GradientPicker.RadialShape />
+        <GradientPicker.StopList />
+        <GradientPicker.StopColor>
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+          <ColorPicker.ChannelInput />
+        </GradientPicker.StopColor>
+        <GradientPicker.InterpSwitcher />
+        <GradientPicker.Presets />
+      </FillPicker.Pane>
+    </FillPicker.Root>
   );
 }
 

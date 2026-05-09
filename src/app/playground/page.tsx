@@ -5,9 +5,12 @@ import Link from "next/link";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import {
   GradientPicker,
+  FillPicker,
   DEFAULT_LINEAR,
   formatGradient,
+  formatFill,
   type Gradient,
+  type Fill,
 } from "@/registry/new-york/color-picker/fill-picker";
 import { parseColor, formatColor } from "@/registry/new-york/color-picker/lib/color";
 import type {
@@ -288,10 +291,18 @@ export default function PlaygroundPage() {
   const [areaHeight, setAreaHeight] = React.useState<number | undefined>(
     VARIANTS[0].areaHeight,
   );
-  const [fillMode, setFillMode] = React.useState<"color" | "gradient">("color");
+  const [fillMode, setFillMode] = React.useState<"color" | "gradient" | "fill">(
+    "color",
+  );
   const [gradient, setGradient] = React.useState<Gradient>(DEFAULT_LINEAR);
+  const [fill, setFill] = React.useState<Fill>(() => ({
+    kind: "color",
+    color: parseColor("oklch(0.7 0.18 30)")!,
+  }));
   const gradientCss = React.useMemo(() => formatGradient(gradient), [gradient]);
-  const previewBg = fillMode === "gradient" ? gradientCss : bg;
+  const fillCss = React.useMemo(() => formatFill(fill), [fill]);
+  const previewBg =
+    fillMode === "gradient" ? gradientCss : fillMode === "fill" ? fillCss : bg;
 
   const toggleFormat = (f: ColorFormat) => {
     setFormats((prev) => {
@@ -385,7 +396,13 @@ export default function PlaygroundPage() {
             aria-label="Fill mode"
             className="inline-flex w-fit items-center gap-1 rounded-md bg-muted p-1"
           >
-            {(["color", "gradient"] as const).map((m) => {
+            {(
+              [
+                ["color", "Solid"],
+                ["gradient", "Gradient"],
+                ["fill", "Fill (tabs)"],
+              ] as const
+            ).map(([m, label]) => {
               const active = fillMode === m;
               return (
                 <button
@@ -403,7 +420,7 @@ export default function PlaygroundPage() {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {m === "color" ? "Solid" : "Gradient"}
+                  {label}
                 </button>
               );
             })}
@@ -593,13 +610,46 @@ export default function PlaygroundPage() {
                   <GradientPicker.CssInput />
                 </GradientPicker.Root>
               )}
+              {fillMode === "fill" && (
+                <FillPicker.Root value={fill} onValueChange={setFill}>
+                  <FillPicker.Tabs className="self-stretch">
+                    <FillPicker.Tab mode="color" className="flex-1">
+                      Solid
+                    </FillPicker.Tab>
+                    <FillPicker.Tab mode="gradient" className="flex-1">
+                      Gradient
+                    </FillPicker.Tab>
+                  </FillPicker.Tabs>
+                  <FillPicker.Pane mode="color" className="flex flex-col gap-2">
+                    <ColorPicker.Area />
+                    <ColorPicker.Hue />
+                    <ColorPicker.Alpha />
+                    <ColorPicker.ChannelInput />
+                  </FillPicker.Pane>
+                  <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
+                    <GradientPicker.TypeSwitcher />
+                    <GradientPicker.Bar />
+                    <GradientPicker.AngleDial />
+                    <GradientPicker.CenterPad />
+                    <GradientPicker.RadialShape />
+                    <GradientPicker.StopList />
+                    <GradientPicker.StopColor>
+                      <ColorPicker.Hue />
+                      <ColorPicker.ChannelInput />
+                    </GradientPicker.StopColor>
+                    <GradientPicker.InterpSwitcher />
+                  </FillPicker.Pane>
+                </FillPicker.Root>
+              )}
             </div>
           </div>
 
           {fillMode === "color" ? (
             <CodeBlock code={code} />
-          ) : (
+          ) : fillMode === "gradient" ? (
             <CodeBlock code={gradientCss} />
+          ) : (
+            <CodeBlock code={fillCss} />
           )}
         </div>
 

@@ -7,9 +7,13 @@ import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 import {
   GradientPicker,
+  FillPicker,
   DEFAULT_LINEAR,
 } from "@/registry/new-york/color-picker/fill-picker";
-import type { Gradient } from "@/registry/new-york/color-picker/fill-picker";
+import type {
+  Gradient,
+  Fill,
+} from "@/registry/new-york/color-picker/fill-picker";
 import {
   Popover,
   PopoverContent,
@@ -25,6 +29,7 @@ const TOC = [
   ["usage", "Usage"],
   ["examples", "Examples"],
   ["gradient-picker", "Gradient picker"],
+  ["fill-picker", "Fill picker (tabs)"],
   ["anatomy", "Anatomy"],
   ["api-root", "API: <ColorPicker.Root>"],
   ["api-parts", "API: Parts"],
@@ -157,6 +162,29 @@ export default function DocsPage() {
             description="Just the gradient bar — useful as an inline preview strip or when you want to drive a fully custom stop-editing UI yourself."
             preview={<GradientBarOnlyDemo />}
             code={GRADIENT_BAR_ONLY_CODE}
+          />
+        </section>
+
+        <section className="flex flex-col gap-6">
+          <H2 id="fill-picker">Fill picker (tabs)</H2>
+          <p>
+            <Code>{"<FillPicker.Root>"}</Code> bundles solid color and gradient
+            into a single component with{" "}
+            <Code>{"<FillPicker.Tabs>"}</Code> /{" "}
+            <Code>{"<FillPicker.Tab>"}</Code> on top and a{" "}
+            <Code>{"<FillPicker.Pane mode=...>"}</Code> per side. The value is a{" "}
+            <Code>Fill</Code> discriminated union ({" "}
+            <Code>{'{ kind: "color", color }'}</Code> or{" "}
+            <Code>{'{ kind: "gradient", gradient }'}</Code>); each pane mounts
+            its own picker bound to the matching slice, and switching tabs
+            preserves both sides.
+          </p>
+
+          <Example
+            title="Solid + Gradient"
+            description="Tabs inside the picker. The Solid pane uses the canonical color tree; the Gradient pane uses the full gradient tree. One state, one component."
+            preview={<FillPickerTabsDemo />}
+            code={FILL_PICKER_TABS_CODE}
           />
         </section>
 
@@ -663,6 +691,46 @@ function GradientBarOnlyDemo() {
   );
 }
 
+function FillPickerTabsDemo() {
+  const [fill, setFill] = React.useState<Fill>(() => ({
+    kind: "color",
+    color: parseColor("oklch(0.7 0.18 30)")!,
+  }));
+  return (
+    <FillPicker.Root value={fill} onValueChange={setFill} className="w-full max-w-xs">
+      <FillPicker.Tabs className="self-stretch">
+        <FillPicker.Tab mode="color" className="flex-1">
+          Solid
+        </FillPicker.Tab>
+        <FillPicker.Tab mode="gradient" className="flex-1">
+          Gradient
+        </FillPicker.Tab>
+      </FillPicker.Tabs>
+
+      <FillPicker.Pane mode="color" className="flex flex-col gap-2">
+        <ColorPicker.Area />
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
+        <ColorPicker.ChannelInput />
+      </FillPicker.Pane>
+
+      <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
+        <GradientPicker.TypeSwitcher />
+        <GradientPicker.Bar />
+        <GradientPicker.AngleDial />
+        <GradientPicker.CenterPad />
+        <GradientPicker.RadialShape />
+        <GradientPicker.StopList />
+        <GradientPicker.StopColor>
+          <ColorPicker.Hue />
+          <ColorPicker.ChannelInput />
+        </GradientPicker.StopColor>
+        <GradientPicker.InterpSwitcher />
+      </FillPicker.Pane>
+    </FillPicker.Root>
+  );
+}
+
 /* ─────────────────────────── Code strings ─────────────────────────── */
 
 const HERO_CODE = `"use client";
@@ -930,6 +998,53 @@ export function GradientBarOnlyDemo() {
     <GradientPicker.Root value={g} onValueChange={setG}>
       <GradientPicker.Bar />
     </GradientPicker.Root>
+  );
+}`;
+
+const FILL_PICKER_TABS_CODE = `"use client";
+
+import * as React from "react";
+import {
+  ColorPicker,
+  GradientPicker,
+  FillPicker,
+  parseColor,
+} from "@/components/ui/color-picker/fill-picker";
+import type { Fill } from "@/components/ui/color-picker/fill-picker";
+
+export function FillPickerTabsDemo() {
+  const [fill, setFill] = React.useState<Fill>(() => ({
+    kind: "color",
+    color: parseColor("oklch(0.7 0.18 30)")!,
+  }));
+  return (
+    <FillPicker.Root value={fill} onValueChange={setFill}>
+      <FillPicker.Tabs className="self-stretch">
+        <FillPicker.Tab mode="color" className="flex-1">Solid</FillPicker.Tab>
+        <FillPicker.Tab mode="gradient" className="flex-1">Gradient</FillPicker.Tab>
+      </FillPicker.Tabs>
+
+      <FillPicker.Pane mode="color" className="flex flex-col gap-2">
+        <ColorPicker.Area />
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
+        <ColorPicker.ChannelInput />
+      </FillPicker.Pane>
+
+      <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
+        <GradientPicker.TypeSwitcher />
+        <GradientPicker.Bar />
+        <GradientPicker.AngleDial />
+        <GradientPicker.CenterPad />
+        <GradientPicker.RadialShape />
+        <GradientPicker.StopList />
+        <GradientPicker.StopColor>
+          <ColorPicker.Hue />
+          <ColorPicker.ChannelInput />
+        </GradientPicker.StopColor>
+        <GradientPicker.InterpSwitcher />
+      </FillPicker.Pane>
+    </FillPicker.Root>
   );
 }`;
 

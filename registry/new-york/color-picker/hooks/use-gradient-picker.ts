@@ -129,18 +129,26 @@ export function useGradientPicker(
 
   // Emit onValueChange whenever internal state changes (but not on first render).
   // Decoupled from setters so StrictMode double-invocation of updaters doesn't
-  // fire the callback twice.
+  // fire the callback twice. The callback is read from a ref so callers passing
+  // a fresh arrow function each render don't re-trigger the effect (which would
+  // emit a fresh gradient identity on every render and round-trip into a loop
+  // through any controlled parent).
+  const onValueChangeRef = React.useRef(onValueChange);
+  React.useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  });
   const isFirstRenderRef = React.useRef(true);
   React.useEffect(() => {
     if (isFirstRenderRef.current) {
       isFirstRenderRef.current = false;
       return;
     }
-    if (!onValueChange) return;
+    const cb = onValueChangeRef.current;
+    if (!cb) return;
     const clean = toPublicGradient(internal);
     lastEmittedRef.current = clean;
-    onValueChange(clean, formatGradient(clean));
-  }, [internal, onValueChange]);
+    cb(clean, formatGradient(clean));
+  }, [internal]);
 
   // ---- Gradient-level setters ----------------------------------------------
 

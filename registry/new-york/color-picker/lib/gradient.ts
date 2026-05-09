@@ -1,4 +1,5 @@
 import type { OklchColor } from "./types";
+import { formatColor } from "./color";
 
 export type GradientType = "linear" | "radial" | "conic";
 
@@ -83,3 +84,42 @@ export const DEFAULT_CONIC: ConicGradient = {
     { color: { l: 0, c: 0, h: 0, alpha: 1 }, position: 1 },
   ],
 };
+
+function trim(n: number, digits = 4): string {
+  return Number(n.toFixed(digits)).toString();
+}
+
+const formatStopColor = (c: OklchColor): string => formatColor(c, "oklch");
+
+function formatStops(stops: GradientStop[]): string {
+  const parts: string[] = [];
+  stops.forEach((s, i) => {
+    // A hint on stop i is the midpoint *between* stop i-1 and stop i —
+    // emit it before this stop's color declaration.
+    if (s.hint !== undefined && i > 0) {
+      parts.push(`${trim(s.hint * 100)}%`);
+    }
+    parts.push(`${formatStopColor(s.color)} ${trim(s.position * 100)}%`);
+  });
+  return parts.join(", ");
+}
+
+function formatInterp(interp: GradientInterp): string {
+  if (interp === "hsl-longer") return "hsl longer hue";
+  return interp;
+}
+
+export function formatGradient(g: Gradient): string {
+  const interp = `in ${formatInterp(g.interp)}`;
+  if (g.type === "linear") {
+    return `linear-gradient(${interp} ${trim(g.angle)}deg, ${formatStops(g.stops)})`;
+  }
+  if (g.type === "radial") {
+    const shape = `${g.shape} ${g.size}`;
+    const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
+    return `radial-gradient(${shape} ${center} ${interp}, ${formatStops(g.stops)})`;
+  }
+  // conic
+  const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
+  return `conic-gradient(from ${trim(g.startAngle)}deg ${center} ${interp}, ${formatStops(g.stops)})`;
+}

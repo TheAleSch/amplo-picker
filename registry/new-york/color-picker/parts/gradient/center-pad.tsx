@@ -41,15 +41,32 @@ export const CenterPad = React.forwardRef<HTMLDivElement, CenterPadProps>(
       e.currentTarget.addEventListener("pointerup", onUp);
     };
 
+    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const step = e.shiftKey ? 0.05 : 0.01;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        ctx.setCenter({ x: Math.max(0, Math.min(1, center.x - step)), y: center.y });
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        ctx.setCenter({ x: Math.max(0, Math.min(1, center.x + step)), y: center.y });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        ctx.setCenter({ x: center.x, y: Math.max(0, Math.min(1, center.y - step)) });
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        ctx.setCenter({ x: center.x, y: Math.max(0, Math.min(1, center.y + step)) });
+      }
+    };
+
     return (
       <div
         ref={padRef}
         onPointerDown={onPointerDown}
-        role="slider"
+        onKeyDown={onKeyDown}
+        role="application"
         aria-label="Gradient center"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(center.x * 100)}
+        aria-roledescription="2D pad for gradient center"
+        aria-valuetext={`x ${Math.round(center.x * 100)}%, y ${Math.round(center.y * 100)}%`}
         tabIndex={0}
         className={cn(
           "relative shrink-0 cursor-crosshair rounded-md border border-border bg-muted",

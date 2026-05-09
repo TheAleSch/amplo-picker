@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 import {
   formatGradient,
   parseGradient,
+  parseFill,
+  formatFill,
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
   type LinearGradient,
+  type Fill,
 } from "./gradient";
 
 describe("formatGradient", () => {
@@ -90,5 +93,33 @@ describe("parseGradient", () => {
     expect(parsed!.stops).toHaveLength(2);
     expect(parsed!.stops[0].position).toBe(0);
     expect(parsed!.stops[1].position).toBe(1);
+  });
+});
+
+describe("Fill helpers", () => {
+  it("formats a color fill as a CSS color string", () => {
+    const fill: Fill = { kind: "color", color: { l: 0.7, c: 0.18, h: 30, alpha: 1 } };
+    expect(formatFill(fill)).toBe("oklch(0.7 0.18 30)");
+  });
+
+  it("formats a gradient fill via formatGradient", () => {
+    const fill: Fill = { kind: "gradient", gradient: DEFAULT_LINEAR };
+    expect(formatFill(fill)).toBe(formatGradient(DEFAULT_LINEAR));
+  });
+
+  it("parses a CSS color into a color fill", () => {
+    const f = parseFill("oklch(0.7 0.18 30)");
+    expect(f).not.toBeNull();
+    expect(f!.kind).toBe("color");
+  });
+
+  it("parses a CSS gradient into a gradient fill", () => {
+    const f = parseFill(formatGradient(DEFAULT_LINEAR));
+    expect(f).not.toBeNull();
+    expect(f!.kind).toBe("gradient");
+  });
+
+  it("returns null for nonsense", () => {
+    expect(parseFill("xxx")).toBeNull();
   });
 });

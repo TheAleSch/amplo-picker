@@ -276,3 +276,20 @@ export function parseGradient(input: string): Gradient | null {
   if (!stops) return null;
   return { type: "conic", startAngle, center: { x: cx, y: cy }, interp, stops };
 }
+
+// ---------------------------------------------------------------------------
+// parseFill / formatFill — discriminated union of Color | Gradient
+// ---------------------------------------------------------------------------
+
+export function formatFill(f: Fill): string {
+  if (f.kind === "color") return formatColor(f.color, "oklch");
+  return formatGradient(f.gradient);
+}
+
+export function parseFill(input: string): Fill | null {
+  const g = parseGradient(input);
+  if (g) return { kind: "gradient", gradient: g };
+  const c = parseColor(input);
+  if (c) return { kind: "color", color: c };
+  return null;
+}

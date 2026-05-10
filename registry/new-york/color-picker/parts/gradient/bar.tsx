@@ -55,10 +55,15 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
 
   const startStopDrag = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    e.preventDefault();
     ctx.selectStop(id);
-    const target = e.currentTarget;
-    target.setPointerCapture(e.pointerId);
 
+    // Listen on document, not the handle DOM node. moveStop reorders the
+    // stops array, and React reconciles the per-stop <div>s in their new
+    // order; if we captured/listened on the original handle element, a
+    // sibling handle could end up under the pointer and steal the gesture.
+    // Document-level listeners + an `id` captured in closure keep the drag
+    // bound to the originally-clicked stop regardless of reordering.
     let pendingRemove = false;
     const onMove = (ev: PointerEvent) => {
       const rect = trackRef.current?.getBoundingClientRect();
@@ -69,14 +74,15 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       pendingRemove = dy > 24 && ctx.stops.length > 1;
       if (!pendingRemove) ctx.moveStop(id, positionFromEvent(ev.clientX));
     };
-    const onUp = (ev: PointerEvent) => {
-      target.releasePointerCapture(ev.pointerId);
-      target.removeEventListener("pointermove", onMove);
-      target.removeEventListener("pointerup", onUp);
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
       if (pendingRemove) ctx.removeStop(id);
     };
-    target.addEventListener("pointermove", onMove);
-    target.addEventListener("pointerup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onUp);
   };
 
   const onStopKeyDown =

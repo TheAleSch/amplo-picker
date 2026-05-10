@@ -187,9 +187,23 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     if (gradient.type === "linear") {
       if (gradient.start && gradient.end) {
         // Positioned linear: endpoints can sit anywhere inside the box.
+        // Visually clamp by HANDLE_PX/2 so the handle dot stays fully inside
+        // the `overflow-hidden` container even when the user drags to a
+        // corner. The stored `gradient.start` / `gradient.end` keep the
+        // true pointer position — only the rendered handle + dashed line
+        // endpoint are inset.
+        const inset = HANDLE_PX / 2;
+        const clampX = (px: number) => Math.max(inset, Math.min(w - inset, px));
+        const clampY = (px: number) => Math.max(inset, Math.min(h - inset, px));
         return {
-          a: { x: gradient.start.x * w, y: gradient.start.y * h },
-          b: { x: gradient.end.x * w, y: gradient.end.y * h },
+          a: {
+            x: clampX(gradient.start.x * w),
+            y: clampY(gradient.start.y * h),
+          },
+          b: {
+            x: clampX(gradient.end.x * w),
+            y: clampY(gradient.end.y * h),
+          },
           showConnector: true,
         };
       }

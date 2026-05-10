@@ -651,14 +651,21 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                       aria-valuemax={100}
                       aria-valuenow={pct}
                       aria-valuetext={`${pct} percent`}
-                      // Force the swatch to alpha 1 so the dashed line is
-                      // never visible through a transparent stop color.
-                      style={{
-                        background: formatColor(
-                          { ...s.color, alpha: 1 },
-                          "oklch",
-                        ),
-                      }}
+                      // Render the stop's actual color including alpha, but
+                      // never let the dashed gradient line show through.
+                      // Stack three layers from top to bottom:
+                      //   1. the stop color (may be translucent)
+                      //   2. a small-scale checkerboard so transparency
+                      //      reads as transparency, not as the line behind
+                      //   3. the Handle's solid `bg-background` (from
+                      //      className) — guarantees full opacity
+                      style={(() => {
+                        const css = formatColor(s.color, "oklch");
+                        return {
+                          backgroundImage: `linear-gradient(${css}, ${css}), ${CHECKERBOARD}`,
+                          backgroundSize: "auto, 6px 6px",
+                        };
+                      })()}
                     />
                   );
                 })}

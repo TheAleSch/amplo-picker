@@ -636,7 +636,6 @@ export default function PlaygroundPage() {
                   {gradientParts.angleDial && <GradientPicker.AngleDial />}
                   {gradientParts.centerPad && <GradientPicker.CenterPad />}
                   {gradientParts.radialShape && <GradientPicker.RadialShape />}
-                  {gradientParts.stopList && <GradientPicker.StopList />}
                   {gradientParts.stopColor && (
                     <GradientPicker.StopColor>
                       <ColorPicker.Area />
@@ -645,6 +644,7 @@ export default function PlaygroundPage() {
                       <ColorPicker.ChannelInput />
                     </GradientPicker.StopColor>
                   )}
+                  {gradientParts.stopList && <GradientPicker.StopList />}
                   {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
                   {gradientParts.presets && <GradientPicker.Presets />}
                   {gradientParts.cssInput && <GradientPicker.CssInput />}
@@ -672,13 +672,13 @@ export default function PlaygroundPage() {
                     {gradientParts.angleDial && <GradientPicker.AngleDial />}
                     {gradientParts.centerPad && <GradientPicker.CenterPad />}
                     {gradientParts.radialShape && <GradientPicker.RadialShape />}
-                    {gradientParts.stopList && <GradientPicker.StopList />}
                     {gradientParts.stopColor && (
                       <GradientPicker.StopColor>
                         <ColorPicker.Hue />
                         <ColorPicker.ChannelInput />
                       </GradientPicker.StopColor>
                     )}
+                    {gradientParts.stopList && <GradientPicker.StopList />}
                     {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
                     {gradientParts.presets && <GradientPicker.Presets />}
                     {gradientParts.cssInput && <GradientPicker.CssInput />}
@@ -1041,12 +1041,12 @@ function buildGradientPartsLines(
   if (parts.angleDial) lines.push(`${indent}<GradientPicker.AngleDial />`);
   if (parts.centerPad) lines.push(`${indent}<GradientPicker.CenterPad />`);
   if (parts.radialShape) lines.push(`${indent}<GradientPicker.RadialShape />`);
-  if (parts.stopList) lines.push(`${indent}<GradientPicker.StopList />`);
   if (parts.stopColor) {
     lines.push(`${indent}<GradientPicker.StopColor>`);
     stopColorChildren.forEach((c) => lines.push(`${indent}  ${c}`));
     lines.push(`${indent}</GradientPicker.StopColor>`);
   }
+  if (parts.stopList) lines.push(`${indent}<GradientPicker.StopList />`);
   if (parts.interpSwitcher) lines.push(`${indent}<GradientPicker.InterpSwitcher />`);
   if (parts.presets) lines.push(`${indent}<GradientPicker.Presets />`);
   if (parts.cssInput) lines.push(`${indent}<GradientPicker.CssInput />`);

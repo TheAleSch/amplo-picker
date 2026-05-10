@@ -32,6 +32,14 @@ export interface RadialGradient {
   /** Normalized 0..1 in each axis. */
   center: { x: number; y: number };
   size: "closest-side" | "farthest-corner";
+  /**
+   * Optional explicit radii. When set, takes precedence over `shape`+`size`
+   * for CSS emission. `x` is a fraction of the gradient box width, `y` a
+   * fraction of its height — matching the CSS `<length-percentage>{1,2}`
+   * radial-gradient ending-shape syntax. When unset, the keyword form
+   * (`shape size`) is emitted instead.
+   */
+  radii?: { x: number; y: number };
   stops: GradientStop[];
   interp: GradientInterp;
 }
@@ -115,9 +123,11 @@ export function formatGradient(g: Gradient): string {
     return `linear-gradient(${interp} ${trim(g.angle)}deg, ${formatStops(g.stops)})`;
   }
   if (g.type === "radial") {
-    const shape = `${g.shape} ${g.size}`;
     const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
-    return `radial-gradient(${shape} ${center} ${interp}, ${formatStops(g.stops)})`;
+    const endingShape = g.radii
+      ? `${trim(g.radii.x * 100)}% ${trim(g.radii.y * 100)}%`
+      : `${g.shape} ${g.size}`;
+    return `radial-gradient(${endingShape} ${center} ${interp}, ${formatStops(g.stops)})`;
   }
   // conic
   const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
@@ -228,6 +238,7 @@ export function parseGradient(input: string): Gradient | null {
 
   if (type === "radial") {
     // formatGradient output parts[0]: "circle farthest-corner at 50% 50% in oklch"
+    //                            or:  "48% 30% at 50% 50% in oklch"
     const { interp, rest } = extractInterp(parts[0]);
     const head = rest;
     const stopParts = parts.slice(1);
@@ -236,11 +247,27 @@ export function parseGradient(input: string): Gradient | null {
     let size: "closest-side" | "farthest-corner" = "farthest-corner";
     let cx = 0.5;
     let cy = 0.5;
+    let radii: { x: number; y: number } | undefined;
 
     if (/\bcircle\b/i.test(head)) shape = "circle";
     else if (/\bellipse\b/i.test(head)) shape = "ellipse";
     if (/\bclosest-side\b/i.test(head)) size = "closest-side";
     else if (/\bfarthest-corner\b/i.test(head)) size = "farthest-corner";
+
+    // Explicit two-value ending shape (e.g. "48% 30%") — appears before `at`.
+    // We deliberately only match the percentage form formatGradient emits;
+    // raw lengths (`100px 80px`) are intentionally ignored here so they fall
+    // through to the keyword defaults instead of being silently rescaled.
+    const beforeAt = head.split(/\bat\b/i)[0] ?? head;
+    const radiiMatch = beforeAt.match(
+      /(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/,
+    );
+    if (radiiMatch) {
+      radii = {
+        x: parseFloat(radiiMatch[1]) / 100,
+        y: parseFloat(radiiMatch[2]) / 100,
+      };
+    }
 
     const atMatch = head.match(/\bat\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/i);
     if (atMatch) {
@@ -250,7 +277,15 @@ export function parseGradient(input: string): Gradient | null {
 
     const stops = parseStops(stopParts);
     if (!stops) return null;
-    return { type: "radial", shape, size, center: { x: cx, y: cy }, interp, stops };
+    return {
+      type: "radial",
+      shape,
+      size,
+      center: { x: cx, y: cy },
+      ...(radii ? { radii } : {}),
+      interp,
+      stops,
+    };
   }
 
   // conic

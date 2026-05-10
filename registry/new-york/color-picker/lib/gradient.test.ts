@@ -37,6 +37,14 @@ describe("formatGradient", () => {
     );
   });
 
+  it("emits explicit numeric radii when radii is set, overriding keywords", () => {
+    expect(
+      formatGradient({ ...DEFAULT_RADIAL, radii: { x: 0.48, y: 0.3 } }),
+    ).toBe(
+      "radial-gradient(48% 30% at 50% 50% in oklch, oklch(1 0 0) 0%, oklch(0 0 0) 100%)",
+    );
+  });
+
   it("emits a conic gradient with start angle and center", () => {
     expect(formatGradient(DEFAULT_CONIC)).toBe(
       "conic-gradient(from 0deg at 50% 50% in oklch, oklch(1 0 0) 0%, oklch(0 0 0) 100%)",
@@ -74,6 +82,22 @@ describe("parseGradient", () => {
   it("round-trips a radial gradient", () => {
     const css = formatGradient(DEFAULT_RADIAL);
     expect(parseGradient(css)).toEqual(DEFAULT_RADIAL);
+  });
+
+  it("round-trips a radial gradient with explicit numeric radii", () => {
+    // When numeric radii are emitted, the `circle`/`ellipse` keyword is
+    // intentionally dropped from the CSS — `circle <length-percentage>{2}`
+    // is invalid syntax. On re-parse, shape falls back to the CSS default
+    // (`ellipse`), which is the expected behavior; the explicit radii are
+    // the source of truth for visual sizing.
+    const g = { ...DEFAULT_RADIAL, shape: "ellipse" as const, radii: { x: 0.6, y: 0.25 } };
+    expect(parseGradient(formatGradient(g))).toEqual(g);
+  });
+
+  it("does not attach a radii field when CSS only carries keywords", () => {
+    const parsed = parseGradient(formatGradient(DEFAULT_RADIAL));
+    expect(parsed).toEqual(DEFAULT_RADIAL);
+    expect((parsed as { radii?: unknown }).radii).toBeUndefined();
   });
 
   it("round-trips a conic gradient", () => {

@@ -65,6 +65,49 @@ function snapDeg(deg: number, step: number): number {
 }
 
 /**
+ * Seed numeric radii from the radial gradient's keyword form (`shape` +
+ * `size`) so the edge handle has a sensible starting position before the
+ * user has touched it. Returns radii as fractions of the box width/height
+ * matching the CSS `<length-percentage>{1,2}` convention.
+ *
+ * For `farthest-corner` on ellipse we deliberately approximate by stretching
+ * each axis to the farthest side rather than implementing the exact CSS
+ * spec — once the user drags, they own the radii anyway.
+ */
+function keywordToRadii(
+  shape: "circle" | "ellipse",
+  size: "closest-side" | "farthest-corner",
+  center: { x: number; y: number },
+  w: number,
+  h: number,
+): { x: number; y: number } {
+  const cx = center.x * w;
+  const cy = center.y * h;
+  if (shape === "circle") {
+    const rPx =
+      size === "closest-side"
+        ? Math.min(cx, w - cx, cy, h - cy)
+        : Math.max(
+            Math.hypot(cx, cy),
+            Math.hypot(w - cx, cy),
+            Math.hypot(cx, h - cy),
+            Math.hypot(w - cx, h - cy),
+          );
+    return { x: rPx / w, y: rPx / h };
+  }
+  if (size === "closest-side") {
+    return {
+      x: Math.min(cx, w - cx) / w,
+      y: Math.min(cy, h - cy) / h,
+    };
+  }
+  return {
+    x: Math.max(cx, w - cx) / w,
+    y: Math.max(cy, h - cy) / h,
+  };
+}
+
+/**
  * Visual 2D pad that surfaces the *geometry* of the active gradient:
  *
  * - **Linear** — two handles sit on opposite edges, a dashed line runs
@@ -139,9 +182,14 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     }
 
     if (gradient.type === "radial") {
+      const radii =
+        gradient.radii ??
+        keywordToRadii(gradient.shape, gradient.size, gradient.center, w, h);
+      const ax = gradient.center.x * w;
+      const ay = gradient.center.y * h;
       return {
-        a: { x: gradient.center.x * w, y: gradient.center.y * h },
-        b: null as XY | null,
+        a: { x: ax, y: ay },
+        b: { x: ax + radii.x * w, y: ay + radii.y * h } as XY,
         showConnector: false,
       };
     }
@@ -166,7 +214,12 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     return { x: clientX - r.left, y: clientY - r.top };
   };
 
-  type HandleKind = "linear-a" | "linear-b" | "center" | "conic-dial";
+  type HandleKind =
+    | "linear-a"
+    | "linear-b"
+    | "center"
+    | "conic-dial"
+    | "radial-edge";
 
   const handleAt = (kind: HandleKind, p: XY, shiftKey: boolean) => {
     const { w, h } = dims;
@@ -185,6 +238,31 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       const nx = Math.max(0, Math.min(1, p.x / w));
       const ny = Math.max(0, Math.min(1, p.y / h));
       ctx.setCenter({ x: nx, y: ny });
+      return;
+    }
+
+    if (kind === "radial-edge") {
+      if (gradient.type !== "radial") return;
+      const ax = gradient.center.x * w;
+      const ay = gradient.center.y * h;
+      // Edge handle lives in the +x +y quadrant relative to the center —
+      // drags into other quadrants are mirrored via abs() so radii stay
+      // strictly non-negative (CSS forbids negative gradient radii).
+      const dxPx = Math.abs(p.x - ax);
+      const dyPx = Math.abs(p.y - ay);
+      let rx = dxPx / w;
+      let ry = dyPx / h;
+      if (shiftKey) {
+        // Shift = visual circle on screen. Lock the larger pixel radius into
+        // both axes so the ellipse degenerates to a circle of that size.
+        const rPx = Math.max(dxPx, dyPx);
+        rx = rPx / w;
+        ry = rPx / h;
+      }
+      ctx.setRadii({
+        x: Math.max(0, Math.min(2, rx)),
+        y: Math.max(0, Math.min(2, ry)),
+      });
       return;
     }
 
@@ -225,6 +303,27 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     if (next === null) return;
     e.preventDefault();
     ctx.setStartAngle(next);
+  };
+
+  const onKeyDownRadii = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (gradient.type !== "radial") return;
+    const { w, h } = dims;
+    if (w === 0 || h === 0) return;
+    const current =
+      gradient.radii ??
+      keywordToRadii(gradient.shape, gradient.size, gradient.center, w, h);
+    const step = e.shiftKey ? 0.05 : 0.01;
+    let { x, y } = current;
+    if (e.key === "ArrowLeft") x -= step;
+    else if (e.key === "ArrowRight") x += step;
+    else if (e.key === "ArrowUp") y -= step;
+    else if (e.key === "ArrowDown") y += step;
+    else return;
+    e.preventDefault();
+    ctx.setRadii({
+      x: Math.max(0, Math.min(2, x)),
+      y: Math.max(0, Math.min(2, y)),
+    });
   };
 
   const onKeyDownCenter = (e: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -371,6 +470,39 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                   aria-valuemax={360}
                   aria-valuenow={Math.round(gradient.startAngle)}
                   aria-valuetext={`${Math.round(gradient.startAngle)} degrees`}
+                />
+              )}
+              {handles.b && gradient.type === "radial" && (
+                <Handle
+                  label="Gradient radius"
+                  position={handles.b}
+                  onPointerDown={beginDrag("radial-edge")}
+                  onKeyDown={onKeyDownRadii}
+                  role="slider"
+                  aria-valuemin={0}
+                  aria-valuemax={200}
+                  aria-valuenow={Math.round(
+                    (gradient.radii?.x ??
+                      keywordToRadii(
+                        gradient.shape,
+                        gradient.size,
+                        gradient.center,
+                        dims.w,
+                        dims.h,
+                      ).x) * 100,
+                  )}
+                  aria-valuetext={(() => {
+                    const r =
+                      gradient.radii ??
+                      keywordToRadii(
+                        gradient.shape,
+                        gradient.size,
+                        gradient.center,
+                        dims.w,
+                        dims.h,
+                      );
+                    return `radius x ${Math.round(r.x * 100)}%, y ${Math.round(r.y * 100)}%`;
+                  })()}
                 />
               )}
             </>

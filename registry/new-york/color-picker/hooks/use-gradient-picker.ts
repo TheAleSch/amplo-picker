@@ -79,6 +79,13 @@ export interface GradientPickerState {
   setInterp: (interp: GradientInterp) => void;
   setRadialShape: (shape: "circle" | "ellipse") => void;
   setRadialSize: (size: "closest-side" | "farthest-corner") => void;
+  /**
+   * Set explicit numeric radii on the active radial gradient. Each value is
+   * a 0..1 fraction of the gradient box (x→width, y→height). Passing
+   * `undefined` clears the explicit override and falls back to the
+   * keyword-based size from `setRadialShape` / `setRadialSize`.
+   */
+  setRadii: (radii: { x: number; y: number } | undefined) => void;
   selectStop: (id: string) => void;
   addStop: (position: number, color?: OklchColor) => string;
   removeStop: (id: string) => void;
@@ -254,6 +261,26 @@ export function useGradientPicker(
     [apply],
   );
 
+  const setRadii = React.useCallback(
+    (radii: { x: number; y: number } | undefined) =>
+      apply((prev) => {
+        if (prev.gradient.type !== "radial") return prev;
+        const base = prev.gradient as RadialGradient;
+        // Spread first, then conditionally attach/strip the field so we never
+        // leave a `radii: undefined` property dangling on the object (which
+        // would format as `"undefined% undefined%"` if we ever swapped the
+        // emission strategy).
+        const next: RadialGradient = radii
+          ? { ...base, radii: { x: Math.max(0, radii.x), y: Math.max(0, radii.y) } }
+          : (() => {
+              const { radii: _drop, ...rest } = base;
+              return rest as RadialGradient;
+            })();
+        return { gradient: next, stops: prev.stops };
+      }),
+    [apply],
+  );
+
   // ---- Stop setters --------------------------------------------------------
 
   const selectStop = React.useCallback((id: string) => setSelectedStopId(id), []);
@@ -366,6 +393,7 @@ export function useGradientPicker(
     setInterp,
     setRadialShape,
     setRadialSize,
+    setRadii,
     selectStop,
     addStop,
     removeStop,

@@ -11,8 +11,10 @@ import {
 import { formatColor } from "../../lib/color";
 
 export interface BarProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Bar height in px. Defaults to 24. */
+  /** Track height in px. Defaults to 12 to match `<ColorPicker.Hue>`. */
   height?: number;
+  /** Handle (stop) diameter in px. Defaults to 16 to match the Hue thumb. */
+  handleSize?: number;
 }
 
 function buildPreviewGradient(
@@ -31,7 +33,7 @@ function buildPreviewGradient(
 }
 
 export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
-  { className, height = 24, ...rest },
+  { className, height = 12, handleSize = 16, ...rest },
   ref,
 ) {
   const ctx = useGradientPickerContext();
@@ -102,7 +104,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       <div
         ref={trackRef}
         onPointerDown={onTrackPointerDown}
-        className="absolute inset-0 rounded-md border border-border"
+        className="absolute inset-0 rounded-full border border-border"
         style={{
           background: `${buildPreviewGradient(ctx.gradient)}, repeating-conic-gradient(#bbb 0 25%, #fff 0 50%) 0 0/8px 8px`,
         }}
@@ -123,13 +125,15 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             onFocus={() => ctx.selectStop(s.id)}
             onKeyDown={onStopKeyDown(s.id, s.position)}
             style={{
-              left: `${s.position * 100}%`,
-              width: height,
-              height,
+              // Match the Hue thumb's positioning math: inset the centerline
+              // by handleSize/2 so pos=0/1 sit flush with the track edges.
+              left: `calc(${s.position} * (100% - ${handleSize}px) + ${handleSize / 2}px)`,
+              width: handleSize,
+              height: handleSize,
               background: formatColor(s.color, "oklch"),
             }}
             className={cn(
-              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-white shadow-sm",
+              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]",
               selected && "outline-2 outline-offset-1 outline-ring",
             )}
           />

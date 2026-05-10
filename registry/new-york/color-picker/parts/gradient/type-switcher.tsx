@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { GradientType } from "../../lib/gradient";
@@ -13,36 +12,35 @@ const TYPES: { value: GradientType; label: string }[] = [
 ];
 
 /**
- * Compact native `<select>` bound to `gradient.type`. Renders as a small
- * inline trigger ("Linear ▾") so it sits naturally next to icon-button
- * controls like `<GradientPicker.ReverseStops>`. The native `<select>` sits
- * on top of the visual chip with `opacity:0` so the OS chooser still opens
- * on click + arrow keys + screen reader interaction.
+ * Native `<select>` bound to `gradient.type`. Styled to match the shadcn
+ * new-york `<select>` look used by `<ColorPicker.FormatSwitcher>` and
+ * `<GradientPicker.InterpSwitcher>` — same height, border, chevron, and
+ * focus ring — so all three controls line up visually side by side.
+ *
+ * Width is intrinsic (not `w-full`) so it can sit next to icon buttons like
+ * `<GradientPicker.ReverseStops>` without stretching to fill the row.
  */
 export const TypeSwitcher = React.forwardRef<
   HTMLSelectElement,
   React.SelectHTMLAttributes<HTMLSelectElement>
 >(function TypeSwitcher({ className, ...rest }, ref) {
   const ctx = useGradientPickerContext();
-  const current =
-    TYPES.find((t) => t.value === ctx.gradient.type) ?? TYPES[0];
-
   return (
-    <span
+    <div
       data-slot="gradient-type-switcher"
-      className={cn(
-        "relative inline-flex items-center gap-1 text-xs font-medium text-foreground",
-        className,
-      )}
+      className={cn("relative inline-flex items-center", className)}
     >
-      <span aria-hidden="true">{current.label}</span>
-      <ChevronDown aria-hidden="true" className="size-3 text-muted-foreground" />
       <select
         ref={ref}
+        data-slot="gradient-type-switcher-select"
+        aria-label="Gradient type"
         value={ctx.gradient.type}
         onChange={(e) => ctx.setType(e.target.value as GradientType)}
-        aria-label="Gradient type"
-        className="absolute inset-0 cursor-pointer opacity-0 outline-none"
+        className={cn(
+          "h-8 appearance-none rounded-md border border-input bg-transparent pl-2.5 pr-7 text-xs font-medium shadow-xs outline-none",
+          "focus-visible:ring-1 focus-visible:ring-ring",
+          "cursor-pointer",
+        )}
         {...rest}
       >
         {TYPES.map((t) => (
@@ -51,6 +49,20 @@ export const TypeSwitcher = React.forwardRef<
           </option>
         ))}
       </select>
-    </span>
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 12 12"
+        className="pointer-events-none absolute right-2 size-3 text-muted-foreground"
+      >
+        <path
+          d="M3 4.5l3 3 3-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
   );
 });

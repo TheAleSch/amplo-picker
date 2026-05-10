@@ -13,6 +13,7 @@ import { Pane as FillPane } from "./parts/fill/pane";
 // GradientPicker parts
 import { Root as GradientRoot } from "./parts/gradient/root";
 import { Bar } from "./parts/gradient/bar";
+import { Area as GradientArea } from "./parts/gradient/area";
 import { TypeSwitcher } from "./parts/gradient/type-switcher";
 import { ReverseStops } from "./parts/gradient/reverse-stops";
 import { AngleDial } from "./parts/gradient/angle-dial";
@@ -61,6 +62,7 @@ export type {
 export const GradientPicker = {
   Root: GradientRoot,
   Bar,
+  Area: GradientArea,
   TypeSwitcher,
   ReverseStops,
   AngleDial,

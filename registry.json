@@ -158,6 +158,11 @@
           "target": "components/ui/fill-picker/parts/gradient/bar.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/area.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/area.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/gradient/type-switcher.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/type-switcher.tsx"

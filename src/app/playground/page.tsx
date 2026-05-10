@@ -70,6 +70,7 @@ type PartsState = Record<PartKey, boolean>;
 type GradientPartKey =
   | "typeSwitcher"
   | "bar"
+  | "area"
   | "angleDial"
   | "centerPad"
   | "radialShape"
@@ -87,6 +88,7 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   typeSwitcher: true,
   reverseStops: true,
   bar: true,
+  area: true,
   angleDial: true,
   centerPad: true,
   radialShape: true,
@@ -102,6 +104,7 @@ const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [
   { key: "typeSwitcher", label: "TypeSwitcher" },
   { key: "reverseStops", label: "ReverseStops" },
   { key: "bar", label: "Bar" },
+  { key: "area", label: "Area" },
   { key: "angleDial", label: "AngleDial" },
   { key: "centerPad", label: "CenterPad" },
   { key: "radialShape", label: "RadialShape" },
@@ -657,6 +660,7 @@ export default function PlaygroundPage() {
                     </div>
                   )}
                   {gradientParts.bar && <GradientPicker.Bar />}
+                  {gradientParts.area && <GradientPicker.Area />}
                   {gradientParts.angleDial && <GradientPicker.AngleDial />}
                   {gradientParts.centerPad && <GradientPicker.CenterPad />}
                   {gradientParts.radialShape && <GradientPicker.RadialShape />}
@@ -718,6 +722,7 @@ export default function PlaygroundPage() {
                       </div>
                     )}
                     {gradientParts.bar && <GradientPicker.Bar />}
+                    {gradientParts.area && <GradientPicker.Area />}
                     {gradientParts.angleDial && <GradientPicker.AngleDial />}
                     {gradientParts.centerPad && <GradientPicker.CenterPad />}
                     {gradientParts.radialShape && <GradientPicker.RadialShape />}
@@ -1113,6 +1118,7 @@ function buildGradientPartsLines(
     lines.push(`${indent}</div>`);
   }
   if (parts.bar) lines.push(`${indent}<GradientPicker.Bar />`);
+  if (parts.area) lines.push(`${indent}<GradientPicker.Area />`);
   if (parts.angleDial) lines.push(`${indent}<GradientPicker.AngleDial />`);
   if (parts.centerPad) lines.push(`${indent}<GradientPicker.CenterPad />`);
   if (parts.radialShape) lines.push(`${indent}<GradientPicker.RadialShape />`);

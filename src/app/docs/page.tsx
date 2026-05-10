@@ -193,11 +193,23 @@ export default function DocsPage() {
           </p>
           <ul className="ml-5 list-disc text-sm text-muted-foreground [&_strong]:text-foreground">
             <li>
-              <strong>Linear.</strong> Two opposite-edge handles connected by
-              a dashed line through the box center. Dragging either rotates{" "}
-              <Code>gradient.angle</Code>. CSS <Code>linear-gradient</Code>{" "}
-              only persists an angle, so the endpoint positions are derived
-              from the angle each render — not a separately stored property.
+              <strong>Linear.</strong> Two endpoint handles connected by a
+              dashed line. By default the line passes through the box center
+              and dragging rotates <Code>gradient.angle</Code>. The first
+              free drag promotes the gradient to <em>positioned</em> mode by
+              setting <Code>gradient.start</Code> and{" "}
+              <Code>gradient.end</Code> — endpoints can then sit anywhere
+              inside the box, and the line follows them. CSS{" "}
+              <Code>linear-gradient</Code> cannot represent an offset line
+              natively, so on emit the angle is derived from{" "}
+              <Code>end − start</Code> and stop positions are re-mapped into
+              the projected segment, giving the visual offset for free in
+              pure CSS. <Code>parseGradient</Code> cannot recover{" "}
+              <Code>start</Code>/<Code>end</Code> from the emitted form —
+              they are dropped on round-trip through a CSS string.
+              <Code>setAngle</Code> (e.g. via{" "}
+              <Code>{"<GradientPicker.AngleDial>"}</Code>) clears both
+              endpoints to return to the angle-only model.
             </li>
             <li>
               <strong>Radial.</strong> Center handle for{" "}
@@ -218,9 +230,12 @@ export default function DocsPage() {
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Keyboard.</strong> Every
             handle is a focusable <Code>{"<button>"}</Code> with appropriate{" "}
-            <Code>role</Code> / <Code>aria-*</Code>. Linear A and B and the
-            conic dial: ← / → / ↑ / ↓ nudge the angle by ±1° (±15° with
-            Shift), Home / End jump to 0° / 359°. The center handle nudges{" "}
+            <Code>role</Code> / <Code>aria-*</Code>. The conic dial — and
+            the linear endpoints in their angle-only default mode — nudge
+            the angle by ±1° (±15° with Shift), Home / End jump to 0° /
+            359°. Once a linear gradient is in positioned mode, the linear
+            endpoint arrows nudge the corresponding endpoint by ±1% (±5%
+            with Shift) in the box. The center handle nudges{" "}
             <Code>gradient.center</Code> by ±1% per arrow (±5% with Shift),
             Home recenters to (50%, 50%). The radial edge handle nudges{" "}
             <Code>gradient.radii</Code> by ±1% (±5% with Shift); Shift+drag

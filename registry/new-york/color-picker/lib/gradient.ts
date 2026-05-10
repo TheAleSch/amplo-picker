@@ -20,8 +20,29 @@ export interface GradientStop {
 
 export interface LinearGradient {
   type: "linear";
-  /** Degrees, 0..360. */
+  /**
+   * Degrees, 0..360. CSS gradient angle convention: 0deg = up, increases
+   * clockwise. Always present. When `start` and `end` are set, this field
+   * is kept in sync with `atan2(end - start)` so consumers reading `angle`
+   * alone still get a meaningful value.
+   */
   angle: number;
+  /**
+   * Optional start endpoint of the gradient line, normalized 0..1 of the
+   * gradient box in each axis. When both `start` and `end` are set, the
+   * gradient is treated as "positioned" — the line is the segment between
+   * them, and `formatGradient` emits CSS with stop positions adjusted so
+   * the visual transition happens between these two points (the CSS
+   * gradient line itself still passes through the box center because
+   * `linear-gradient` has no way to express an offset line, but the
+   * adjusted stop positions preserve the visual offset).
+   *
+   * When unset, the gradient behaves the legacy way: line passes through
+   * the box center, direction determined by `angle` only.
+   */
+  start?: { x: number; y: number };
+  /** Optional end endpoint. See `start`. */
+  end?: { x: number; y: number };
   stops: GradientStop[];
   interp: GradientInterp;
 }
@@ -129,9 +150,83 @@ function formatInterp(interp: GradientInterp): string {
   return interp;
 }
 
+/**
+ * Derive a CSS gradient angle (0deg = up, increases clockwise) from two
+ * box-normalized points. Returns undefined when the two points coincide.
+ */
+function angleFromPoints(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): number | undefined {
+  const dx = end.x - start.x;
+  // Box y axis points down in screen coords, but CSS gradient angle is
+  // measured with 0deg = up. Flip dy so the formula matches the visual.
+  const dy = -(end.y - start.y);
+  if (dx === 0 && dy === 0) return undefined;
+  // atan2(x, y) with CSS convention: angle = arctan2(dx, dy) gives 0 = up,
+  // increases clockwise. Same convention used by AngleDial and Area.
+  const deg = (Math.atan2(dx, dy) * 180) / Math.PI;
+  return ((deg % 360) + 360) % 360;
+}
+
+/**
+ * Re-map a list of stop positions so that the gradient transition happens
+ * between `start` and `end` along the CSS gradient line — which is always
+ * centered. We project `start` and `end` onto the gradient direction in
+ * box-normalized coordinates and remap each stop's position from its
+ * authored `[0, 1]` range into the projected `[startProj, endProj]` range.
+ *
+ * The CSS gradient line length depends on the actual box dimensions, so
+ * this projection uses a square unit-box as an approximation. In stretched
+ * containers the visual offset will be slightly off in proportion — the
+ * direction of the offset is always correct.
+ */
+function adjustStopsForEndpoints(
+  stops: GradientStop[],
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): GradientStop[] {
+  // Direction along the gradient line in *screen* coords (y down).
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const len = Math.hypot(dx, dy);
+  if (len === 0) return stops;
+  const ux = dx / len;
+  const uy = dy / len;
+  // CSS gradient line length in unit-box space along this direction.
+  const cssLen = Math.abs(ux) + Math.abs(uy);
+  // Project (point - center) onto unit dir, normalized so 0 = line start,
+  // 1 = line end. center = (0.5, 0.5) in box-normalized coords.
+  const project = (p: { x: number; y: number }) => {
+    const px = p.x - 0.5;
+    const py = p.y - 0.5;
+    const proj = px * ux + py * uy;
+    return 0.5 + proj / cssLen;
+  };
+  const startProj = project(start);
+  const endProj = project(end);
+  return stops.map((s) => ({
+    ...s,
+    position: startProj + (endProj - startProj) * s.position,
+    hint:
+      s.hint === undefined
+        ? undefined
+        : startProj + (endProj - startProj) * s.hint,
+  }));
+}
+
 export function formatGradient(g: Gradient): string {
   const interp = `in ${formatInterp(g.interp)}`;
   if (g.type === "linear") {
+    if (g.start && g.end) {
+      const derivedAngle = angleFromPoints(g.start, g.end);
+      // If start and end coincide (zero-length line), there's no meaningful
+      // direction — fall through to the plain angle form.
+      if (derivedAngle !== undefined) {
+        const adjusted = adjustStopsForEndpoints(g.stops, g.start, g.end);
+        return `linear-gradient(${interp} ${trim(derivedAngle)}deg, ${formatStops(adjusted)})`;
+      }
+    }
     return `linear-gradient(${interp} ${trim(g.angle)}deg, ${formatStops(g.stops)})`;
   }
   if (g.type === "radial") {

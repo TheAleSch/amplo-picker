@@ -72,6 +72,53 @@ describe("formatGradient", () => {
   });
 });
 
+describe("formatGradient — positioned linear", () => {
+  it("derives the angle from start/end when both are set", () => {
+    // start = top, end = bottom → CSS angle 180deg (gradient flows down)
+    const g: LinearGradient = {
+      ...DEFAULT_LINEAR,
+      start: { x: 0.5, y: 0 },
+      end: { x: 0.5, y: 1 },
+    };
+    const css = formatGradient(g);
+    expect(css).toContain("180deg");
+  });
+
+  it("re-maps stop positions when start/end are inset from box edges", () => {
+    // Center-symmetric segment with half-length: stops should land at 25%/75%.
+    const g: LinearGradient = {
+      ...DEFAULT_LINEAR,
+      angle: 90,
+      start: { x: 0.25, y: 0.5 },
+      end: { x: 0.75, y: 0.5 },
+    };
+    const css = formatGradient(g);
+    expect(css).toContain("oklch(1 0 0) 25%");
+    expect(css).toContain("oklch(0 0 0) 75%");
+  });
+
+  it("falls back to the angle form when start === end (degenerate line)", () => {
+    const g: LinearGradient = {
+      ...DEFAULT_LINEAR,
+      start: { x: 0.5, y: 0.5 },
+      end: { x: 0.5, y: 0.5 },
+    };
+    const css = formatGradient(g);
+    // Stops should keep their authored positions when there's no valid
+    // direction to project onto.
+    expect(css).toContain("oklch(1 0 0) 0%");
+    expect(css).toContain("oklch(0 0 0) 100%");
+  });
+
+  it("ignores start/end when only one is set", () => {
+    const g: LinearGradient = {
+      ...DEFAULT_LINEAR,
+      start: { x: 0.25, y: 0.5 },
+    };
+    expect(formatGradient(g)).toBe(formatGradient(DEFAULT_LINEAR));
+  });
+});
+
 describe("parseGradient", () => {
   it("round-trips a default linear gradient", () => {
     const css = formatGradient(DEFAULT_LINEAR);

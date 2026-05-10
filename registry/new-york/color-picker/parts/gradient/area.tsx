@@ -185,6 +185,14 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const cy = h / 2;
 
     if (gradient.type === "linear") {
+      if (gradient.start && gradient.end) {
+        // Positioned linear: endpoints can sit anywhere inside the box.
+        return {
+          a: { x: gradient.start.x * w, y: gradient.start.y * h },
+          b: { x: gradient.end.x * w, y: gradient.end.y * h },
+          showConnector: true,
+        };
+      }
       const dir = angleToDir(gradient.angle);
       // Inset the edge by half a handle so the dot stays fully inside the box
       // and doesn't get clipped by `overflow-hidden` on the container. The
@@ -249,10 +257,39 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const cy = h / 2;
 
     if (kind === "linear-a" || kind === "linear-b") {
-      let deg = dirToAngle(p.x - cx, p.y - cy);
-      if (kind === "linear-a") deg = (deg + 180) % 360;
-      if (shiftKey) deg = snapDeg(deg, 15);
-      ctx.setAngle(deg);
+      if (gradient.type !== "linear") return;
+      // Free position: drag puts the endpoint exactly where the pointer is.
+      // Promote the gradient to "positioned" mode by ensuring both `start`
+      // and `end` are populated — seed the other endpoint from the angle if
+      // this is the first drag.
+      const nx = Math.max(0, Math.min(1, p.x / w));
+      const ny = Math.max(0, Math.min(1, p.y / h));
+      const ensureOther = (existing: { x: number; y: number } | undefined) => {
+        if (existing) return existing;
+        // Seed from the current angle so the line keeps its visual direction
+        // for the very first drag — no visible jump on promotion.
+        const dir = angleToDir(gradient.angle);
+        const inset = HANDLE_PX / 2;
+        const t = edgeExtent(
+          dir,
+          Math.max(0, w / 2 - inset),
+          Math.max(0, h / 2 - inset),
+        );
+        // The "other" endpoint is opposite the one being dragged.
+        const sign = kind === "linear-a" ? 1 : -1;
+        const ox = cx + dir.x * t * sign;
+        const oy = cy + dir.y * t * sign;
+        return { x: ox / w, y: oy / h };
+      };
+      if (kind === "linear-a") {
+        const other = ensureOther(gradient.end);
+        if (!gradient.end) ctx.setLinearEnd(other);
+        ctx.setLinearStart({ x: nx, y: ny });
+      } else {
+        const other = ensureOther(gradient.start);
+        if (!gradient.start) ctx.setLinearStart(other);
+        ctx.setLinearEnd({ x: nx, y: ny });
+      }
       return;
     }
 
@@ -317,6 +354,35 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     if (next === null) return;
     e.preventDefault();
     ctx.setAngle(next);
+  };
+
+  const onKeyDownLinearEndpoint = (
+    which: "linear-a" | "linear-b",
+    e: React.KeyboardEvent<HTMLButtonElement>,
+  ) => {
+    if (gradient.type !== "linear") return;
+    const point =
+      which === "linear-a" ? gradient.start : gradient.end;
+    if (!point) {
+      // Fall back to angle rotation when this handle hasn't been promoted
+      // to free-position mode yet — keeps the angle-only behavior intact.
+      onKeyDownAngle(e);
+      return;
+    }
+    const step = e.shiftKey ? 0.05 : 0.01;
+    let { x, y } = point;
+    if (e.key === "ArrowLeft") x -= step;
+    else if (e.key === "ArrowRight") x += step;
+    else if (e.key === "ArrowUp") y -= step;
+    else if (e.key === "ArrowDown") y += step;
+    else return;
+    e.preventDefault();
+    const next = {
+      x: Math.max(0, Math.min(1, x)),
+      y: Math.max(0, Math.min(1, y)),
+    };
+    if (which === "linear-a") ctx.setLinearStart(next);
+    else ctx.setLinearEnd(next);
   };
 
   const onKeyDownConicDial = (e: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -449,24 +515,32 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                 label="Gradient start"
                 position={handles.a}
                 onPointerDown={beginDrag("linear-a")}
-                onKeyDown={onKeyDownAngle}
+                onKeyDown={(e) => onKeyDownLinearEndpoint("linear-a", e)}
                 role="slider"
                 aria-valuemin={0}
                 aria-valuemax={360}
                 aria-valuenow={Math.round(gradient.angle)}
-                aria-valuetext={`${Math.round(gradient.angle)} degrees`}
+                aria-valuetext={
+                  gradient.start
+                    ? `start x ${Math.round(gradient.start.x * 100)}%, y ${Math.round(gradient.start.y * 100)}%`
+                    : `${Math.round(gradient.angle)} degrees`
+                }
               />
               {handles.b && (
                 <Handle
                   label="Gradient end"
                   position={handles.b}
                   onPointerDown={beginDrag("linear-b")}
-                  onKeyDown={onKeyDownAngle}
+                  onKeyDown={(e) => onKeyDownLinearEndpoint("linear-b", e)}
                   role="slider"
                   aria-valuemin={0}
                   aria-valuemax={360}
                   aria-valuenow={Math.round(gradient.angle)}
-                  aria-valuetext={`${Math.round(gradient.angle)} degrees`}
+                  aria-valuetext={
+                    gradient.end
+                      ? `end x ${Math.round(gradient.end.x * 100)}%, y ${Math.round(gradient.end.y * 100)}%`
+                      : `${Math.round(gradient.angle)} degrees`
+                  }
                 />
               )}
             </>

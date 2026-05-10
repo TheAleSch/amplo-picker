@@ -53,6 +53,8 @@ function sortByPosition(stops: InternalStop[]): InternalStop[] {
   return [...stops].sort((a, b) => a.position - b.position);
 }
 
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
 function defaultsForType(type: GradientType): Gradient {
   if (type === "linear") return DEFAULT_LINEAR;
   if (type === "radial") return DEFAULT_RADIAL;
@@ -75,6 +77,17 @@ export interface GradientPickerState {
   setGradient: (next: Gradient) => void;
   setType: (type: GradientType) => void;
   setAngle: (angleDeg: number) => void;
+  /**
+   * Set the start endpoint of a linear gradient (normalized 0..1 of the
+   * gradient box). Promotes the gradient to "positioned" mode — when both
+   * `start` and `end` are set, the gradient is treated as a line between
+   * them rather than an angle-only construct. `angle` is kept in sync with
+   * the derived direction. Passing `undefined` clears the override and
+   * returns the gradient to the legacy angle-only behavior.
+   */
+  setLinearStart: (xy: { x: number; y: number } | undefined) => void;
+  /** Set the end endpoint of a linear gradient. See `setLinearStart`. */
+  setLinearEnd: (xy: { x: number; y: number } | undefined) => void;
   setStartAngle: (angleDeg: number) => void;
   setCenter: (xy: { x: number; y: number }) => void;
   setInterp: (interp: GradientInterp) => void;
@@ -197,10 +210,75 @@ export function useGradientPicker(
     (angleDeg: number) =>
       apply((prev) => {
         if (prev.gradient.type !== "linear") return prev;
-        return {
-          gradient: { ...(prev.gradient as LinearGradient), angle: angleDeg },
-          stops: prev.stops,
-        };
+        const cur = prev.gradient as LinearGradient;
+        // Setting an angle directly clears any free-position endpoints — the
+        // angle-only model can't represent both. Callers that want to
+        // preserve positioned mode should `setLinearStart` / `setLinearEnd`
+        // (which keep `angle` in sync with the derived direction).
+        const { start: _s, end: _e, ...rest } = cur;
+        const next: LinearGradient = { ...rest, angle: angleDeg };
+        return { gradient: next, stops: prev.stops };
+      }),
+    [apply],
+  );
+
+  const recomputeAngle = (
+    start: { x: number; y: number } | undefined,
+    end: { x: number; y: number } | undefined,
+    fallback: number,
+  ): number => {
+    if (!start || !end) return fallback;
+    const dx = end.x - start.x;
+    const dy = -(end.y - start.y); // y axis is down in box coords
+    if (dx === 0 && dy === 0) return fallback;
+    const deg = (Math.atan2(dx, dy) * 180) / Math.PI;
+    return ((deg % 360) + 360) % 360;
+  };
+
+  const setLinearStart = React.useCallback(
+    (xy: { x: number; y: number } | undefined) =>
+      apply((prev) => {
+        if (prev.gradient.type !== "linear") return prev;
+        const cur = prev.gradient as LinearGradient;
+        const next: LinearGradient = xy
+          ? {
+              ...cur,
+              start: { x: clamp01(xy.x), y: clamp01(xy.y) },
+              angle: recomputeAngle(
+                { x: clamp01(xy.x), y: clamp01(xy.y) },
+                cur.end,
+                cur.angle,
+              ),
+            }
+          : (() => {
+              const { start: _drop, ...rest } = cur;
+              return rest as LinearGradient;
+            })();
+        return { gradient: next, stops: prev.stops };
+      }),
+    [apply],
+  );
+
+  const setLinearEnd = React.useCallback(
+    (xy: { x: number; y: number } | undefined) =>
+      apply((prev) => {
+        if (prev.gradient.type !== "linear") return prev;
+        const cur = prev.gradient as LinearGradient;
+        const next: LinearGradient = xy
+          ? {
+              ...cur,
+              end: { x: clamp01(xy.x), y: clamp01(xy.y) },
+              angle: recomputeAngle(
+                cur.start,
+                { x: clamp01(xy.x), y: clamp01(xy.y) },
+                cur.angle,
+              ),
+            }
+          : (() => {
+              const { end: _drop, ...rest } = cur;
+              return rest as LinearGradient;
+            })();
+        return { gradient: next, stops: prev.stops };
       }),
     [apply],
   );
@@ -389,6 +467,8 @@ export function useGradientPicker(
     setGradient,
     setType,
     setAngle,
+    setLinearStart,
+    setLinearEnd,
     setStartAngle,
     setCenter,
     setInterp,

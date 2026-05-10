@@ -3,7 +3,11 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
-import { formatGradient, type LinearGradient } from "../../lib/gradient";
+import {
+  formatGradient,
+  sampleStopsAt,
+  type LinearGradient,
+} from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 
 export interface BarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -44,7 +48,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.target !== trackRef.current) return; // handles handle their own drag
     const pos = positionFromEvent(e.clientX);
-    ctx.addStop(pos);
+    ctx.addStop(pos, sampleStopsAt(ctx.stops, pos));
   };
 
   const startStopDrag = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {

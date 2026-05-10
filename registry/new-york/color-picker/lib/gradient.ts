@@ -293,3 +293,48 @@ export function parseFill(input: string): Fill | null {
   if (c) return { kind: "color", color: c };
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// sampleStopsAt — interpolate a stop color at an arbitrary 0..1 position
+// ---------------------------------------------------------------------------
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+// Shortest-path hue lerp on a 0..360 circle. Matches what users perceive in
+// an OKLCH-rendered gradient between two adjacent stops.
+function lerpHue(a: number, b: number, t: number): number {
+  let d = b - a;
+  if (d > 180) d -= 360;
+  else if (d < -180) d += 360;
+  return ((a + d * t) % 360 + 360) % 360;
+}
+
+/**
+ * Returns the OKLCH color at `position` (0..1) along a sorted-by-position
+ * stop list. Used by Bar so click-to-add picks the color the user sees.
+ * Interpolation is done in OKLCH regardless of the gradient's `interp`
+ * setting — the stops themselves are canonical OKLCH and that gives a
+ * perceptually sensible pick even when the visual paint uses sRGB/HSL.
+ */
+export function sampleStopsAt(
+  stops: GradientStop[],
+  position: number,
+): OklchColor {
+  if (stops.length === 0) return { l: 0.5, c: 0, h: 0, alpha: 1 };
+  const sorted = [...stops].sort((a, b) => a.position - b.position);
+  if (position <= sorted[0].position) return { ...sorted[0].color };
+  const last = sorted[sorted.length - 1];
+  if (position >= last.position) return { ...last.color };
+  let i = 0;
+  while (i < sorted.length - 1 && sorted[i + 1].position < position) i++;
+  const a = sorted[i];
+  const b = sorted[i + 1];
+  const span = b.position - a.position;
+  const t = span === 0 ? 0 : (position - a.position) / span;
+  return {
+    l: lerp(a.color.l, b.color.l, t),
+    c: lerp(a.color.c, b.color.c, t),
+    h: lerpHue(a.color.h, b.color.h, t),
+    alpha: lerp(a.color.alpha, b.color.alpha, t),
+  };
+}

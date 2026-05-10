@@ -333,7 +333,10 @@ function HeroPicker() {
       </FillPicker.Pane>
 
       <FillPicker.Pane mode="gradient" className="flex flex-col gap-3">
-        <GradientPicker.TypeSwitcher />
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
+        </div>
         <GradientPicker.Bar />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />

@@ -698,7 +698,10 @@ function GradientFullDemo() {
   return (
     <div className="w-full max-w-xs">
       <GradientPicker.Root value={g} onValueChange={setG}>
-        <GradientPicker.TypeSwitcher />
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
+        </div>
         <GradientPicker.Bar />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />
@@ -752,7 +755,10 @@ function FillPickerTabsDemo() {
       </FillPicker.Pane>
 
       <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
-        <GradientPicker.TypeSwitcher />
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
+        </div>
         <GradientPicker.Bar />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />
@@ -1002,7 +1008,10 @@ export function GradientFullDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
   return (
     <GradientPicker.Root value={g} onValueChange={setG}>
-      <GradientPicker.TypeSwitcher />
+      <div className="flex items-center justify-between">
+        <GradientPicker.TypeSwitcher />
+        <GradientPicker.ReverseStops />
+      </div>
       <GradientPicker.Bar />
       <GradientPicker.AngleDial />
       <GradientPicker.CenterPad />
@@ -1069,7 +1078,10 @@ export function FillPickerTabsDemo() {
       </FillPicker.Pane>
 
       <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
-        <GradientPicker.TypeSwitcher />
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
+        </div>
         <GradientPicker.Bar />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />

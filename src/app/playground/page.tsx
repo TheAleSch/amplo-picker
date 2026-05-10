@@ -78,12 +78,14 @@ type GradientPartKey =
   | "stopSwatches"
   | "interpSwitcher"
   | "presets"
-  | "cssInput";
+  | "cssInput"
+  | "reverseStops";
 
 type GradientPartsState = Record<GradientPartKey, boolean>;
 
 const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   typeSwitcher: true,
+  reverseStops: true,
   bar: true,
   angleDial: true,
   centerPad: true,
@@ -98,6 +100,7 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
 
 const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [
   { key: "typeSwitcher", label: "TypeSwitcher" },
+  { key: "reverseStops", label: "ReverseStops" },
   { key: "bar", label: "Bar" },
   { key: "angleDial", label: "AngleDial" },
   { key: "centerPad", label: "CenterPad" },
@@ -643,7 +646,16 @@ export default function PlaygroundPage() {
               )}
               {fillMode === "gradient" && (
                 <GradientPicker.Root value={gradient} onValueChange={setGradient}>
-                  {gradientParts.typeSwitcher && <GradientPicker.TypeSwitcher />}
+                  {(gradientParts.typeSwitcher || gradientParts.reverseStops) && (
+                    <div className="flex items-center justify-between">
+                      {gradientParts.typeSwitcher ? (
+                        <GradientPicker.TypeSwitcher />
+                      ) : (
+                        <span />
+                      )}
+                      {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                    </div>
+                  )}
                   {gradientParts.bar && <GradientPicker.Bar />}
                   {gradientParts.angleDial && <GradientPicker.AngleDial />}
                   {gradientParts.centerPad && <GradientPicker.CenterPad />}
@@ -695,7 +707,16 @@ export default function PlaygroundPage() {
                     <ColorPicker.ChannelInput />
                   </FillPicker.Pane>
                   <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
-                    {gradientParts.typeSwitcher && <GradientPicker.TypeSwitcher />}
+                    {(gradientParts.typeSwitcher || gradientParts.reverseStops) && (
+                      <div className="flex items-center justify-between">
+                        {gradientParts.typeSwitcher ? (
+                          <GradientPicker.TypeSwitcher />
+                        ) : (
+                          <span />
+                        )}
+                        {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                      </div>
+                    )}
                     {gradientParts.bar && <GradientPicker.Bar />}
                     {gradientParts.angleDial && <GradientPicker.AngleDial />}
                     {gradientParts.centerPad && <GradientPicker.CenterPad />}
@@ -1082,7 +1103,15 @@ function buildGradientPartsLines(
   stopColorChildren: string[],
 ): string[] {
   const lines: string[] = [];
-  if (parts.typeSwitcher) lines.push(`${indent}<GradientPicker.TypeSwitcher />`);
+  if (parts.typeSwitcher || parts.reverseStops) {
+    lines.push(`${indent}<div className="flex items-center justify-between">`);
+    if (parts.typeSwitcher)
+      lines.push(`${indent}  <GradientPicker.TypeSwitcher />`);
+    else lines.push(`${indent}  <span />`);
+    if (parts.reverseStops)
+      lines.push(`${indent}  <GradientPicker.ReverseStops />`);
+    lines.push(`${indent}</div>`);
+  }
   if (parts.bar) lines.push(`${indent}<GradientPicker.Bar />`);
   if (parts.angleDial) lines.push(`${indent}<GradientPicker.AngleDial />`);
   if (parts.centerPad) lines.push(`${indent}<GradientPicker.CenterPad />`);

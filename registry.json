@@ -163,6 +163,11 @@
           "target": "components/ui/fill-picker/parts/gradient/type-switcher.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/reverse-stops.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/reverse-stops.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/gradient/angle-dial.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/angle-dial.tsx"

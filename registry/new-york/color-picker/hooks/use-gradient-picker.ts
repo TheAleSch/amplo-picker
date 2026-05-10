@@ -85,6 +85,7 @@ export interface GradientPickerState {
   moveStop: (id: string, position: number) => void;
   setStopColor: (id: string, color: OklchColor) => void;
   setStopHint: (id: string, hint: number | undefined) => void;
+  reverseStops: () => void;
 }
 
 // ---- Hook ------------------------------------------------------------------
@@ -326,6 +327,23 @@ export function useGradientPicker(
     [apply],
   );
 
+  const reverseStops = React.useCallback(
+    () =>
+      apply((prev) => {
+        if (prev.stops.length < 2) return prev;
+        // Mirror each stop's position around 0.5 so the visual order flips
+        // while ids stay attached to their colors. Re-sort to keep the
+        // invariant that `stops` is position-ascending.
+        const flipped = prev.stops.map((s) => ({
+          ...s,
+          position: 1 - s.position,
+          hint: s.hint === undefined ? undefined : 1 - s.hint,
+        }));
+        return { gradient: prev.gradient, stops: sortByPosition(flipped) };
+      }),
+    [apply],
+  );
+
   // ---- Derived values ------------------------------------------------------
 
   const selectedStop = React.useMemo(
@@ -354,5 +372,6 @@ export function useGradientPicker(
     moveStop,
     setStopColor,
     setStopHint,
+    reverseStops,
   };
 }

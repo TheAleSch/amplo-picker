@@ -82,6 +82,35 @@ describe("useGradientPicker", () => {
     expect((result.current.gradient as Extract<Gradient, { type: "conic" }>).startAngle).toBe(0);
   });
 
+  it("reverseStops mirrors stop positions around 0.5 and keeps ids attached to colors", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({
+        defaultValue: {
+          ...DEFAULT_LINEAR,
+          stops: [
+            { color: { l: 1, c: 0, h: 0, alpha: 1 }, position: 0 },
+            { color: { l: 0.5, c: 0.2, h: 200, alpha: 1 }, position: 0.3 },
+            { color: { l: 0, c: 0, h: 0, alpha: 1 }, position: 1 },
+          ],
+        },
+      }),
+    );
+    const ids = result.current.stops.map((s) => s.id);
+    const colorsByOriginalId = new Map(
+      result.current.stops.map((s) => [s.id, s.color]),
+    );
+    act(() => {
+      result.current.reverseStops();
+    });
+    const positionsAfter = result.current.stops.map((s) => s.position);
+    expect(positionsAfter).toEqual([0, 0.7, 1]);
+    // Each original id still points at the same color it had.
+    for (const s of result.current.stops) {
+      expect(s.color).toEqual(colorsByOriginalId.get(s.id));
+    }
+    expect(new Set(result.current.stops.map((s) => s.id))).toEqual(new Set(ids));
+  });
+
   it("onValueChange emits a clean Gradient (no internal ids)", () => {
     let emitted: Gradient | null = null;
     const { result } = renderHook(() =>

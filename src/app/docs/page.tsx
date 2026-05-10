@@ -153,7 +153,7 @@ export default function DocsPage() {
 
           <Example
             title="Full"
-            description="All gradient parts composed together: type switcher, bar, angle dial, center pad, radial shape, stop list, full color editor, interpolation switcher, and presets."
+            description="All gradient parts composed together: type switcher, bar, the visual Area pad, angle dial, center pad, radial shape, stop list, full color editor, interpolation switcher, and presets."
             preview={<GradientFullDemo />}
             code={GRADIENT_FULL_CODE}
           />
@@ -169,13 +169,87 @@ export default function DocsPage() {
             <strong className="text-foreground">Keyboard.</strong>{" "}
             <Code>Bar</Code> stops respond to ← / → (±1%, ±5% with Shift) and
             Delete / Backspace to remove. <Code>AngleDial</Code> responds to
-            arrow keys (±1°, ±15° with Shift) and Home / End. <Code>StopList</Code>{" "}
-            is a listbox — Enter or Space select the focused row, Delete /
+            arrow keys (±1°, ±15° with Shift) and Home / End. Every{" "}
+            <Code>Area</Code> handle is focusable and editable from the
+            keyboard too — see the section below. <Code>StopList</Code> is a
+            listbox — Enter or Space select the focused row, Delete /
             Backspace removes it. Every interactive part exposes a{" "}
             <Code>data-slot</Code> attribute (
-            <Code>gradient-bar</Code>, <Code>gradient-angle-dial</Code>,{" "}
-            <Code>gradient-center-pad</Code>, <Code>gradient-stop-list</Code>,{" "}
-            etc.) for unstyled-targetable composition.
+            <Code>gradient-bar</Code>, <Code>gradient-area</Code>,{" "}
+            <Code>gradient-angle-dial</Code>, <Code>gradient-center-pad</Code>,
+            {" "}<Code>gradient-stop-list</Code>, etc.) for
+            unstyled-targetable composition.
+          </p>
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <H2 id="gradient-area">Visual Area pad</H2>
+          <p>
+            <Code>{"<GradientPicker.Area>"}</Code> is a 2D pad that paints the
+            live gradient and overlays draggable handles on top — a visual
+            complement to <Code>{"<GradientPicker.AngleDial>"}</Code> and{" "}
+            <Code>{"<GradientPicker.CenterPad>"}</Code>. The handles are{" "}
+            <em>type-adaptive</em>:
+          </p>
+          <ul className="ml-5 list-disc text-sm text-muted-foreground [&_strong]:text-foreground">
+            <li>
+              <strong>Linear.</strong> Two opposite-edge handles connected by
+              a dashed line through the box center. Dragging either rotates{" "}
+              <Code>gradient.angle</Code>. CSS <Code>linear-gradient</Code>{" "}
+              only persists an angle, so the endpoint positions are derived
+              from the angle each render — not a separately stored property.
+            </li>
+            <li>
+              <strong>Radial.</strong> Center handle for{" "}
+              <Code>gradient.center</Code> plus an edge handle that drives{" "}
+              <Code>gradient.radii</Code> — an optional{" "}
+              <Code>{"{ x, y }"}</Code> pair (fractions of box width / height)
+              that overrides the keyword <Code>shape</Code> +{" "}
+              <Code>size</Code> form at emit time. Until the user touches the
+              edge handle, the radii stay <Code>undefined</Code> and the
+              keyword form is emitted verbatim.
+            </li>
+            <li>
+              <strong>Conic.</strong> Center handle plus a dial handle locked
+              on a ring around it; rotating the dial drives{" "}
+              <Code>gradient.startAngle</Code>.
+            </li>
+          </ul>
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Keyboard.</strong> Every
+            handle is a focusable <Code>{"<button>"}</Code> with appropriate{" "}
+            <Code>role</Code> / <Code>aria-*</Code>. Linear A and B and the
+            conic dial: ← / → / ↑ / ↓ nudge the angle by ±1° (±15° with
+            Shift), Home / End jump to 0° / 359°. The center handle nudges{" "}
+            <Code>gradient.center</Code> by ±1% per arrow (±5% with Shift),
+            Home recenters to (50%, 50%). The radial edge handle nudges{" "}
+            <Code>gradient.radii</Code> by ±1% (±5% with Shift); Shift+drag
+            on pointer locks the ellipse to a visual circle on screen.
+          </p>
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <H2 id="gradient-radial-size">Radial size and extent keywords</H2>
+          <p>
+            CSS <Code>radial-gradient</Code> can describe the ellipse in two
+            ways: an <em>extent keyword</em> that auto-resizes the ellipse
+            relative to the gradient box, or explicit{" "}
+            <Code>{"<length-percentage>{1,2}"}</Code> radii. The picker
+            preserves both forms via the optional{" "}
+            <Code>gradient.radii</Code> field — when set, explicit numeric
+            radii are emitted; when unset, the keyword form is emitted from{" "}
+            <Code>shape</Code> + <Code>size</Code>.
+          </p>
+          <PropsTable rows={EXTENT_KEYWORD_ROWS} />
+          <p className="text-sm text-muted-foreground">
+            All four keywords are typed as{" "}
+            <Code>RadialSizeKeyword</Code> (exported from the picker barrel)
+            and are round-tripped by <Code>parseGradient</Code>{" "}
+            /&nbsp;<Code>formatGradient</Code>. The two extremes —{" "}
+            <Code>closest-side</Code> and <Code>farthest-corner</Code> —
+            cover most use cases; <Code>closest-corner</Code> and{" "}
+            <Code>farthest-side</Code> are there for round-tripping
+            handwritten CSS without losing information.
           </p>
         </section>
 
@@ -703,6 +777,7 @@ function GradientFullDemo() {
           <GradientPicker.ReverseStops />
         </div>
         <GradientPicker.Bar />
+        <GradientPicker.Area />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />
         <GradientPicker.RadialShape />
@@ -760,9 +835,9 @@ function FillPickerTabsDemo() {
           <GradientPicker.ReverseStops />
         </div>
         <GradientPicker.Bar />
+        <GradientPicker.Area />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />
-        <GradientPicker.RadialShape />
         <GradientPicker.StopList />
         <GradientPicker.StopColor>
           <ColorPicker.Hue />
@@ -1013,6 +1088,7 @@ export function GradientFullDemo() {
         <GradientPicker.ReverseStops />
       </div>
       <GradientPicker.Bar />
+      <GradientPicker.Area />
       <GradientPicker.AngleDial />
       <GradientPicker.CenterPad />
       <GradientPicker.RadialShape />
@@ -1083,9 +1159,9 @@ export function FillPickerTabsDemo() {
           <GradientPicker.ReverseStops />
         </div>
         <GradientPicker.Bar />
+        <GradientPicker.Area />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />
-        <GradientPicker.RadialShape />
         <GradientPicker.StopList />
         <GradientPicker.StopColor>
           <ColorPicker.Hue />
@@ -1188,6 +1264,33 @@ const ROOT_PROPS: PropRow[] = [
     type: "string | OklchColor",
     default: "#fff",
     desc: "Background used for contrast metrics and Preview compositing.",
+  },
+];
+
+const EXTENT_KEYWORD_ROWS: PropRow[] = [
+  {
+    name: '"closest-side"',
+    type: "closest-side",
+    desc: "Ellipse / circle ends at the nearest box edge. Smallest, snuggest gradient — the inner colors get the most room.",
+    default: "—",
+  },
+  {
+    name: '"closest-corner"',
+    type: "closest-corner",
+    desc: "Ends at the closest corner of the box. Slightly larger than closest-side. Rarely used directly but kept for round-tripping handwritten CSS.",
+    default: "—",
+  },
+  {
+    name: '"farthest-side"',
+    type: "farthest-side",
+    desc: "Ends at the farthest edge of the box. Bigger than closest-corner but smaller than farthest-corner.",
+    default: "—",
+  },
+  {
+    name: '"farthest-corner"',
+    type: "farthest-corner",
+    desc: "Ends at the farthest corner of the box. Fills the most space — the CSS default.",
+    default: "default",
   },
 ];
 

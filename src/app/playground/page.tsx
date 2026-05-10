@@ -91,7 +91,10 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   area: true,
   angleDial: true,
   centerPad: true,
-  radialShape: true,
+  // RadialShape ships off by default — the new Area edge handle is the
+  // primary way to size a radial gradient now. Toggle on if you still want
+  // the explicit shape + extent-keyword dropdown.
+  radialShape: false,
   stopList: true,
   stopColor: true,
   stopSwatches: false,

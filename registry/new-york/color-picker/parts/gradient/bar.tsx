@@ -4,6 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import { formatGradient, type LinearGradient } from "../../lib/gradient";
+import { formatColor } from "../../lib/color";
 
 export interface BarProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Bar height in px. Defaults to 24. */
@@ -122,11 +123,13 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             onKeyDown={onStopKeyDown(s.id, s.position)}
             style={{
               left: `${s.position * 100}%`,
-              transform: "translate(-50%, -2px)",
+              width: height,
+              height,
+              background: formatColor(s.color, "oklch"),
             }}
             className={cn(
-              "absolute top-full size-3 cursor-grab rounded-full border bg-background",
-              selected ? "border-foreground ring-2 ring-foreground/40" : "border-border",
+              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-white shadow-sm",
+              selected && "outline-2 outline-offset-1 outline-ring",
             )}
           />
         );

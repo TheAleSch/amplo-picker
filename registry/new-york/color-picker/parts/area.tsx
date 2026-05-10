@@ -112,20 +112,26 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
 
   React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
 
-  // Depend on color values, not on the OKLCH object identity. A controlled
-  // ColorPicker may receive a fresh OklchColor reference each render even
-  // when the values are unchanged (e.g., parent context recomputes derived
-  // state); reacting to identity would fire this effect every render and,
-  // under React 19's stricter detection, can register as a setState-in-effect
-  // loop even though `setPickPos(null)` would otherwise bail.
-  React.useEffect(() => {
+  // Adjusting state during rendering — React-blessed alternative to
+  // syncing color → pickPos in a useEffect. We compare channel values
+  // (not the OKLCH object identity, which a controlled ColorPicker may
+  // re-create each render even when values are unchanged) against the
+  // previous render's snapshot. When the user-driven path moved the
+  // bead, `selfSetRef` short-circuits the clear so the override sticks.
+  const [prevColor, setPrevColor] = React.useState(color);
+  if (
+    prevColor.l !== color.l ||
+    prevColor.c !== color.c ||
+    prevColor.h !== color.h ||
+    prevColor.alpha !== color.alpha
+  ) {
+    setPrevColor(color);
     if (selfSetRef.current) {
       selfSetRef.current = false;
-      return;
+    } else if (pickPos !== null) {
+      setPickPos(null);
     }
-    setPickPos((prev) => (prev === null ? prev : null));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [color.l, color.c, color.h, color.alpha]);
+  }
 
   // The gradient and warning lines depend only on the axis the mode keeps
   // *fixed* (hue for oklch-cl/hsv-sv, lightness for oklch-hc). Depending on

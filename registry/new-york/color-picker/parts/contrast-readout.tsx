@@ -62,9 +62,13 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
       defaultMetric && metrics.includes(defaultMetric) ? defaultMetric : metrics[0];
     const [active, setActive] = React.useState<ContrastMetric>(initial);
 
-    React.useEffect(() => {
-      if (!metrics.includes(active)) setActive(metrics[0]);
-    }, [metrics, active]);
+    // If the parent narrows `metrics` so the previously-active option is no
+    // longer offered, fall back to the first one. Adjusting state during
+    // rendering — no useEffect needed; React re-renders synchronously and the
+    // updated state is visible to the rest of this render pass.
+    if (!metrics.includes(active)) {
+      setActive(metrics[0]);
+    }
 
     const togglable = metrics.length > 1;
     const cycle = () => {

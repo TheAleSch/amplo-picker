@@ -428,6 +428,21 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     ctx.moveStop(id, Math.max(0, Math.min(1, next)));
   };
 
+  /**
+   * Stack three background layers so a handle dot shows the stop's actual
+   * color (alpha intact) while still fully occluding the dashed gradient
+   * line behind it: stop-color on top, checkerboard underneath so
+   * transparency reads as transparency, and the Handle's own solid
+   * `bg-background` at the bottom for the final opacity guarantee.
+   */
+  const stopSwatchStyle = (color: typeof ctx.stops[number]["color"]) => {
+    const css = formatColor(color, "oklch");
+    return {
+      backgroundImage: `linear-gradient(${css}, ${css}), ${CHECKERBOARD}`,
+      backgroundSize: "auto, 6px 6px",
+    } as const;
+  };
+
   const onKeyDownAngle = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (gradient.type !== "linear") return;
     const next = rotate(gradient.angle, e);
@@ -605,6 +620,11 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                     ? `start x ${Math.round(gradient.start.x * 100)}%, y ${Math.round(gradient.start.y * 100)}%`
                     : `${Math.round(gradient.angle)} degrees`
                 }
+                // Endpoint handles are always anchored to the first / last
+                // stop, so they render in that stop's color.
+                style={
+                  ctx.stops[0] ? stopSwatchStyle(ctx.stops[0].color) : undefined
+                }
               />
               {handles.b && (
                 <Handle
@@ -621,6 +641,10 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                       ? `end x ${Math.round(gradient.end.x * 100)}%, y ${Math.round(gradient.end.y * 100)}%`
                       : `${Math.round(gradient.angle)} degrees`
                   }
+                  style={(() => {
+                    const last = ctx.stops[ctx.stops.length - 1];
+                    return last ? stopSwatchStyle(last.color) : undefined;
+                  })()}
                 />
               )}
               {/* Middle-stop handles: every stop between the first and last
@@ -651,21 +675,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                       aria-valuemax={100}
                       aria-valuenow={pct}
                       aria-valuetext={`${pct} percent`}
-                      // Render the stop's actual color including alpha, but
-                      // never let the dashed gradient line show through.
-                      // Stack three layers from top to bottom:
-                      //   1. the stop color (may be translucent)
-                      //   2. a small-scale checkerboard so transparency
-                      //      reads as transparency, not as the line behind
-                      //   3. the Handle's solid `bg-background` (from
-                      //      className) — guarantees full opacity
-                      style={(() => {
-                        const css = formatColor(s.color, "oklch");
-                        return {
-                          backgroundImage: `linear-gradient(${css}, ${css}), ${CHECKERBOARD}`,
-                          backgroundSize: "auto, 6px 6px",
-                        };
-                      })()}
+                      style={stopSwatchStyle(s.color)}
                     />
                   );
                 })}

@@ -9,6 +9,7 @@ import {
   DEFAULT_LINEAR,
   formatGradient,
   formatFill,
+  BUILTIN_GRADIENT_PRESETS,
   type Gradient,
   type Fill,
 } from "@/registry/new-york/color-picker/fill-picker";
@@ -343,6 +344,14 @@ export default function PlaygroundPage() {
   const toggleGradientPart = (k: GradientPartKey) =>
     setGradientParts((p) => ({ ...p, [k]: !p[k] }));
   const [gradient, setGradient] = React.useState<Gradient>(DEFAULT_LINEAR);
+  const [savedGradients, setSavedGradients] = React.useState<string[]>([]);
+  const addGradientPreset = React.useCallback((_g: Gradient, css: string) => {
+    setSavedGradients((prev) => (prev.includes(css) ? prev : [...prev, css]));
+  }, []);
+  const gradientPresets = React.useMemo(
+    () => [...BUILTIN_GRADIENT_PRESETS, ...savedGradients],
+    [savedGradients],
+  );
   const [fill, setFill] = React.useState<Fill>(() => ({
     kind: "color",
     color: parseColor("oklch(0.7 0.18 30)")!,
@@ -660,7 +669,12 @@ export default function PlaygroundPage() {
                   )}
                   {gradientParts.stopList && <GradientPicker.StopList />}
                   {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
-                  {gradientParts.presets && <GradientPicker.Presets />}
+                  {gradientParts.presets && (
+                    <GradientPicker.Presets
+                      presets={gradientPresets}
+                      onAdd={addGradientPreset}
+                    />
+                  )}
                   {gradientParts.cssInput && <GradientPicker.CssInput />}
                 </GradientPicker.Root>
               )}
@@ -707,7 +721,12 @@ export default function PlaygroundPage() {
                     )}
                     {gradientParts.stopList && <GradientPicker.StopList />}
                     {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
-                    {gradientParts.presets && <GradientPicker.Presets />}
+                    {gradientParts.presets && (
+                    <GradientPicker.Presets
+                      presets={gradientPresets}
+                      onAdd={addGradientPreset}
+                    />
+                  )}
                     {gradientParts.cssInput && <GradientPicker.CssInput />}
                   </FillPicker.Pane>
                 </FillPicker.Root>

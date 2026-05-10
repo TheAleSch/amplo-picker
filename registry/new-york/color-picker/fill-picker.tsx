@@ -20,7 +20,7 @@ import { RadialShape } from "./parts/gradient/radial-shape";
 import { StopList } from "./parts/gradient/stop-list";
 import { StopColor } from "./parts/gradient/stop-color";
 import { InterpSwitcher } from "./parts/gradient/interp-switcher";
-import { Presets } from "./parts/gradient/presets";
+import { Presets, BUILTIN_GRADIENT_PRESETS } from "./parts/gradient/presets";
 import { CssInput as GradientCssInput } from "./parts/gradient/css-input";
 
 export type {
@@ -44,6 +44,7 @@ export {
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
 } from "./lib/gradient";
+export { BUILTIN_GRADIENT_PRESETS };
 export { useGradientPicker } from "./hooks/use-gradient-picker";
 export type {
   UseGradientPickerProps,

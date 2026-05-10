@@ -11,6 +11,7 @@ import {
   ColorPicker,
   FillPicker,
   GradientPicker,
+  BUILTIN_GRADIENT_PRESETS,
   type Fill,
 } from "@/registry/new-york/color-picker/fill-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
@@ -284,6 +285,14 @@ function HeroPicker() {
   const addSwatch = React.useCallback((_c: OklchColor, hex: string) => {
     setSavedSwatches((prev) => (prev.includes(hex) ? prev : [...prev, hex]));
   }, []);
+  const [savedGradients, setSavedGradients] = React.useState<string[]>([]);
+  const gradientPresets = React.useMemo(
+    () => [...BUILTIN_GRADIENT_PRESETS, ...savedGradients],
+    [savedGradients],
+  );
+  const addGradient = React.useCallback((_g: unknown, css: string) => {
+    setSavedGradients((prev) => (prev.includes(css) ? prev : [...prev, css]));
+  }, []);
 
   return (
     <FillPicker.Root
@@ -341,7 +350,7 @@ function HeroPicker() {
           </div>
           <ColorPicker.ChannelInput showFormat={false} />
         </GradientPicker.StopColor>
-        <GradientPicker.Presets />
+        <GradientPicker.Presets presets={gradientPresets} onAdd={addGradient} />
       </FillPicker.Pane>
     </FillPicker.Root>
   );

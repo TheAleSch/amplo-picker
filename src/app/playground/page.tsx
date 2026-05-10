@@ -650,7 +650,7 @@ export default function PlaygroundPage() {
                         <ColorPicker.FormatSwitcher className="flex-1" />
                         <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
                       </div>
-                      <ColorPicker.ChannelInput />
+                      <ColorPicker.ChannelInput showFormat={false} />
                       {gradientParts.stopSwatches && (
                         <ColorPicker.Swatches
                           presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
@@ -697,7 +697,7 @@ export default function PlaygroundPage() {
                           <ColorPicker.FormatSwitcher className="flex-1" />
                           <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
                         </div>
-                        <ColorPicker.ChannelInput />
+                        <ColorPicker.ChannelInput showFormat={false} />
                         {gradientParts.stopSwatches && (
                           <ColorPicker.Swatches
                             presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
@@ -1091,7 +1091,7 @@ function stopColorChildren(includeSwatches: boolean): string[] {
     `  <ColorPicker.FormatSwitcher className="flex-1" />`,
     `  <ColorPicker.EyeDropper className="h-8 w-full flex-1" />`,
     "</div>",
-    "<ColorPicker.ChannelInput />",
+    "<ColorPicker.ChannelInput showFormat={false} />",
   ];
   if (includeSwatches)
     lines.push(`<ColorPicker.Swatches presets={["#fff", "#000", "oklch(0.7 0.18 30)"]} />`);

@@ -29,6 +29,7 @@ const TOC = [
   ["usage", "Usage"],
   ["examples", "Examples"],
   ["gradient-picker", "Gradient picker"],
+  ["gradient-interp", "Interpolation"],
   ["fill-picker", "Fill picker (tabs)"],
   ["anatomy", "Anatomy"],
   ["api-root", "API: <ColorPicker.Root>"],
@@ -163,6 +164,29 @@ export default function DocsPage() {
             preview={<GradientBarOnlyDemo />}
             code={GRADIENT_BAR_ONLY_CODE}
           />
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <H2 id="gradient-interp">Interpolation</H2>
+          <p>
+            <Code>{"<GradientPicker.InterpSwitcher>"}</Code> is a native{" "}
+            <Code>{"<select>"}</Code> bound to <Code>gradient.interp</Code>. It
+            picks the color space the browser blends through{" "}
+            <em>between</em> stops — stop positions and stop colors are
+            untouched. Each option emits the matching CSS Color 4{" "}
+            <Code>{"in <space>"}</Code> clause when the gradient is serialized:
+          </p>
+          <PropsTable rows={INTERP_ROWS} />
+          <p className="text-sm text-muted-foreground">
+            Default is <Code>oklch</Code>. The component reads from and writes
+            to <Code>{"<GradientPicker.Root>"}</Code> context (throws if
+            rendered outside it). It accepts every standard{" "}
+            <Code>SelectHTMLAttributes</Code> prop (<Code>className</Code>,{" "}
+            <Code>disabled</Code>, <Code>onBlur</Code>, etc.) and forwards a
+            ref to the underlying <Code>{"<select>"}</Code>; <Code>value</Code>,{" "}
+            <Code>onChange</Code>, and <Code>aria-label</Code> are managed
+            internally and any passed values for those will be overwritten.
+          </p>
         </section>
 
         <section className="flex flex-col gap-6">
@@ -1139,6 +1163,39 @@ const ROOT_PROPS: PropRow[] = [
     type: "string | OklchColor",
     default: "#fff",
     desc: "Background used for contrast metrics and Preview compositing.",
+  },
+];
+
+const INTERP_ROWS: PropRow[] = [
+  {
+    name: '"oklch"',
+    type: "in oklch",
+    desc: "Perceptually uniform polar interpolation. Hue arcs the short way; chroma/lightness blend evenly. No muddy mid-tones; the canonical default and what every example in this site uses.",
+    default: "default",
+  },
+  {
+    name: '"oklab"',
+    type: "in oklab",
+    desc: "Perceptually uniform but cartesian (no hue circle). Slightly less vivid than oklch for far-apart hues but avoids hue overshoot when stops sit on opposite sides of the wheel.",
+    default: "—",
+  },
+  {
+    name: '"srgb"',
+    type: "in srgb",
+    desc: "Per-channel linear interpolation in sRGB. Matches the legacy browser default; produces gray/muddy midpoints for far-apart hues. Use when you need byte-identical output to a pre-CSS-Color-4 design tool.",
+    default: "—",
+  },
+  {
+    name: '"hsl"',
+    type: "in hsl",
+    desc: "HSL interpolation taking the *shorter* path around the hue wheel. Stays vivid through the midpoint (no gray) but can produce surprising hue choices when stops are nearly opposite.",
+    default: "—",
+  },
+  {
+    name: '"hsl-longer"',
+    type: "in hsl longer hue",
+    desc: "HSL interpolation forced to take the *longer* arc. Two close hues sweep through the entire opposite half of the wheel — the rainbow effect.",
+    default: "—",
   },
 ];
 

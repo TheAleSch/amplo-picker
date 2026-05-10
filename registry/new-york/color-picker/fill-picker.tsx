@@ -35,6 +35,7 @@ export type {
   GradientStop,
   LinearGradient,
   RadialGradient,
+  RadialSizeKeyword,
   ConicGradient,
 } from "./lib/gradient";
 export {

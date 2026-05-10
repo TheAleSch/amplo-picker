@@ -12,6 +12,7 @@ import {
   type GradientType,
   type LinearGradient,
   type RadialGradient,
+  type RadialSizeKeyword,
   type ConicGradient,
 } from "../lib/gradient";
 import type { OklchColor } from "../lib/types";
@@ -78,7 +79,7 @@ export interface GradientPickerState {
   setCenter: (xy: { x: number; y: number }) => void;
   setInterp: (interp: GradientInterp) => void;
   setRadialShape: (shape: "circle" | "ellipse") => void;
-  setRadialSize: (size: "closest-side" | "farthest-corner") => void;
+  setRadialSize: (size: RadialSizeKeyword) => void;
   /**
    * Set explicit numeric radii on the active radial gradient. Each value is
    * a 0..1 fraction of the gradient box (x→width, y→height). Passing
@@ -250,7 +251,7 @@ export function useGradientPicker(
   );
 
   const setRadialSize = React.useCallback(
-    (size: "closest-side" | "farthest-corner") =>
+    (size: RadialSizeKeyword) =>
       apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
         return {

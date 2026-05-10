@@ -100,6 +100,18 @@ describe("parseGradient", () => {
     expect((parsed as { radii?: unknown }).radii).toBeUndefined();
   });
 
+  it("round-trips all four radial extent keywords", () => {
+    for (const size of [
+      "closest-side",
+      "closest-corner",
+      "farthest-side",
+      "farthest-corner",
+    ] as const) {
+      const g = { ...DEFAULT_RADIAL, size };
+      expect(parseGradient(formatGradient(g))).toEqual(g);
+    }
+  });
+
   it("round-trips a conic gradient", () => {
     const css = formatGradient(DEFAULT_CONIC);
     expect(parseGradient(css)).toEqual(DEFAULT_CONIC);

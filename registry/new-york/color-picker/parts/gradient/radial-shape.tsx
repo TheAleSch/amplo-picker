@@ -3,6 +3,14 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import type { RadialSizeKeyword } from "../../lib/gradient";
+
+const SIZE_OPTIONS: RadialSizeKeyword[] = [
+  "closest-side",
+  "closest-corner",
+  "farthest-side",
+  "farthest-corner",
+];
 
 export const RadialShape = React.forwardRef<
   HTMLDivElement,
@@ -44,14 +52,15 @@ export const RadialShape = React.forwardRef<
       </div>
       <select
         value={g.size}
-        onChange={(e) =>
-          ctx.setRadialSize(e.target.value as "closest-side" | "farthest-corner")
-        }
+        onChange={(e) => ctx.setRadialSize(e.target.value as RadialSizeKeyword)}
         className="h-8 rounded-md border border-border bg-background px-2 text-xs"
         aria-label="Radial size"
       >
-        <option value="closest-side">closest-side</option>
-        <option value="farthest-corner">farthest-corner</option>
+        {SIZE_OPTIONS.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
       </select>
     </div>
   );

@@ -26,12 +26,24 @@ export interface LinearGradient {
   interp: GradientInterp;
 }
 
+/**
+ * CSS radial-gradient extent keywords — the four values the spec allows in
+ * the `<size>` slot. They describe how far the gradient ellipse reaches
+ * from its center, measured to either a side or a corner of the gradient
+ * box. Spec: https://www.w3.org/TR/css-images-3/#valdef-radial-gradient-extent-keyword
+ */
+export type RadialSizeKeyword =
+  | "closest-side"
+  | "closest-corner"
+  | "farthest-side"
+  | "farthest-corner";
+
 export interface RadialGradient {
   type: "radial";
   shape: "circle" | "ellipse";
   /** Normalized 0..1 in each axis. */
   center: { x: number; y: number };
-  size: "closest-side" | "farthest-corner";
+  size: RadialSizeKeyword;
   /**
    * Optional explicit radii. When set, takes precedence over `shape`+`size`
    * for CSS emission. `x` is a fraction of the gradient box width, `y` a
@@ -244,14 +256,20 @@ export function parseGradient(input: string): Gradient | null {
     const stopParts = parts.slice(1);
 
     let shape: "circle" | "ellipse" = "ellipse";
-    let size: "closest-side" | "farthest-corner" = "farthest-corner";
+    let size: RadialSizeKeyword = "farthest-corner";
     let cx = 0.5;
     let cy = 0.5;
     let radii: { x: number; y: number } | undefined;
 
     if (/\bcircle\b/i.test(head)) shape = "circle";
     else if (/\bellipse\b/i.test(head)) shape = "ellipse";
-    if (/\bclosest-side\b/i.test(head)) size = "closest-side";
+    // Order matters: `closest-corner` and `farthest-side` must be checked
+    // before the shorter `closest-side` and `farthest-corner` to avoid the
+    // longer keyword being partially matched. Using anchored \b regexes
+    // sidesteps that issue regardless of order.
+    if (/\bclosest-corner\b/i.test(head)) size = "closest-corner";
+    else if (/\bclosest-side\b/i.test(head)) size = "closest-side";
+    else if (/\bfarthest-side\b/i.test(head)) size = "farthest-side";
     else if (/\bfarthest-corner\b/i.test(head)) size = "farthest-corner";
 
     // Explicit two-value ending shape (e.g. "48% 30%") — appears before `at`.

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
-import { formatGradient } from "../../lib/gradient";
+import { formatGradient, type RadialSizeKeyword } from "../../lib/gradient";
 
 export interface AreaProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Fixed height in px. Defaults to 120. Width always fills the container. */
@@ -70,41 +70,54 @@ function snapDeg(deg: number, step: number): number {
  * user has touched it. Returns radii as fractions of the box width/height
  * matching the CSS `<length-percentage>{1,2}` convention.
  *
- * For `farthest-corner` on ellipse we deliberately approximate by stretching
- * each axis to the farthest side rather than implementing the exact CSS
- * spec — once the user drags, they own the radii anyway.
+ * For corner-targeting keywords on ellipse we deliberately approximate by
+ * stretching each axis to the appropriate side rather than implementing the
+ * exact CSS spec — once the user drags, they own the radii anyway.
  */
 function keywordToRadii(
   shape: "circle" | "ellipse",
-  size: "closest-side" | "farthest-corner",
+  size: RadialSizeKeyword,
   center: { x: number; y: number },
   w: number,
   h: number,
 ): { x: number; y: number } {
   const cx = center.x * w;
   const cy = center.y * h;
+  const dxClose = Math.min(cx, w - cx);
+  const dxFar = Math.max(cx, w - cx);
+  const dyClose = Math.min(cy, h - cy);
+  const dyFar = Math.max(cy, h - cy);
   if (shape === "circle") {
-    const rPx =
-      size === "closest-side"
-        ? Math.min(cx, w - cx, cy, h - cy)
-        : Math.max(
-            Math.hypot(cx, cy),
-            Math.hypot(w - cx, cy),
-            Math.hypot(cx, h - cy),
-            Math.hypot(w - cx, h - cy),
-          );
+    let rPx: number;
+    switch (size) {
+      case "closest-side":
+        rPx = Math.min(dxClose, dyClose);
+        break;
+      case "closest-corner":
+        rPx = Math.hypot(dxClose, dyClose);
+        break;
+      case "farthest-side":
+        rPx = Math.max(dxFar, dyFar);
+        break;
+      case "farthest-corner":
+        rPx = Math.hypot(dxFar, dyFar);
+        break;
+    }
     return { x: rPx / w, y: rPx / h };
   }
-  if (size === "closest-side") {
-    return {
-      x: Math.min(cx, w - cx) / w,
-      y: Math.min(cy, h - cy) / h,
-    };
+  switch (size) {
+    case "closest-side":
+      return { x: dxClose / w, y: dyClose / h };
+    case "closest-corner":
+      // Ellipse closest-corner: stretch each axis to the *closest* side along
+      // that axis (approximation — the spec scales to actually touch the
+      // closest corner, but visually this is close enough as a seed).
+      return { x: dxClose / w, y: dyClose / h };
+    case "farthest-side":
+      return { x: dxFar / w, y: dyFar / h };
+    case "farthest-corner":
+      return { x: dxFar / w, y: dyFar / h };
   }
-  return {
-    x: Math.max(cx, w - cx) / w,
-    y: Math.max(cy, h - cy) / h,
-  };
 }
 
 /**

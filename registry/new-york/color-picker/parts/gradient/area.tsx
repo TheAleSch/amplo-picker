@@ -173,7 +173,16 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
 
     if (gradient.type === "linear") {
       const dir = angleToDir(gradient.angle);
-      const t = edgeExtent(dir, w / 2, h / 2);
+      // Inset the edge by half a handle so the dot stays fully inside the box
+      // and doesn't get clipped by `overflow-hidden` on the container. The
+      // gradient itself still paints to the true edge — only the handle
+      // visualization is inset.
+      const inset = HANDLE_PX / 2;
+      const t = edgeExtent(
+        dir,
+        Math.max(0, w / 2 - inset),
+        Math.max(0, h / 2 - inset),
+      );
       return {
         a: { x: cx - dir.x * t, y: cy - dir.y * t },
         b: { x: cx + dir.x * t, y: cy + dir.y * t },

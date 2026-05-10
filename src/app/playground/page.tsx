@@ -639,9 +639,18 @@ export default function PlaygroundPage() {
                   {gradientParts.stopColor && (
                     <GradientPicker.StopColor>
                       <ColorPicker.Area />
-                      <ColorPicker.Hue />
-                      <ColorPicker.Alpha />
+                      <div className="flex flex-col gap-1.5">
+                        <ColorPicker.Hue />
+                        <ColorPicker.Alpha />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ColorPicker.FormatSwitcher className="flex-1" />
+                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                      </div>
                       <ColorPicker.ChannelInput />
+                      <ColorPicker.Swatches
+                        presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
+                      />
                     </GradientPicker.StopColor>
                   )}
                   {gradientParts.stopList && <GradientPicker.StopList />}
@@ -674,7 +683,15 @@ export default function PlaygroundPage() {
                     {gradientParts.radialShape && <GradientPicker.RadialShape />}
                     {gradientParts.stopColor && (
                       <GradientPicker.StopColor>
-                        <ColorPicker.Hue />
+                        <ColorPicker.Area />
+                        <div className="flex flex-col gap-1.5">
+                          <ColorPicker.Hue />
+                          <ColorPicker.Alpha />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ColorPicker.FormatSwitcher className="flex-1" />
+                          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                        </div>
                         <ColorPicker.ChannelInput />
                       </GradientPicker.StopColor>
                     )}
@@ -1053,15 +1070,26 @@ function buildGradientPartsLines(
   return lines;
 }
 
+const STOP_COLOR_CHILDREN = [
+  "<ColorPicker.Area />",
+  `<div className="flex flex-col gap-1.5">`,
+  "  <ColorPicker.Hue />",
+  "  <ColorPicker.Alpha />",
+  "</div>",
+  `<div className="flex items-center gap-2">`,
+  `  <ColorPicker.FormatSwitcher className="flex-1" />`,
+  `  <ColorPicker.EyeDropper className="h-8 w-full flex-1" />`,
+  "</div>",
+  "<ColorPicker.ChannelInput />",
+  `<ColorPicker.Swatches presets={["#fff", "#000", "oklch(0.7 0.18 30)"]} />`,
+];
+
 function buildGradientSnippet(parts: GradientPartsState): string {
   const lines: string[] = [];
   lines.push(`<GradientPicker.Root value={gradient} onValueChange={setGradient}>`);
-  buildGradientPartsLines(parts, "  ", [
-    "<ColorPicker.Area />",
-    "<ColorPicker.Hue />",
-    "<ColorPicker.Alpha />",
-    "<ColorPicker.ChannelInput />",
-  ]).forEach((l) => lines.push(l));
+  buildGradientPartsLines(parts, "  ", STOP_COLOR_CHILDREN).forEach((l) =>
+    lines.push(l),
+  );
   lines.push(`</GradientPicker.Root>`);
   return lines.join("\n");
 }
@@ -1080,10 +1108,9 @@ function buildFillSnippet(parts: GradientPartsState): string {
   lines.push(`    <ColorPicker.ChannelInput />`);
   lines.push(`  </FillPicker.Pane>`);
   lines.push(`  <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">`);
-  buildGradientPartsLines(parts, "    ", [
-    "<ColorPicker.Hue />",
-    "<ColorPicker.ChannelInput />",
-  ]).forEach((l) => lines.push(l));
+  buildGradientPartsLines(parts, "    ", STOP_COLOR_CHILDREN).forEach((l) =>
+    lines.push(l),
+  );
   lines.push(`  </FillPicker.Pane>`);
   lines.push(`</FillPicker.Root>`);
   return lines.join("\n");

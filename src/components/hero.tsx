@@ -341,7 +341,6 @@ function HeroPicker() {
           </div>
           <ColorPicker.ChannelInput showFormat={false} />
         </GradientPicker.StopColor>
-        <GradientPicker.StopList />
         <GradientPicker.Presets />
       </FillPicker.Pane>
     </FillPicker.Root>

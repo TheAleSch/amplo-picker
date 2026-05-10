@@ -4,6 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import { formatGradient, type RadialSizeKeyword } from "../../lib/gradient";
+import { formatColor } from "../../lib/color";
 
 export interface AreaProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Fixed height in px. Defaults to 120. Width always fills the container. */
@@ -362,6 +363,71 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     return ((next % 360) + 360) % 360;
   };
 
+  /**
+   * Project a pointer position onto the line a→b and return the parametric
+   * position along the segment in [0, 1]. Used by the in-line stop handles
+   * so dragging a stop slides it along the visible gradient line, even when
+   * the pointer drifts away from the line itself.
+   */
+  const projectOntoLine = (a: XY, b: XY, p: XY): number => {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) return 0;
+    const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
+    return Math.max(0, Math.min(1, t));
+  };
+
+  const beginStopDrag = (id: string) => (
+    e: React.PointerEvent<HTMLButtonElement>,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!handles || !handles.b) return;
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    ctx.selectStop(id);
+    const a = handles.a;
+    const b = handles.b;
+    const apply = (clientX: number, clientY: number) => {
+      const t = projectOntoLine(a, b, localFromEvent(clientX, clientY));
+      ctx.moveStop(id, t);
+    };
+    apply(e.clientX, e.clientY);
+    const onMove = (ev: PointerEvent) => apply(ev.clientX, ev.clientY);
+    const cleanup = (ev: PointerEvent) => {
+      try {
+        target.releasePointerCapture(ev.pointerId);
+      } catch {
+        // pointer may already be released on cancel
+      }
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", cleanup);
+      target.removeEventListener("pointercancel", cleanup);
+    };
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", cleanup);
+    target.addEventListener("pointercancel", cleanup);
+  };
+
+  const onKeyDownLinearStop = (
+    id: string,
+    position: number,
+    e: React.KeyboardEvent<HTMLButtonElement>,
+  ) => {
+    const step = e.shiftKey ? 0.05 : 0.01;
+    let next = position;
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") next -= step;
+    else if (e.key === "ArrowRight" || e.key === "ArrowUp") next += step;
+    else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      ctx.removeStop(id);
+      return;
+    } else return;
+    e.preventDefault();
+    ctx.moveStop(id, Math.max(0, Math.min(1, next)));
+  };
+
   const onKeyDownAngle = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (gradient.type !== "linear") return;
     const next = rotate(gradient.angle, e);
@@ -557,6 +623,38 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                   }
                 />
               )}
+              {/* Middle-stop handles: every stop between the first and last
+                 lives on the gradient line as a colored dot. Drag projects
+                 the pointer onto the a→b segment so the handle can slide
+                 even if the user wanders off the line. First and last
+                 stops are already represented by the endpoint handles
+                 above and are intentionally omitted here. */}
+              {handles.b &&
+                ctx.stops.length > 2 &&
+                ctx.stops.slice(1, -1).map((s) => {
+                  const a = handles.a;
+                  const b = handles.b as XY;
+                  const px = a.x + (b.x - a.x) * s.position;
+                  const py = a.y + (b.y - a.y) * s.position;
+                  const pct = Math.round(s.position * 100);
+                  return (
+                    <Handle
+                      key={s.id}
+                      label={`Gradient stop at ${pct}%`}
+                      position={{ x: px, y: py }}
+                      onPointerDown={beginStopDrag(s.id)}
+                      onKeyDown={(e) =>
+                        onKeyDownLinearStop(s.id, s.position, e)
+                      }
+                      role="slider"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={pct}
+                      aria-valuetext={`${pct} percent`}
+                      style={{ background: formatColor(s.color, "oklch") }}
+                    />
+                  );
+                })}
             </>
           ) : (
             <>

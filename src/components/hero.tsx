@@ -338,6 +338,7 @@ function HeroPicker() {
           <GradientPicker.ReverseStops />
         </div>
         <GradientPicker.Bar />
+        <GradientPicker.Area />
         <GradientPicker.AngleDial />
         <GradientPicker.CenterPad />
         <GradientPicker.RadialShape />

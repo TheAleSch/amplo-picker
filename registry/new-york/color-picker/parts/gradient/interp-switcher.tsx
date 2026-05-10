@@ -45,6 +45,7 @@ export const InterpSwitcher = React.forwardRef<
   return (
     <select
       ref={ref}
+      data-slot="gradient-interp-switcher"
       value={ctx.gradient.interp}
       onChange={(e) => ctx.setInterp(e.target.value as GradientInterp)}
       className={cn(

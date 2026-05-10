@@ -164,6 +164,19 @@ export default function DocsPage() {
             preview={<GradientBarOnlyDemo />}
             code={GRADIENT_BAR_ONLY_CODE}
           />
+
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Keyboard.</strong>{" "}
+            <Code>Bar</Code> stops respond to ← / → (±1%, ±5% with Shift) and
+            Delete / Backspace to remove. <Code>AngleDial</Code> responds to
+            arrow keys (±1°, ±15° with Shift) and Home / End. <Code>StopList</Code>{" "}
+            is a listbox — Enter or Space select the focused row, Delete /
+            Backspace removes it. Every interactive part exposes a{" "}
+            <Code>data-slot</Code> attribute (
+            <Code>gradient-bar</Code>, <Code>gradient-angle-dial</Code>,{" "}
+            <Code>gradient-center-pad</Code>, <Code>gradient-stop-list</Code>,{" "}
+            etc.) for unstyled-targetable composition.
+          </p>
         </section>
 
         <section className="flex flex-col gap-4">

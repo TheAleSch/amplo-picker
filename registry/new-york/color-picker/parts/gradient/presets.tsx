@@ -47,6 +47,7 @@ export const Presets = React.forwardRef<HTMLDivElement, PresetsProps>(
     return (
       <div
         ref={ref}
+        data-slot="gradient-presets"
         className={cn("flex flex-wrap gap-1.5", className)}
         {...rest}
       >

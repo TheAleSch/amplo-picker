@@ -33,13 +33,19 @@ export const CenterPad = React.forwardRef<HTMLDivElement, CenterPadProps>(
       ctx.setCenter(fromEvent(e.clientX, e.clientY));
       const onMove = (ev: PointerEvent) =>
         ctx.setCenter(fromEvent(ev.clientX, ev.clientY));
-      const onUp = (ev: PointerEvent) => {
-        target.releasePointerCapture(ev.pointerId);
+      const cleanup = (ev: PointerEvent) => {
+        try {
+          target.releasePointerCapture(ev.pointerId);
+        } catch {
+          // pointer may already be released on cancel
+        }
         target.removeEventListener("pointermove", onMove);
-        target.removeEventListener("pointerup", onUp);
+        target.removeEventListener("pointerup", cleanup);
+        target.removeEventListener("pointercancel", cleanup);
       };
       target.addEventListener("pointermove", onMove);
-      target.addEventListener("pointerup", onUp);
+      target.addEventListener("pointerup", cleanup);
+      target.addEventListener("pointercancel", cleanup);
     };
 
     const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -62,6 +68,7 @@ export const CenterPad = React.forwardRef<HTMLDivElement, CenterPadProps>(
     return (
       <div
         ref={padRef}
+        data-slot="gradient-center-pad"
         onPointerDown={onPointerDown}
         onKeyDown={onKeyDown}
         role="application"
@@ -69,11 +76,11 @@ export const CenterPad = React.forwardRef<HTMLDivElement, CenterPadProps>(
         aria-roledescription="2D pad for gradient center"
         aria-valuetext={`x ${Math.round(center.x * 100)}%, y ${Math.round(center.y * 100)}%`}
         tabIndex={0}
+        style={{ width: size, height: size }}
         className={cn(
-          "relative shrink-0 cursor-crosshair rounded-md border border-border bg-muted",
+          "relative shrink-0 cursor-crosshair rounded-md border border-border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
-        style={{ width: size, height: size }}
         {...rest}
       >
         <div

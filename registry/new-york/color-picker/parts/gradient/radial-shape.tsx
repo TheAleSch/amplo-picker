@@ -13,7 +13,12 @@ export const RadialShape = React.forwardRef<
   const g = ctx.gradient;
 
   return (
-    <div ref={ref} className={cn("flex items-center gap-2", className)} {...rest}>
+    <div
+      ref={ref}
+      data-slot="gradient-radial-shape"
+      className={cn("flex items-center gap-2", className)}
+      {...rest}
+    >
       <div role="tablist" aria-label="Radial shape" className="inline-flex rounded-md bg-muted p-1">
         {(["circle", "ellipse"] as const).map((shape) => {
           const active = g.shape === shape;

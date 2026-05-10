@@ -19,6 +19,7 @@ export const TypeSwitcher = React.forwardRef<
   return (
     <div
       ref={ref}
+      data-slot="gradient-type-switcher"
       role="tablist"
       aria-label="Gradient type"
       className={cn("inline-flex w-full rounded-md bg-muted p-1", className)}

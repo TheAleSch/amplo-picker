@@ -14,7 +14,9 @@ export const StopList = React.forwardRef<
   return (
     <div
       ref={ref}
-      role="list"
+      data-slot="gradient-stop-list"
+      role="listbox"
+      aria-label="Gradient stops"
       className={cn("flex flex-col gap-1", className)}
       {...rest}
     >
@@ -23,11 +25,22 @@ export const StopList = React.forwardRef<
         return (
           <div
             key={s.id}
-            role="listitem"
+            role="option"
+            aria-selected={selected}
+            tabIndex={selected ? 0 : -1}
             data-selected={selected}
             onClick={() => ctx.selectStop(s.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                ctx.selectStop(s.id);
+              } else if (e.key === "Delete" || e.key === "Backspace") {
+                e.preventDefault();
+                ctx.removeStop(s.id);
+              }
+            }}
             className={cn(
-              "flex cursor-pointer items-center gap-2 rounded-md border p-1 text-xs",
+              "flex cursor-pointer items-center gap-2 rounded-md border p-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
               selected ? "border-foreground" : "border-border",
             )}
           >

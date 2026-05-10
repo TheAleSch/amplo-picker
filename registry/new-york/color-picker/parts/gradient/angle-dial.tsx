@@ -45,13 +45,31 @@ export const AngleDial = React.forwardRef<HTMLDivElement, AngleDialProps>(
       setAngle(fromEvent(e.clientX, e.clientY));
       const onMove = (ev: PointerEvent) =>
         setAngle(fromEvent(ev.clientX, ev.clientY));
-      const onUp = (ev: PointerEvent) => {
-        target.releasePointerCapture(ev.pointerId);
+      const cleanup = (ev: PointerEvent) => {
+        try {
+          target.releasePointerCapture(ev.pointerId);
+        } catch {
+          // pointer may already be released on cancel
+        }
         target.removeEventListener("pointermove", onMove);
-        target.removeEventListener("pointerup", onUp);
+        target.removeEventListener("pointerup", cleanup);
+        target.removeEventListener("pointercancel", cleanup);
       };
       target.addEventListener("pointermove", onMove);
-      target.addEventListener("pointerup", onUp);
+      target.addEventListener("pointerup", cleanup);
+      target.addEventListener("pointercancel", cleanup);
+    };
+
+    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const step = e.shiftKey ? 15 : 1;
+      let next = angle;
+      if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = angle - step;
+      else if (e.key === "ArrowRight" || e.key === "ArrowUp") next = angle + step;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = 359;
+      else return;
+      e.preventDefault();
+      setAngle(((next % 360) + 360) % 360);
     };
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,17 +78,23 @@ export const AngleDial = React.forwardRef<HTMLDivElement, AngleDialProps>(
     };
 
     return (
-      <div className={cn("flex items-center gap-2", className)} {...rest}>
+      <div
+        data-slot="gradient-angle-dial"
+        className={cn("flex items-center gap-2", className)}
+        {...rest}
+      >
         <div
           ref={padRef}
           onPointerDown={onPointerDown}
+          onKeyDown={onKeyDown}
           role="slider"
           aria-label="Gradient angle"
           aria-valuemin={0}
           aria-valuemax={360}
           aria-valuenow={Math.round(angle)}
+          aria-valuetext={`${Math.round(angle)} degrees`}
           tabIndex={0}
-          className="relative shrink-0 cursor-grab rounded-full border border-border bg-muted"
+          className="relative shrink-0 cursor-grab rounded-full border border-border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
           style={{ width: size, height: size }}
         >
           <div

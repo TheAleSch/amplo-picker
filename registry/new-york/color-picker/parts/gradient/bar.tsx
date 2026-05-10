@@ -37,8 +37,12 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   ref,
 ) {
   const ctx = useGradientPickerContext();
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const trackRef = React.useRef<HTMLDivElement | null>(null);
-  React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement);
+  // Forward the consumer's ref to the outer wrapper (the element that carries
+  // `data-slot="gradient-bar"`) so `wrapper.querySelector('[data-slot="gradient-bar"]')`
+  // works as expected; pointer math still uses the inner trackRef.
+  React.useImperativeHandle(ref, () => wrapperRef.current as HTMLDivElement);
 
   const positionFromEvent = React.useCallback((clientX: number): number => {
     const el = trackRef.current;
@@ -102,6 +106,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
 
   return (
     <div
+      ref={wrapperRef}
       data-slot="gradient-bar"
       className={cn("relative w-full select-none", className)}
       style={{ height }}
@@ -125,6 +130,8 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(s.position * 100)}
+            aria-valuetext={`${Math.round(s.position * 100)} percent`}
+            aria-orientation="horizontal"
             aria-current={selected ? "true" : undefined}
             tabIndex={0}
             onPointerDown={startStopDrag(s.id)}

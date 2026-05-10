@@ -112,13 +112,20 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
 
   React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
 
+  // Depend on color values, not on the OKLCH object identity. A controlled
+  // ColorPicker may receive a fresh OklchColor reference each render even
+  // when the values are unchanged (e.g., parent context recomputes derived
+  // state); reacting to identity would fire this effect every render and,
+  // under React 19's stricter detection, can register as a setState-in-effect
+  // loop even though `setPickPos(null)` would otherwise bail.
   React.useEffect(() => {
     if (selfSetRef.current) {
       selfSetRef.current = false;
       return;
     }
-    setPickPos(null);
-  }, [color]);
+    setPickPos((prev) => (prev === null ? prev : null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [color.l, color.c, color.h, color.alpha]);
 
   // The gradient and warning lines depend only on the axis the mode keeps
   // *fixed* (hue for oklch-cl/hsv-sv, lightness for oklch-hc). Depending on

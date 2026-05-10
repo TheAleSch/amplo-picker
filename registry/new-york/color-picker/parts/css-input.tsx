@@ -12,14 +12,16 @@ export const CssInput = React.forwardRef<HTMLInputElement, CssInputProps>(functi
   ref,
 ) {
   const { formatted, setFromString } = useColorPickerContext();
-  const [draft, setDraft] = React.useState(formatted);
-  const [error, setError] = React.useState(false);
-
   // Sync draft when canonical value changes externally (slider drags etc.)
-  React.useEffect(() => {
+  // via in-render adjustment — no useEffect needed.
+  const [draft, setDraft] = React.useState(formatted);
+  const [prevFormatted, setPrevFormatted] = React.useState(formatted);
+  const [error, setError] = React.useState(false);
+  if (formatted !== prevFormatted) {
+    setPrevFormatted(formatted);
     setDraft(formatted);
     setError(false);
-  }, [formatted]);
+  }
 
   const commit = (value: string) => {
     const ok = setFromString(value.trim());

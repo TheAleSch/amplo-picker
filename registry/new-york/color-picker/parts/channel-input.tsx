@@ -141,13 +141,18 @@ function HexField({
   value: string;
   onCommit: (v: string) => boolean;
 }) {
+  // Adjusting state during rendering — React-blessed alternative to
+  // syncing prop → state in useEffect. When the upstream `value` changes
+  // (e.g., a sibling control commits), we re-seed the draft synchronously
+  // *during* the render that observes the change, not after a paint.
   const [draft, setDraft] = React.useState(value);
+  const [prevValue, setPrevValue] = React.useState(value);
   const [error, setError] = React.useState(false);
-
-  React.useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value);
     setDraft(value);
     setError(false);
-  }, [value]);
+  }
 
   const commit = (v: string) => {
     const ok = onCommit(v.trim());
@@ -199,14 +204,16 @@ function ChannelField({
   onPasteColor: (raw: string) => boolean;
 }) {
   const display = formatNumber(channel.value, channel.precision);
-  const [draft, setDraft] = React.useState(display);
-
   // Sync draft when external state updates (slider drag, sibling channel,
-  // format swap). Compare formatted strings to avoid clobbering an
-  // in-progress edit when the canonical value rounds to the same display.
-  React.useEffect(() => {
+  // format swap) using the in-render adjustment pattern. Comparing formatted
+  // strings avoids clobbering an in-progress edit when the canonical value
+  // rounds to the same display string.
+  const [draft, setDraft] = React.useState(display);
+  const [prevDisplay, setPrevDisplay] = React.useState(display);
+  if (display !== prevDisplay) {
+    setPrevDisplay(display);
     setDraft(display);
-  }, [display]);
+  }
 
   const commit = (raw: string) => {
     const parsed = parseFloat(raw);

@@ -47,6 +47,18 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
   const [internalFill, setInternalFill] = React.useState<Fill>(initialFill);
   const [internalMode, setInternalMode] = React.useState<FillMode>(initialMode);
 
+  // Derive in render — don't sync props → state via useEffect (per React's
+  // "you might not need an effect" guidance). The controlled value is the
+  // source of truth when provided; internal state is only consulted when
+  // uncontrolled.
+  const isControlled = value !== undefined;
+  const isControlledMode = modeProp !== undefined;
+  const fill: Fill = isControlled ? value : internalFill;
+  const mode: FillMode = isControlledMode ? modeProp : internalMode;
+
+  // Track the last fill we saw for each kind so setMode can restore the cached
+  // side. Mutating refs during render is allowed (refs are not state) and
+  // avoids the parent → effect → setState round-trip.
   const lastColorRef = React.useRef<ColorFill>(
     initialFill.kind === "color"
       ? initialFill
@@ -57,25 +69,13 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
       ? initialFill
       : { kind: "gradient", gradient: DEFAULT_LINEAR },
   );
-
-  React.useEffect(() => {
-    if (value === undefined) return;
-    setInternalFill(value);
-    if (value.kind === "color") lastColorRef.current = value;
-    else lastGradientRef.current = value;
-  }, [value]);
-
-  React.useEffect(() => {
-    if (modeProp === undefined) return;
-    setInternalMode(modeProp);
-  }, [modeProp]);
+  if (fill.kind === "color") lastColorRef.current = fill;
+  else lastGradientRef.current = fill;
 
   const setFill = React.useCallback(
-    (fill: Fill) => {
-      setInternalFill(fill);
-      if (fill.kind === "color") lastColorRef.current = fill;
-      else lastGradientRef.current = fill;
-      onValueChange?.(fill, formatFill(fill));
+    (next: Fill) => {
+      setInternalFill(next);
+      onValueChange?.(next, formatFill(next));
     },
     [onValueChange],
   );
@@ -92,5 +92,5 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
     [onValueChange, onModeChange],
   );
 
-  return { fill: internalFill, mode: internalMode, setFill, setMode };
+  return { fill, mode, setFill, setMode };
 }

@@ -103,154 +103,154 @@ export function useGradientPicker(
   );
 
   // Track the last gradient we emitted upward so the controlled-sync effect can
-  // ignore echoes (parent re-renders with the same gradient we just sent).
-  // Without this, every emit triggers a controlled-sync that builds a new
-  // internal state object, which re-triggers the emit effect → infinite loop.
-  const lastEmittedRef = React.useRef<Gradient | null>(null);
+  // ignore echoes. Seed with the initial controlled value so the *first* sync
+  // is treated as an echo of our own initial state — without this, the very
+  // first render would unconditionally rebuild internal state and re-emit.
+  const lastEmittedRef = React.useRef<Gradient | null>(value ?? null);
+
+  // stateRef mirrors `internal` so setters can compute the next state +
+  // synchronously emit the cleaned gradient without going through an effect.
+  // We update it both inside `apply` (so chained setters within one event
+  // handler see the latest) and after every commit (so the controlled-sync
+  // effect can write to internal without us missing the change).
+  const stateRef = React.useRef(internal);
+  React.useEffect(() => {
+    stateRef.current = internal;
+  });
+
+  // Latest-callback ref so a fresh arrow each render doesn't re-create our
+  // setters via deps.
+  const onValueChangeRef = React.useRef(onValueChange);
+  React.useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  });
 
   // Sync controlled value into internal state, preserving stop ids when possible.
   React.useEffect(() => {
     if (!isControlled || !value) return;
     if (value === lastEmittedRef.current) return;
     setInternal((prev) => {
-      if (
+      const next: InternalState =
         prev.gradient.type === value.type &&
         prev.stops.length === value.stops.length &&
         prev.stops.every((s, i) => s.position === value.stops[i].position)
-      ) {
-        return {
-          gradient: value,
-          stops: prev.stops.map((s, i) => ({ ...value.stops[i], id: s.id })),
-        };
-      }
-      return attachIds(value);
+          ? {
+              gradient: value,
+              stops: prev.stops.map((s, i) => ({ ...value.stops[i], id: s.id })),
+            }
+          : attachIds(value);
+      stateRef.current = next;
+      return next;
     });
   }, [isControlled, value]);
 
-  // Emit onValueChange whenever internal state changes (but not on first render).
-  // Decoupled from setters so StrictMode double-invocation of updaters doesn't
-  // fire the callback twice. The callback is read from a ref so callers passing
-  // a fresh arrow function each render don't re-trigger the effect (which would
-  // emit a fresh gradient identity on every render and round-trip into a loop
-  // through any controlled parent).
-  const onValueChangeRef = React.useRef(onValueChange);
-  React.useEffect(() => {
-    onValueChangeRef.current = onValueChange;
-  });
-  const isFirstRenderRef = React.useRef(true);
-  React.useEffect(() => {
-    if (isFirstRenderRef.current) {
-      isFirstRenderRef.current = false;
-      return;
-    }
-    const cb = onValueChangeRef.current;
-    if (!cb) return;
-    const clean = toPublicGradient(internal);
-    lastEmittedRef.current = clean;
-    cb(clean, formatGradient(clean));
-  }, [internal]);
+  // Apply a state transition + emit in one shot. Read-modify-write through
+  // stateRef so chained calls in one event handler each see the previous
+  // result. Returning `prev` (or null) is a no-op signal.
+  const apply = React.useCallback(
+    (compute: (prev: InternalState) => InternalState | null) => {
+      const prev = stateRef.current;
+      const next = compute(prev);
+      if (next === null || next === prev) return;
+      stateRef.current = next;
+      setInternal(next);
+      const clean = toPublicGradient(next);
+      lastEmittedRef.current = clean;
+      onValueChangeRef.current?.(clean, formatGradient(clean));
+    },
+    [],
+  );
 
   // ---- Gradient-level setters ----------------------------------------------
 
   const setGradient = React.useCallback(
     (next: Gradient) => {
-      const internalNext = attachIds(next);
-      setInternal(internalNext);
-      setSelectedStopId(internalNext.stops[0]?.id ?? "");
+      apply(() => attachIds(next));
+      setSelectedStopId((prev) => stateRef.current.stops[0]?.id ?? prev);
     },
-    [],
+    [apply],
   );
 
   const setType = React.useCallback(
-    (type: GradientType) => {
-      setInternal((prev) => {
+    (type: GradientType) =>
+      apply((prev) => {
         if (prev.gradient.type === type) return prev;
         const fallback = defaultsForType(type);
-        const next: InternalState = {
+        return {
           gradient: { ...fallback, interp: prev.gradient.interp } as Gradient,
           stops: prev.stops,
         };
-        return next;
-      });
-    },
-    [],
+      }),
+    [apply],
   );
 
   const setAngle = React.useCallback(
-    (angleDeg: number) => {
-      setInternal((prev) => {
+    (angleDeg: number) =>
+      apply((prev) => {
         if (prev.gradient.type !== "linear") return prev;
         return {
           gradient: { ...(prev.gradient as LinearGradient), angle: angleDeg },
           stops: prev.stops,
         };
-      });
-    },
-    [],
+      }),
+    [apply],
   );
 
   const setStartAngle = React.useCallback(
-    (angleDeg: number) => {
-      setInternal((prev) => {
+    (angleDeg: number) =>
+      apply((prev) => {
         if (prev.gradient.type !== "conic") return prev;
         return {
           gradient: { ...(prev.gradient as ConicGradient), startAngle: angleDeg },
           stops: prev.stops,
         };
-      });
-    },
-    [],
+      }),
+    [apply],
   );
 
   const setCenter = React.useCallback(
-    (xy: { x: number; y: number }) => {
-      setInternal((prev) => {
+    (xy: { x: number; y: number }) =>
+      apply((prev) => {
         if (prev.gradient.type === "linear") return prev;
         return {
           gradient: { ...(prev.gradient as RadialGradient | ConicGradient), center: xy },
           stops: prev.stops,
         };
-      });
-    },
-    [],
+      }),
+    [apply],
   );
 
   const setInterp = React.useCallback(
-    (interp: GradientInterp) => {
-      setInternal((prev) => {
-        return {
-          gradient: { ...prev.gradient, interp } as Gradient,
-          stops: prev.stops,
-        };
-      });
-    },
-    [],
+    (interp: GradientInterp) =>
+      apply((prev) => ({
+        gradient: { ...prev.gradient, interp } as Gradient,
+        stops: prev.stops,
+      })),
+    [apply],
   );
 
   const setRadialShape = React.useCallback(
-    (shape: "circle" | "ellipse") => {
-      setInternal((prev) => {
+    (shape: "circle" | "ellipse") =>
+      apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
         return {
           gradient: { ...(prev.gradient as RadialGradient), shape },
           stops: prev.stops,
         };
-      });
-    },
-    [],
+      }),
+    [apply],
   );
 
   const setRadialSize = React.useCallback(
-    (size: "closest-side" | "farthest-corner") => {
-      setInternal((prev) => {
+    (size: "closest-side" | "farthest-corner") =>
+      apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
         return {
           gradient: { ...(prev.gradient as RadialGradient), size },
           stops: prev.stops,
         };
-      });
-    },
-    [],
+      }),
+    [apply],
   );
 
   // ---- Stop setters --------------------------------------------------------
@@ -261,25 +261,23 @@ export function useGradientPicker(
     (position: number, color?: OklchColor): string => {
       const id = nextId();
       const fallback: OklchColor = { l: 0.5, c: 0, h: 0, alpha: 1 };
-      setInternal((prev) => {
-        return {
-          gradient: prev.gradient,
-          stops: sortByPosition([
-            ...prev.stops,
-            { id, position, color: color ?? fallback },
-          ]),
-        };
-      });
+      apply((prev) => ({
+        gradient: prev.gradient,
+        stops: sortByPosition([
+          ...prev.stops,
+          { id, position, color: color ?? fallback },
+        ]),
+      }));
       setSelectedStopId(id);
       return id;
     },
-    [],
+    [apply],
   );
 
   const removeStop = React.useCallback(
     (id: string) => {
       let nextSelId: string | null = null;
-      setInternal((prev) => {
+      apply((prev) => {
         if (prev.stops.length <= 1) return prev;
         const idx = prev.stops.findIndex((s) => s.id === id);
         if (idx === -1) return prev;
@@ -289,13 +287,13 @@ export function useGradientPicker(
       });
       if (nextSelId !== null) setSelectedStopId(nextSelId);
     },
-    [],
+    [apply],
   );
 
   const moveStop = React.useCallback(
     (id: string, position: number) => {
       const clamped = Math.max(0, Math.min(1, position));
-      setInternal((prev) => {
+      apply((prev) => {
         // Move the target stop to the end before sorting so that in a position
         // tie it sorts after existing stops at that position (stable sort).
         const others = prev.stops.filter((s) => s.id !== id);
@@ -307,31 +305,25 @@ export function useGradientPicker(
         };
       });
     },
-    [],
+    [apply],
   );
 
   const setStopColor = React.useCallback(
-    (id: string, color: OklchColor) => {
-      setInternal((prev) => {
-        return {
-          gradient: prev.gradient,
-          stops: prev.stops.map((s) => (s.id === id ? { ...s, color } : s)),
-        };
-      });
-    },
-    [],
+    (id: string, color: OklchColor) =>
+      apply((prev) => ({
+        gradient: prev.gradient,
+        stops: prev.stops.map((s) => (s.id === id ? { ...s, color } : s)),
+      })),
+    [apply],
   );
 
   const setStopHint = React.useCallback(
-    (id: string, hint: number | undefined) => {
-      setInternal((prev) => {
-        return {
-          gradient: prev.gradient,
-          stops: prev.stops.map((s) => (s.id === id ? { ...s, hint } : s)),
-        };
-      });
-    },
-    [],
+    (id: string, hint: number | undefined) =>
+      apply((prev) => ({
+        gradient: prev.gradient,
+        stops: prev.stops.map((s) => (s.id === id ? { ...s, hint } : s)),
+      })),
+    [apply],
   );
 
   // ---- Derived values ------------------------------------------------------

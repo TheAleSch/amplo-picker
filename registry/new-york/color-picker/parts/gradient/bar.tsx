@@ -57,24 +57,21 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
 
+    let pendingRemove = false;
     const onMove = (ev: PointerEvent) => {
       const rect = trackRef.current?.getBoundingClientRect();
       if (!rect) return;
       const dy = ev.clientY - rect.bottom;
-      // Drag handle below the bar by more than 24px → remove stop.
-      if (dy > 24 && ctx.stops.length > 1) {
-        ctx.removeStop(id);
-        target.releasePointerCapture(ev.pointerId);
-        target.removeEventListener("pointermove", onMove);
-        target.removeEventListener("pointerup", onUp);
-        return;
-      }
-      ctx.moveStop(id, positionFromEvent(ev.clientX));
+      // Mark for removal while dragged below the bar by more than 24px,
+      // but only commit on release so the user can drag back up to cancel.
+      pendingRemove = dy > 24 && ctx.stops.length > 1;
+      if (!pendingRemove) ctx.moveStop(id, positionFromEvent(ev.clientX));
     };
     const onUp = (ev: PointerEvent) => {
       target.releasePointerCapture(ev.pointerId);
       target.removeEventListener("pointermove", onMove);
       target.removeEventListener("pointerup", onUp);
+      if (pendingRemove) ctx.removeStop(id);
     };
     target.addEventListener("pointermove", onMove);
     target.addEventListener("pointerup", onUp);

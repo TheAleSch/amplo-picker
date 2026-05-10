@@ -90,9 +90,9 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   stopList: true,
   stopColor: true,
   stopSwatches: false,
-  interpSwitcher: true,
+  interpSwitcher: false,
   presets: true,
-  cssInput: true,
+  cssInput: false,
 };
 
 const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [

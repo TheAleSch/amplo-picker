@@ -651,7 +651,14 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                       aria-valuemax={100}
                       aria-valuenow={pct}
                       aria-valuetext={`${pct} percent`}
-                      style={{ background: formatColor(s.color, "oklch") }}
+                      // Force the swatch to alpha 1 so the dashed line is
+                      // never visible through a transparent stop color.
+                      style={{
+                        background: formatColor(
+                          { ...s.color, alpha: 1 },
+                          "oklch",
+                        ),
+                      }}
                     />
                   );
                 })}
@@ -742,7 +749,10 @@ function Handle({ label, position, className, style, ...rest }: HandleProps) {
       }}
       className={cn(
         "absolute -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full",
-        "border-2 border-white bg-foreground/10 shadow-[0_0_0_1px_rgba(0,0,0,0.55),0_2px_6px_rgba(0,0,0,0.35)]",
+        // Solid background so the dashed gradient line behind the dot is
+        // fully hidden by it (a translucent fill would let the line bleed
+        // through visibly).
+        "border-2 border-white bg-background shadow-[0_0_0_1px_rgba(0,0,0,0.55),0_2px_6px_rgba(0,0,0,0.35)]",
         "outline-none transition-transform",
         "hover:scale-110 active:cursor-grabbing active:scale-95",
         "focus-visible:ring-2 focus-visible:ring-ring",

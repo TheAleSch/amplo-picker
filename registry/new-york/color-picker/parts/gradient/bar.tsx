@@ -4,7 +4,10 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import {
+  adjustStopsForEndpoints,
   formatGradient,
+  projectStopPosition,
+  reverseProjectStopPosition,
   sampleStopsAt,
   type LinearGradient,
 } from "../../lib/gradient";
@@ -22,12 +25,18 @@ function buildPreviewGradient(
 ): string {
   // For the bar preview we always render the stops as a horizontal linear
   // gradient regardless of the live gradient type — the bar is the editing
-  // surface for stop positions.
+  // surface for stop positions. When the live gradient is a positioned
+  // linear with `start`/`end`, mirror the same stop projection used at CSS
+  // emit time so the Bar shows the *visible* stop positions.
+  const stops =
+    g.type === "linear" && g.start && g.end
+      ? adjustStopsForEndpoints(g.stops, g.start, g.end)
+      : g.stops;
   const linear: LinearGradient = {
     type: "linear",
     angle: 90,
     interp: g.interp,
-    stops: g.stops,
+    stops,
   };
   return formatGradient(linear);
 }
@@ -44,17 +53,32 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   // works as expected; pointer math still uses the inner trackRef.
   React.useImperativeHandle(ref, () => wrapperRef.current as HTMLDivElement);
 
-  const positionFromEvent = React.useCallback((clientX: number): number => {
-    const el = trackRef.current;
-    if (!el) return 0;
-    const rect = el.getBoundingClientRect();
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  }, []);
+  // When the live gradient is positioned-linear, stop positions are projected
+  // onto the CSS gradient line for display + pointer math. Authored values
+  // (what's written to `stop.position`) stay 0..1 along the segment.
+  const linear = ctx.gradient.type === "linear" ? ctx.gradient : null;
+  const start = linear?.start;
+  const end = linear?.end;
+  const toDisplay = (authored: number) =>
+    projectStopPosition(authored, start, end);
+  const fromDisplay = (displayed: number) =>
+    reverseProjectStopPosition(displayed, start, end);
+
+  const displayedPositionFromEvent = React.useCallback(
+    (clientX: number): number => {
+      const el = trackRef.current;
+      if (!el) return 0;
+      const rect = el.getBoundingClientRect();
+      return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    },
+    [],
+  );
 
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.target !== trackRef.current) return; // handles handle their own drag
-    const pos = positionFromEvent(e.clientX);
-    ctx.addStop(pos, sampleStopsAt(ctx.stops, pos));
+    const displayed = displayedPositionFromEvent(e.clientX);
+    const authored = Math.max(0, Math.min(1, fromDisplay(displayed)));
+    ctx.addStop(authored, sampleStopsAt(ctx.stops, authored));
   };
 
   const startStopDrag = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
@@ -76,7 +100,10 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       // Mark for removal while dragged below the bar by more than 24px,
       // but only commit on release so the user can drag back up to cancel.
       pendingRemove = dy > 24 && ctx.stops.length > 1;
-      if (!pendingRemove) ctx.moveStop(id, positionFromEvent(ev.clientX));
+      if (!pendingRemove) {
+        const displayed = displayedPositionFromEvent(ev.clientX);
+        ctx.moveStop(id, fromDisplay(displayed));
+      }
     };
     const onUp = () => {
       document.removeEventListener("pointermove", onMove);
@@ -92,12 +119,16 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   const onStopKeyDown =
     (id: string, position: number) => (e: React.KeyboardEvent<HTMLDivElement>) => {
       const step = e.shiftKey ? 0.05 : 0.01;
+      // Nudge in *displayed* space so a 1% press visibly moves the stop the
+      // same distance on screen regardless of whether the gradient is
+      // positioned-linear or angle-only.
+      const displayed = toDisplay(position);
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        ctx.moveStop(id, position - step);
+        ctx.moveStop(id, fromDisplay(displayed - step));
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        ctx.moveStop(id, position + step);
+        ctx.moveStop(id, fromDisplay(displayed + step));
       } else if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         ctx.removeStop(id);
@@ -122,15 +153,17 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       />
       {ctx.stops.map((s) => {
         const selected = s.id === ctx.selectedStopId;
+        const displayed = Math.max(0, Math.min(1, toDisplay(s.position)));
+        const displayedPct = Math.round(displayed * 100);
         return (
           <div
             key={s.id}
             role="slider"
-            aria-label={`Stop at ${Math.round(s.position * 100)}%`}
+            aria-label={`Stop at ${displayedPct}%`}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round(s.position * 100)}
-            aria-valuetext={`${Math.round(s.position * 100)} percent`}
+            aria-valuenow={displayedPct}
+            aria-valuetext={`${displayedPct} percent`}
             aria-orientation="horizontal"
             aria-current={selected ? "true" : undefined}
             tabIndex={0}
@@ -140,7 +173,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             style={{
               // Match the Hue thumb's positioning math: inset the centerline
               // by handleSize/2 so pos=0/1 sit flush with the track edges.
-              left: `calc(${s.position} * (100% - ${handleSize}px) + ${handleSize / 2}px)`,
+              left: `calc(${displayed} * (100% - ${handleSize}px) + ${handleSize / 2}px)`,
               width: handleSize,
               height: handleSize,
               background: formatColor(s.color, "oklch"),

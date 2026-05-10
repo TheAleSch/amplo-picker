@@ -4,6 +4,8 @@ import {
   parseGradient,
   parseFill,
   formatFill,
+  projectStopPosition,
+  reverseProjectStopPosition,
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
@@ -69,6 +71,36 @@ describe("formatGradient", () => {
     expect(formatGradient(g)).toBe(
       "linear-gradient(in oklch 90deg, oklch(1 0 0 / 0.5) 0%, oklch(0 0 0) 100%)",
     );
+  });
+});
+
+describe("projectStopPosition / reverseProjectStopPosition", () => {
+  it("round-trips authored positions through project → reverse", () => {
+    const start = { x: 0.25, y: 0.5 };
+    const end = { x: 0.75, y: 0.5 };
+    for (const p of [0, 0.25, 0.5, 0.75, 1]) {
+      const displayed = projectStopPosition(p, start, end);
+      const back = reverseProjectStopPosition(displayed, start, end);
+      expect(back).toBeCloseTo(p, 6);
+    }
+  });
+
+  it("returns identity when either endpoint is missing", () => {
+    expect(projectStopPosition(0.3, undefined, undefined)).toBe(0.3);
+    expect(projectStopPosition(0.3, { x: 0, y: 0 }, undefined)).toBe(0.3);
+    expect(reverseProjectStopPosition(0.3, undefined, { x: 1, y: 1 })).toBe(
+      0.3,
+    );
+  });
+
+  it("places authored 0 at startProj and authored 1 at endProj", () => {
+    const start = { x: 0.25, y: 0.5 };
+    const end = { x: 0.75, y: 0.5 };
+    // For this center-symmetric horizontal segment, projection is exactly
+    // the x coordinate of each endpoint.
+    expect(projectStopPosition(0, start, end)).toBeCloseTo(0.25, 6);
+    expect(projectStopPosition(1, start, end)).toBeCloseTo(0.75, 6);
+    expect(projectStopPosition(0.5, start, end)).toBeCloseTo(0.5, 6);
   });
 });
 

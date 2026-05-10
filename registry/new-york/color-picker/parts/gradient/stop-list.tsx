@@ -4,6 +4,10 @@ import * as React from "react";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import {
+  projectStopPosition,
+  reverseProjectStopPosition,
+} from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 
 export const StopList = React.forwardRef<
@@ -11,6 +15,17 @@ export const StopList = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(function StopList({ className, ...rest }, ref) {
   const ctx = useGradientPickerContext();
+  // Mirror the Bar's projection: when the gradient is a positioned linear,
+  // show + edit the *visible* position so this list matches what the user
+  // sees in the Area and Bar. Authored positions still live in 0..1 of the
+  // [start, end] segment; we convert at the edges.
+  const linear = ctx.gradient.type === "linear" ? ctx.gradient : null;
+  const start = linear?.start;
+  const end = linear?.end;
+  const toDisplay = (authored: number) =>
+    projectStopPosition(authored, start, end);
+  const fromDisplay = (displayed: number) =>
+    reverseProjectStopPosition(displayed, start, end);
   return (
     <div
       ref={ref}
@@ -54,10 +69,10 @@ export const StopList = React.forwardRef<
               min={0}
               max={100}
               step={1}
-              value={Math.round(s.position * 100)}
+              value={Math.round(toDisplay(s.position) * 100)}
               onChange={(e) => {
                 const v = parseFloat(e.target.value);
-                if (Number.isFinite(v)) ctx.moveStop(s.id, v / 100);
+                if (Number.isFinite(v)) ctx.moveStop(s.id, fromDisplay(v / 100));
               }}
               className="h-7 w-14 rounded border border-border bg-background px-1 text-right"
               aria-label="Stop position"

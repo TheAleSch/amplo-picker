@@ -170,41 +170,81 @@ function angleFromPoints(
 }
 
 /**
- * Re-map a list of stop positions so that the gradient transition happens
- * between `start` and `end` along the CSS gradient line — which is always
- * centered. We project `start` and `end` onto the gradient direction in
- * box-normalized coordinates and remap each stop's position from its
- * authored `[0, 1]` range into the projected `[startProj, endProj]` range.
+ * Project a linear gradient's `start` and `end` endpoints onto the CSS
+ * gradient line (the centered line implied by the derived angle). Returns
+ * `null` when the segment has zero length and no projection is meaningful.
  *
- * The CSS gradient line length depends on the actual box dimensions, so
- * this projection uses a square unit-box as an approximation. In stretched
- * containers the visual offset will be slightly off in proportion — the
- * direction of the offset is always correct.
+ * The CSS gradient line length depends on the actual box dimensions; this
+ * projection assumes a square unit box, so the magnitudes of the returned
+ * `startProj` / `endProj` are an approximation in stretched containers.
+ * The direction is always correct.
  */
-function adjustStopsForEndpoints(
+export function gradientLineProjection(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): { startProj: number; endProj: number } | null {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const len = Math.hypot(dx, dy);
+  if (len === 0) return null;
+  const ux = dx / len;
+  const uy = dy / len;
+  const cssLen = Math.abs(ux) + Math.abs(uy);
+  const project = (p: { x: number; y: number }) =>
+    0.5 + ((p.x - 0.5) * ux + (p.y - 0.5) * uy) / cssLen;
+  return { startProj: project(start), endProj: project(end) };
+}
+
+/**
+ * Map an authored stop position (0..1 along the [start, end] segment) into
+ * its visible position along the CSS gradient line. Identity when the
+ * segment has zero length or either endpoint is missing.
+ */
+export function projectStopPosition(
+  authoredPos: number,
+  start: { x: number; y: number } | undefined,
+  end: { x: number; y: number } | undefined,
+): number {
+  if (!start || !end) return authoredPos;
+  const proj = gradientLineProjection(start, end);
+  if (!proj) return authoredPos;
+  return proj.startProj + (proj.endProj - proj.startProj) * authoredPos;
+}
+
+/**
+ * Inverse of `projectStopPosition`: take a position along the CSS gradient
+ * line and return the corresponding authored position. Useful for
+ * converting a pointer position on the Bar back into the value that should
+ * be written to `stop.position`. Returns the input unchanged when there's
+ * no segment to project onto.
+ */
+export function reverseProjectStopPosition(
+  displayedPos: number,
+  start: { x: number; y: number } | undefined,
+  end: { x: number; y: number } | undefined,
+): number {
+  if (!start || !end) return displayedPos;
+  const proj = gradientLineProjection(start, end);
+  if (!proj) return displayedPos;
+  const span = proj.endProj - proj.startProj;
+  if (span === 0) return 0;
+  return (displayedPos - proj.startProj) / span;
+}
+
+/**
+ * Re-map a list of stop positions so that the gradient transition happens
+ * between `start` and `end` along the centered CSS gradient line. Used by
+ * `formatGradient` for the positioned linear case, and by the Bar /
+ * StopList parts to mirror that projection in their UI.
+ */
+export function adjustStopsForEndpoints(
   stops: GradientStop[],
   start: { x: number; y: number },
   end: { x: number; y: number },
 ): GradientStop[] {
-  // Direction along the gradient line in *screen* coords (y down).
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const len = Math.hypot(dx, dy);
-  if (len === 0) return stops;
-  const ux = dx / len;
-  const uy = dy / len;
-  // CSS gradient line length in unit-box space along this direction.
-  const cssLen = Math.abs(ux) + Math.abs(uy);
-  // Project (point - center) onto unit dir, normalized so 0 = line start,
-  // 1 = line end. center = (0.5, 0.5) in box-normalized coords.
-  const project = (p: { x: number; y: number }) => {
-    const px = p.x - 0.5;
-    const py = p.y - 0.5;
-    const proj = px * ux + py * uy;
-    return 0.5 + proj / cssLen;
-  };
-  const startProj = project(start);
-  const endProj = project(end);
+  const proj = gradientLineProjection(start, end);
+  if (!proj) return stops;
+  const { startProj, endProj } = proj;
   return stops.map((s) => ({
     ...s,
     position: startProj + (endProj - startProj) * s.position,

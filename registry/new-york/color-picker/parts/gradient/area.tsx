@@ -197,6 +197,56 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     ctx.setStartAngle(deg);
   };
 
+  // Keyboard nudge helpers --------------------------------------------------
+
+  const rotate = (current: number, e: React.KeyboardEvent): number | null => {
+    const step = e.shiftKey ? 15 : 1;
+    let next = current;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") next = current + step;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown")
+      next = current - step;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = 359;
+    else return null;
+    return ((next % 360) + 360) % 360;
+  };
+
+  const onKeyDownAngle = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (gradient.type !== "linear") return;
+    const next = rotate(gradient.angle, e);
+    if (next === null) return;
+    e.preventDefault();
+    ctx.setAngle(next);
+  };
+
+  const onKeyDownConicDial = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (gradient.type !== "conic") return;
+    const next = rotate(gradient.startAngle, e);
+    if (next === null) return;
+    e.preventDefault();
+    ctx.setStartAngle(next);
+  };
+
+  const onKeyDownCenter = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (gradient.type === "linear") return;
+    const center = gradient.center;
+    const step = e.shiftKey ? 0.05 : 0.01;
+    let { x, y } = center;
+    if (e.key === "ArrowLeft") x -= step;
+    else if (e.key === "ArrowRight") x += step;
+    else if (e.key === "ArrowUp") y -= step;
+    else if (e.key === "ArrowDown") y += step;
+    else if (e.key === "Home") {
+      x = 0.5;
+      y = 0.5;
+    } else return;
+    e.preventDefault();
+    ctx.setCenter({
+      x: Math.max(0, Math.min(1, x)),
+      y: Math.max(0, Math.min(1, y)),
+    });
+  };
+
   const beginDrag = (kind: HandleKind) => (
     e: React.PointerEvent<HTMLButtonElement>,
   ) => {
@@ -272,26 +322,58 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
             </svg>
           )}
 
-          <Handle
-            label={gradient.type === "linear" ? "Gradient start" : "Gradient center"}
-            position={handles.a}
-            onPointerDown={beginDrag(
-              gradient.type === "linear" ? "linear-a" : "center",
-            )}
-          />
-
-          {handles.b && (
-            <Handle
-              label={
-                gradient.type === "linear"
-                  ? "Gradient end"
-                  : "Gradient start angle"
-              }
-              position={handles.b}
-              onPointerDown={beginDrag(
-                gradient.type === "linear" ? "linear-b" : "conic-dial",
+          {gradient.type === "linear" ? (
+            <>
+              <Handle
+                label="Gradient start"
+                position={handles.a}
+                onPointerDown={beginDrag("linear-a")}
+                onKeyDown={onKeyDownAngle}
+                role="slider"
+                aria-valuemin={0}
+                aria-valuemax={360}
+                aria-valuenow={Math.round(gradient.angle)}
+                aria-valuetext={`${Math.round(gradient.angle)} degrees`}
+              />
+              {handles.b && (
+                <Handle
+                  label="Gradient end"
+                  position={handles.b}
+                  onPointerDown={beginDrag("linear-b")}
+                  onKeyDown={onKeyDownAngle}
+                  role="slider"
+                  aria-valuemin={0}
+                  aria-valuemax={360}
+                  aria-valuenow={Math.round(gradient.angle)}
+                  aria-valuetext={`${Math.round(gradient.angle)} degrees`}
+                />
               )}
-            />
+            </>
+          ) : (
+            <>
+              <Handle
+                label="Gradient center"
+                position={handles.a}
+                onPointerDown={beginDrag("center")}
+                onKeyDown={onKeyDownCenter}
+                role="application"
+                aria-roledescription="2D pad for gradient center"
+                aria-valuetext={`x ${Math.round(gradient.center.x * 100)}%, y ${Math.round(gradient.center.y * 100)}%`}
+              />
+              {handles.b && gradient.type === "conic" && (
+                <Handle
+                  label="Gradient start angle"
+                  position={handles.b}
+                  onPointerDown={beginDrag("conic-dial")}
+                  onKeyDown={onKeyDownConicDial}
+                  role="slider"
+                  aria-valuemin={0}
+                  aria-valuemax={360}
+                  aria-valuenow={Math.round(gradient.startAngle)}
+                  aria-valuetext={`${Math.round(gradient.startAngle)} degrees`}
+                />
+              )}
+            </>
           )}
         </>
       )}
@@ -299,23 +381,24 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   );
 });
 
-interface HandleProps {
+interface HandleProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> {
   label: string;
   position: XY;
-  onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => void;
 }
 
-function Handle({ label, position, onPointerDown }: HandleProps) {
+function Handle({ label, position, className, style, ...rest }: HandleProps) {
   return (
     <button
       type="button"
       aria-label={label}
-      onPointerDown={onPointerDown}
+      tabIndex={0}
       style={{
         left: position.x,
         top: position.y,
         width: HANDLE_PX,
         height: HANDLE_PX,
+        ...style,
       }}
       className={cn(
         "absolute -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full",
@@ -323,7 +406,9 @@ function Handle({ label, position, onPointerDown }: HandleProps) {
         "outline-none transition-transform",
         "hover:scale-110 active:cursor-grabbing active:scale-95",
         "focus-visible:ring-2 focus-visible:ring-ring",
+        className,
       )}
+      {...rest}
     />
   );
 }

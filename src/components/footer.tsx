@@ -39,7 +39,16 @@ export function Footer() {
             </a>
           </span>
           <span>
-            © {new Date().getFullYear()} Alexandre Schrammel ·{" "}
+            ©{" "}
+            <a
+              href="https://ale.design"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {new Date().getFullYear()} Alexandre Schrammel
+            </a>{" "}
+            ·{" "}
             <a
               href="https://github.com/TheAleSch/amplo-picker/blob/main/LICENSE"
               target="_blank"

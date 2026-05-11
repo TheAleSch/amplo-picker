@@ -97,9 +97,18 @@ export interface GradientPickerState {
    * Set explicit numeric radii on the active radial gradient. Each value is
    * a 0..1 fraction of the gradient box (x→width, y→height). Passing
    * `undefined` clears the explicit override and falls back to the
-   * keyword-based size from `setRadialShape` / `setRadialSize`.
+   * keyword-based size from `setRadialShape` / `setRadialSize`. Use this
+   * for ellipse-shape radials.
    */
   setRadii: (radii: { x: number; y: number } | undefined) => void;
+  /**
+   * Set the explicit circle radius in absolute pixels. Only meaningful
+   * when `shape === "circle"` — produces a CSS `radial-gradient(<px>px
+   * at ...)` form, which is the only way to keep the gradient visually
+   * circular in any consumer container (the percentage pair form always
+   * implies ellipse). Passing `undefined` clears the override.
+   */
+  setRadiusPx: (px: number | undefined) => void;
   selectStop: (id: string) => void;
   addStop: (position: number, color?: OklchColor) => string;
   removeStop: (id: string) => void;
@@ -345,16 +354,35 @@ export function useGradientPicker(
       apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
         const base = prev.gradient as RadialGradient;
-        // Spread first, then conditionally attach/strip the field so we never
-        // leave a `radii: undefined` property dangling on the object (which
-        // would format as `"undefined% undefined%"` if we ever swapped the
-        // emission strategy).
+        // Setting `radii` is the ellipse path — clear `radiusPx` in the same
+        // commit so the two never coexist (only one can win at emit time,
+        // and keeping a stale value around would be confusing for callers
+        // that read state directly).
+        const { radii: _dropRadii, radiusPx: _dropPx, ...rest } = base;
         const next: RadialGradient = radii
-          ? { ...base, radii: { x: Math.max(0, radii.x), y: Math.max(0, radii.y) } }
-          : (() => {
-              const { radii: _drop, ...rest } = base;
-              return rest as RadialGradient;
-            })();
+          ? {
+              ...rest,
+              radii: { x: Math.max(0, radii.x), y: Math.max(0, radii.y) },
+            }
+          : (rest as RadialGradient);
+        return { gradient: next, stops: prev.stops };
+      }),
+    [apply],
+  );
+
+  const setRadiusPx = React.useCallback(
+    (px: number | undefined) =>
+      apply((prev) => {
+        if (prev.gradient.type !== "radial") return prev;
+        const base = prev.gradient as RadialGradient;
+        // Setting `radiusPx` is the circle path — clear `radii` so the
+        // ellipse override never lingers, and so emit logic doesn't have to
+        // tiebreak.
+        const { radii: _dropRadii, radiusPx: _dropPx, ...rest } = base;
+        const next: RadialGradient =
+          px !== undefined
+            ? { ...rest, radiusPx: Math.max(0, px) }
+            : (rest as RadialGradient);
         return { gradient: next, stops: prev.stops };
       }),
     [apply],
@@ -475,6 +503,7 @@ export function useGradientPicker(
     setRadialShape,
     setRadialSize,
     setRadii,
+    setRadiusPx,
     selectStop,
     addStop,
     removeStop,

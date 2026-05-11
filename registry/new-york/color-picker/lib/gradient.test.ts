@@ -47,6 +47,29 @@ describe("formatGradient", () => {
     );
   });
 
+  it("emits a single <px> length when shape=circle and radiusPx is set", () => {
+    expect(
+      formatGradient({ ...DEFAULT_RADIAL, shape: "circle", radiusPx: 268 }),
+    ).toBe(
+      "radial-gradient(268px at 50% 50% in oklch, oklch(1 0 0) 0%, oklch(0 0 0) 100%)",
+    );
+  });
+
+  it("prefers radiusPx over radii when both are set on a circle", () => {
+    // radiusPx wins, radii is ignored on emit. (UI setters keep them
+    // mutually exclusive, but the format function tolerates both.)
+    expect(
+      formatGradient({
+        ...DEFAULT_RADIAL,
+        shape: "circle",
+        radiusPx: 100,
+        radii: { x: 0.5, y: 0.5 },
+      }),
+    ).toBe(
+      "radial-gradient(100px at 50% 50% in oklch, oklch(1 0 0) 0%, oklch(0 0 0) 100%)",
+    );
+  });
+
   it("emits a conic gradient with start angle and center", () => {
     expect(formatGradient(DEFAULT_CONIC)).toBe(
       "conic-gradient(from 0deg at 50% 50% in oklch, oklch(1 0 0) 0%, oklch(0 0 0) 100%)",
@@ -161,6 +184,11 @@ describe("parseGradient", () => {
   it("round-trips a radial gradient", () => {
     const css = formatGradient(DEFAULT_RADIAL);
     expect(parseGradient(css)).toEqual(DEFAULT_RADIAL);
+  });
+
+  it("round-trips a radial gradient with circle radiusPx", () => {
+    const g = { ...DEFAULT_RADIAL, shape: "circle" as const, radiusPx: 184 };
+    expect(parseGradient(formatGradient(g))).toEqual(g);
   });
 
   it("round-trips a radial gradient with explicit numeric radii", () => {

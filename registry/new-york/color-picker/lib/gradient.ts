@@ -71,8 +71,22 @@ export interface RadialGradient {
    * fraction of its height — matching the CSS `<length-percentage>{1,2}`
    * radial-gradient ending-shape syntax. When unset, the keyword form
    * (`shape size`) is emitted instead.
+   *
+   * Use this for **ellipse** shapes — pairs of percentages stay
+   * container-relative on the consumer side.
    */
   radii?: { x: number; y: number };
+  /**
+   * Optional explicit circle radius in absolute pixels. Only meaningful
+   * when `shape === "circle"`. When set, takes the highest precedence at
+   * emit time and produces a `radial-gradient(<px>px at ...)` form — which
+   * is the **only** way to get a CSS radial gradient that stays visually
+   * circular regardless of the consumer container's aspect ratio. The
+   * `<length-percentage>{2}` form always implies ellipse (CSS spec), so
+   * even rx === ry-by-pixel from the picker box draws an ellipse when
+   * pasted into a differently-shaped container.
+   */
+  radiusPx?: number;
   stops: GradientStop[];
   interp: GradientInterp;
 }
@@ -271,9 +285,21 @@ export function formatGradient(g: Gradient): string {
   }
   if (g.type === "radial") {
     const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
-    const endingShape = g.radii
-      ? `${trim(g.radii.x * 100)}% ${trim(g.radii.y * 100)}%`
-      : `${g.shape} ${g.size}`;
+    // Precedence at emit time:
+    //   1. shape=circle + radiusPx → `<px>px` (single length forces circle,
+    //      stays a true circle in any consumer container)
+    //   2. radii → `<rx>% <ry>%` (always renders as an ellipse, scales with
+    //      container width / height respectively)
+    //   3. keyword form → `shape size` (CSS default, computed live by the
+    //      renderer relative to the container + center)
+    let endingShape: string;
+    if (g.shape === "circle" && g.radiusPx !== undefined) {
+      endingShape = `${trim(g.radiusPx)}px`;
+    } else if (g.radii) {
+      endingShape = `${trim(g.radii.x * 100)}% ${trim(g.radii.y * 100)}%`;
+    } else {
+      endingShape = `${g.shape} ${g.size}`;
+    }
     return `radial-gradient(${endingShape} ${center} ${interp}, ${formatStops(g.stops)})`;
   }
   // conic
@@ -395,6 +421,7 @@ export function parseGradient(input: string): Gradient | null {
     let cx = 0.5;
     let cy = 0.5;
     let radii: { x: number; y: number } | undefined;
+    let radiusPx: number | undefined;
 
     if (/\bcircle\b/i.test(head)) shape = "circle";
     else if (/\bellipse\b/i.test(head)) shape = "ellipse";
@@ -407,19 +434,31 @@ export function parseGradient(input: string): Gradient | null {
     else if (/\bfarthest-side\b/i.test(head)) size = "farthest-side";
     else if (/\bfarthest-corner\b/i.test(head)) size = "farthest-corner";
 
+    const beforeAt = head.split(/\bat\b/i)[0] ?? head;
+
+    // Single `<px>` length form (e.g. "268px") — CSS spec requires this
+    // to be a circle, so set shape too. Check before the `%% %%` pair so a
+    // mixed `circle 100px` doesn't accidentally try to parse a pair.
+    const singleLenMatch = beforeAt.match(/(-?\d+(?:\.\d+)?)px(?!\s*-?\d+(?:\.\d+)?\s*(?:px|%))/);
+    if (singleLenMatch) {
+      radiusPx = parseFloat(singleLenMatch[1]);
+      shape = "circle";
+    }
+
     // Explicit two-value ending shape (e.g. "48% 30%") — appears before `at`.
     // We deliberately only match the percentage form formatGradient emits;
     // raw lengths (`100px 80px`) are intentionally ignored here so they fall
     // through to the keyword defaults instead of being silently rescaled.
-    const beforeAt = head.split(/\bat\b/i)[0] ?? head;
-    const radiiMatch = beforeAt.match(
-      /(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/,
-    );
-    if (radiiMatch) {
-      radii = {
-        x: parseFloat(radiiMatch[1]) / 100,
-        y: parseFloat(radiiMatch[2]) / 100,
-      };
+    if (!radiusPx) {
+      const radiiMatch = beforeAt.match(
+        /(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/,
+      );
+      if (radiiMatch) {
+        radii = {
+          x: parseFloat(radiiMatch[1]) / 100,
+          y: parseFloat(radiiMatch[2]) / 100,
+        };
+      }
     }
 
     const atMatch = head.match(/\bat\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/i);
@@ -436,6 +475,7 @@ export function parseGradient(input: string): Gradient | null {
       size,
       center: { x: cx, y: cy },
       ...(radii ? { radii } : {}),
+      ...(radiusPx !== undefined ? { radiusPx } : {}),
       interp,
       stops,
     };

@@ -227,14 +227,39 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     }
 
     if (gradient.type === "radial") {
-      const radii =
-        gradient.radii ??
-        keywordToRadii(gradient.shape, gradient.size, gradient.center, w, h);
       const ax = gradient.center.x * w;
       const ay = gradient.center.y * h;
+      // Edge handle position resolves in three precedence tiers, matching
+      // formatGradient's emit logic:
+      //   1. circle + radiusPx → place the handle on the ring at (rPx, 0).
+      //      Single-axis since the gradient is pixel-circular.
+      //   2. radii (ellipse) → place the handle at the +x +y corner of the
+      //      ellipse bounding box.
+      //   3. keyword form → seed both from `keywordToRadii` and treat the
+      //      handle as ellipse-style for the visual until the user
+      //      promotes (drag promotes per shape).
+      let bx: number;
+      let by: number;
+      if (gradient.shape === "circle" && gradient.radiusPx !== undefined) {
+        bx = ax + gradient.radiusPx;
+        by = ay;
+      } else if (gradient.radii) {
+        bx = ax + gradient.radii.x * w;
+        by = ay + gradient.radii.y * h;
+      } else {
+        const seeded = keywordToRadii(
+          gradient.shape,
+          gradient.size,
+          gradient.center,
+          w,
+          h,
+        );
+        bx = ax + seeded.x * w;
+        by = ay + seeded.y * h;
+      }
       return {
         a: { x: ax, y: ay },
-        b: { x: ax + radii.x * w, y: ay + radii.y * h } as XY,
+        b: { x: bx, y: by } as XY,
         showConnector: false,
       };
     }
@@ -324,31 +349,24 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       // strictly non-negative (CSS forbids negative gradient radii).
       const dxPx = Math.abs(p.x - ax);
       const dyPx = Math.abs(p.y - ay);
-      // Match the gradient's declared shape by default. `shape === "circle"`
-      // means the rendered ellipse must have equal pixel radii on both
-      // axes; without this guard a free drag would silently turn a
-      // "circle" radial into an ellipse, which contradicts the model.
-      // Holding Shift inverts: forces an ellipse on a circle, or a circle
-      // on an ellipse.
-      const lockToCircle =
-        (gradient.shape === "circle") !== shiftKey;
-      let rx: number;
-      let ry: number;
-      if (lockToCircle) {
-        // Visual circle: equal pixel radii on both axes. Use the larger
-        // pointer distance so the dot follows the cursor along whichever
-        // axis the user is most committed to.
+      // Honor the declared shape, Shift inverts:
+      //   shape=circle + no shift  → circle (true pixel circle, radiusPx)
+      //   shape=circle + shift     → ellipse (radii)
+      //   shape=ellipse + no shift → ellipse (radii)
+      //   shape=ellipse + shift    → circle (radiusPx)
+      const renderAsCircle = (gradient.shape === "circle") !== shiftKey;
+      if (renderAsCircle) {
+        // True pixel circle: pick the larger pointer distance as the
+        // radius. Stored in absolute pixels so the consumer-side CSS
+        // (`circle <px>px`) renders a real circle in any container.
         const rPx = Math.max(dxPx, dyPx);
-        rx = rPx / w;
-        ry = rPx / h;
+        ctx.setRadiusPx(rPx);
       } else {
-        rx = dxPx / w;
-        ry = dyPx / h;
+        ctx.setRadii({
+          x: Math.max(0, Math.min(2, dxPx / w)),
+          y: Math.max(0, Math.min(2, dyPx / h)),
+        });
       }
-      ctx.setRadii({
-        x: Math.max(0, Math.min(2, rx)),
-        y: Math.max(0, Math.min(2, ry)),
-      });
       return;
     }
 
@@ -504,27 +522,45 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     if (gradient.type !== "radial") return;
     const { w, h } = dims;
     if (w === 0 || h === 0) return;
+    // Same shape-lock convention as the pointer drag.
+    const renderAsCircle = (gradient.shape === "circle") !== e.shiftKey;
+    const stepRatio = e.shiftKey ? 0.05 : 0.01;
+
+    if (renderAsCircle) {
+      // Resolve the current radius in pixels regardless of which field is
+      // populated, then nudge in pixel space.
+      const currentPx =
+        gradient.radiusPx ??
+        (gradient.radii
+          ? Math.max(gradient.radii.x * w, gradient.radii.y * h)
+          : keywordToRadii(
+              gradient.shape,
+              gradient.size,
+              gradient.center,
+              w,
+              h,
+            ).x * w);
+      const stepPx = stepRatio * Math.min(w, h);
+      let next = currentPx;
+      if (e.key === "ArrowLeft" || e.key === "ArrowDown") next -= stepPx;
+      else if (e.key === "ArrowRight" || e.key === "ArrowUp") next += stepPx;
+      else return;
+      e.preventDefault();
+      ctx.setRadiusPx(Math.max(0, next));
+      return;
+    }
+
+    // Ellipse path: per-axis nudge in normalized space, same as before.
     const current =
       gradient.radii ??
       keywordToRadii(gradient.shape, gradient.size, gradient.center, w, h);
-    const step = e.shiftKey ? 0.05 : 0.01;
     let { x, y } = current;
-    if (e.key === "ArrowLeft") x -= step;
-    else if (e.key === "ArrowRight") x += step;
-    else if (e.key === "ArrowUp") y -= step;
-    else if (e.key === "ArrowDown") y += step;
+    if (e.key === "ArrowLeft") x -= stepRatio;
+    else if (e.key === "ArrowRight") x += stepRatio;
+    else if (e.key === "ArrowUp") y -= stepRatio;
+    else if (e.key === "ArrowDown") y += stepRatio;
     else return;
     e.preventDefault();
-    // Same shape-lock convention as the pointer drag: by default the
-    // gradient's declared `shape` wins, Shift inverts. When locked to a
-    // circle, project both axes back to the dominant pixel radius so the
-    // rendered ellipse stays geometrically circular.
-    const lockToCircle = (gradient.shape === "circle") !== e.shiftKey;
-    if (lockToCircle) {
-      const rPx = Math.max(x * w, y * h);
-      x = rPx / w;
-      y = rPx / h;
-    }
     ctx.setRadii({
       x: Math.max(0, Math.min(2, x)),
       y: Math.max(0, Math.min(2, y)),
@@ -556,15 +592,20 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   };
 
   /**
-   * Snapshot the current keyword-derived radii into explicit numeric radii.
-   * Called the first time the user moves a radial center so the visible
-   * ring size stays put — CSS extent keywords (`farthest-corner` etc.) are
-   * relative to the center, so without this snapshot the gradient appears
-   * to grow / shrink as the center is dragged toward / away from corners.
+   * Snapshot the current keyword-derived size into an explicit value so the
+   * visible gradient doesn't grow / shrink as the user drags the center.
+   * CSS extent keywords (`farthest-corner` etc.) recompute relative to the
+   * center on every paint — without this snapshot, a center drag visibly
+   * resizes the gradient.
+   *
+   *   - shape="circle"  → snapshot to `radiusPx` (absolute pixel radius).
+   *     Consumer-side CSS uses `circle <px>px`, which stays a true circle
+   *     in any container aspect.
+   *   - shape="ellipse" → snapshot to `radii` (fractions of box w/h).
    */
   const lockRadiiFromKeyword = () => {
     if (gradient.type !== "radial") return;
-    if (gradient.radii) return;
+    if (gradient.radii || gradient.radiusPx !== undefined) return;
     if (dims.w === 0 || dims.h === 0) return;
     const seeded = keywordToRadii(
       gradient.shape,
@@ -573,7 +614,14 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       dims.w,
       dims.h,
     );
-    ctx.setRadii(seeded);
+    if (gradient.shape === "circle") {
+      // `keywordToRadii` returns normalized values that, multiplied by the
+      // matching box dimension, yield the same pixel radius — so x*w or
+      // y*h both work here. Use x*w by convention.
+      ctx.setRadiusPx(seeded.x * dims.w);
+    } else {
+      ctx.setRadii(seeded);
+    }
   };
 
   const beginDrag = (kind: HandleKind) => (
@@ -761,28 +809,38 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
                   role="slider"
                   aria-valuemin={0}
                   aria-valuemax={200}
-                  aria-valuenow={Math.round(
-                    (gradient.radii?.x ??
-                      keywordToRadii(
-                        gradient.shape,
-                        gradient.size,
-                        gradient.center,
-                        dims.w,
-                        dims.h,
-                      ).x) * 100,
-                  )}
-                  aria-valuetext={(() => {
-                    const r =
-                      gradient.radii ??
-                      keywordToRadii(
-                        gradient.shape,
-                        gradient.size,
-                        gradient.center,
-                        dims.w,
-                        dims.h,
-                      );
-                    return `radius x ${Math.round(r.x * 100)}%, y ${Math.round(r.y * 100)}%`;
-                  })()}
+                  aria-valuenow={
+                    gradient.shape === "circle" &&
+                    gradient.radiusPx !== undefined
+                      ? Math.round(gradient.radiusPx)
+                      : Math.round(
+                          (gradient.radii?.x ??
+                            keywordToRadii(
+                              gradient.shape,
+                              gradient.size,
+                              gradient.center,
+                              dims.w,
+                              dims.h,
+                            ).x) * 100,
+                        )
+                  }
+                  aria-valuetext={
+                    gradient.shape === "circle" &&
+                    gradient.radiusPx !== undefined
+                      ? `circle radius ${Math.round(gradient.radiusPx)} pixels`
+                      : (() => {
+                          const r =
+                            gradient.radii ??
+                            keywordToRadii(
+                              gradient.shape,
+                              gradient.size,
+                              gradient.center,
+                              dims.w,
+                              dims.h,
+                            );
+                          return `radius x ${Math.round(r.x * 100)}%, y ${Math.round(r.y * 100)}%`;
+                        })()
+                  }
                 />
               )}
             </>

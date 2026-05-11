@@ -2,6 +2,11 @@
 
 import * as React from "react";
 import { Trash2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import {
@@ -9,6 +14,45 @@ import {
   reverseProjectStopPosition,
 } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
+import { ColorPickerContext } from "../../context";
+import { useColorPicker } from "../../hooks/use-color-picker";
+import type { OklchColor } from "../../lib/types";
+import { Area as ColorArea } from "../area";
+import { Hue } from "../hue";
+import { Alpha } from "../alpha";
+import { ChannelInput } from "../channel-input";
+
+const CHECKERBOARD =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
+
+/**
+ * Inline binding helper: mounts a `ColorPickerContext` for a specific
+ * stop id, identical to `<GradientPicker.StopColor>` but bound to the
+ * stop the user just clicked in the row (not necessarily the selected
+ * one). Keyed on `stopId` by callers so a fresh hook instance — and a
+ * fresh `lastGoodHueRef` — is created per popover open.
+ */
+function StopColorEditor({
+  stopId,
+  color,
+  children,
+}: React.PropsWithChildren<{ stopId: string; color: OklchColor }>) {
+  const ctx = useGradientPickerContext();
+  const setStopColorRef = React.useRef(ctx.setStopColor);
+  React.useEffect(() => {
+    setStopColorRef.current = ctx.setStopColor;
+  });
+  const onValueChange = React.useCallback(
+    (c: OklchColor) => setStopColorRef.current(stopId, c),
+    [stopId],
+  );
+  const state = useColorPicker({ value: color, onValueChange });
+  return (
+    <ColorPickerContext.Provider value={state}>
+      {children}
+    </ColorPickerContext.Provider>
+  );
+}
 
 export const StopList = React.forwardRef<
   HTMLDivElement,
@@ -59,11 +103,41 @@ export const StopList = React.forwardRef<
               selected ? "border-foreground" : "border-border",
             )}
           >
-            <span
-              aria-hidden
-              className="size-5 rounded border border-border"
-              style={{ background: formatColor(s.color, "hex") }}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  // Layered swatch: actual stop color (alpha intact) on top
+                  // of a small-scale checkerboard so transparency reads.
+                  // Clicking opens a full ColorPicker popover bound to this
+                  // specific stop — not necessarily the currently selected
+                  // one, so users can edit any stop without first selecting
+                  // it. `e.stopPropagation()` prevents the row click from
+                  // double-firing `selectStop`.
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ctx.selectStop(s.id);
+                  }}
+                  aria-label="Edit stop color"
+                  style={{
+                    backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD}`,
+                    backgroundSize: "auto, 6px 6px",
+                  }}
+                  className="size-7 shrink-0 rounded border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </PopoverTrigger>
+              <PopoverContent
+                className="flex w-64 flex-col gap-2 p-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <StopColorEditor key={s.id} stopId={s.id} color={s.color}>
+                  <ColorArea />
+                  <Hue />
+                  <Alpha />
+                  <ChannelInput />
+                </StopColorEditor>
+              </PopoverContent>
+            </Popover>
             <input
               type="number"
               min={0}

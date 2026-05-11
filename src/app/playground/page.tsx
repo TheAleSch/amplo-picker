@@ -72,6 +72,7 @@ type GradientPartKey =
   | "bar"
   | "area"
   | "overlayDemo"
+  | "externalCanvas"
   | "angleDial"
   | "centerPad"
   | "radialShape"
@@ -91,6 +92,7 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   bar: true,
   area: true,
   overlayDemo: false,
+  externalCanvas: false,
   angleDial: true,
   centerPad: true,
   // RadialShape ships off by default — the new Area edge handle is the
@@ -111,6 +113,7 @@ const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [
   { key: "bar", label: "Bar" },
   { key: "area", label: "Area" },
   { key: "overlayDemo", label: "Overlay (demo)" },
+  { key: "externalCanvas", label: "External canvas (side)" },
   { key: "angleDial", label: "AngleDial" },
   { key: "centerPad", label: "CenterPad" },
   { key: "radialShape", label: "RadialShape" },
@@ -654,7 +657,22 @@ export default function PlaygroundPage() {
               </ColorPicker.Root>
               )}
               {fillMode === "gradient" && (
-                <GradientPicker.Root value={gradient} onValueChange={setGradient}>
+                <GradientPicker.Root
+                  value={gradient}
+                  onValueChange={setGradient}
+                  className={
+                    gradientParts.externalCanvas
+                      ? "max-w-3xl flex-row items-start"
+                      : ""
+                  }
+                >
+                  <div
+                    className={
+                      gradientParts.externalCanvas
+                        ? "flex w-72 shrink-0 flex-col gap-2"
+                        : "contents"
+                    }
+                  >
                   {(gradientParts.typeSwitcher || gradientParts.reverseStops) && (
                     <div className="flex items-center justify-between">
                       {gradientParts.typeSwitcher ? (
@@ -708,6 +726,17 @@ export default function PlaygroundPage() {
                     />
                   )}
                   {gradientParts.cssInput && <GradientPicker.CssInput />}
+                  </div>
+                  {gradientParts.externalCanvas && (
+                    <div className="relative aspect-square flex-1 overflow-hidden rounded-md border border-border bg-muted">
+                      <div
+                        aria-hidden
+                        className="absolute inset-0"
+                        style={{ background: formatGradient(gradient) }}
+                      />
+                      <GradientPicker.Overlay />
+                    </div>
+                  )}
                 </GradientPicker.Root>
               )}
               {fillMode === "fill" && (

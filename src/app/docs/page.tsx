@@ -278,6 +278,13 @@ export default function DocsPage() {
             preview={<GradientOverlayDemo />}
             code={GRADIENT_OVERLAY_CODE}
           />
+
+          <Example
+            title="Picker beside an external canvas"
+            description="Compact picker controls on one side, a larger canvas-style preview on the other — both wired up inside a single <GradientPicker.Root> so editing either side updates the other in real time. This is the pattern to reach for when the picker lives in a side panel and the gradient is applied to an object on the main stage."
+            preview={<GradientCanvasDemo />}
+            code={GRADIENT_CANVAS_CODE}
+          />
         </section>
 
         <section className="flex flex-col gap-4">
@@ -873,6 +880,36 @@ function GradientOverlayDemo() {
   );
 }
 
+function GradientCanvasDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <GradientPicker.Root value={g} onValueChange={setG}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        {/* Picker controls — sit in a side panel. */}
+        <div className="flex w-full max-w-[18rem] flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <GradientPicker.TypeSwitcher />
+            <GradientPicker.ReverseStops />
+          </div>
+          <GradientPicker.Bar />
+          <GradientPicker.StopList />
+        </div>
+        {/* External "canvas object" — paint the gradient on a sibling
+           element inside the same Root so the Overlay handles align to
+           this box and edits flow back through the shared context. */}
+        <div className="relative aspect-square w-full max-w-md flex-1 overflow-hidden rounded-md border border-border bg-muted sm:min-w-48">
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{ background: formatGradient(g) }}
+          />
+          <GradientPicker.Overlay />
+        </div>
+      </div>
+    </GradientPicker.Root>
+  );
+}
+
 function GradientBarOnlyDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
   return (
@@ -1179,6 +1216,41 @@ export function GradientFullDemo() {
       </GradientPicker.StopColor>
       <GradientPicker.InterpSwitcher />
       <GradientPicker.Presets />
+    </GradientPicker.Root>
+  );
+}`;
+
+const GRADIENT_CANVAS_CODE = `"use client";
+
+import * as React from "react";
+import {
+  GradientPicker,
+  DEFAULT_LINEAR,
+  formatGradient,
+} from "@/components/ui/color-picker/fill-picker";
+import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+
+export function GradientCanvasDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <GradientPicker.Root value={g} onValueChange={setG}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex w-full max-w-72 flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <GradientPicker.TypeSwitcher />
+            <GradientPicker.ReverseStops />
+          </div>
+          <GradientPicker.Bar />
+          <GradientPicker.StopList />
+        </div>
+        <div className="relative aspect-square w-full max-w-md flex-1 overflow-hidden rounded-md border">
+          <div
+            className="absolute inset-0"
+            style={{ background: formatGradient(g) }}
+          />
+          <GradientPicker.Overlay />
+        </div>
+      </div>
     </GradientPicker.Root>
   );
 }`;

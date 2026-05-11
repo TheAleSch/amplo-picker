@@ -62,6 +62,86 @@ export const RadialShape = React.forwardRef<
           </option>
         ))}
       </select>
+      {/* Numeric size override. For circle we expose a single px input bound
+         to `radiusPx`; for ellipse, two percentage inputs bound to
+         `radii.x` / `radii.y`. Useful when the desired size is larger than
+         the in-Area edge handle can reach by dragging, or when the user
+         wants a precise numeric value. */}
+      {g.shape === "circle" ? (
+        <label className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <span>r</span>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={
+              g.radiusPx !== undefined ? Math.round(g.radiusPx) : ""
+            }
+            placeholder="auto"
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "") {
+                ctx.setRadiusPx(undefined);
+                return;
+              }
+              const n = parseFloat(v);
+              if (Number.isFinite(n)) ctx.setRadiusPx(Math.max(0, n));
+            }}
+            className="h-7 w-16 rounded border border-border bg-background px-1 text-right text-xs text-foreground"
+            aria-label="Circle radius in pixels"
+          />
+          <span>px</span>
+        </label>
+      ) : (
+        <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={
+              g.radii ? Math.round(g.radii.x * 100) : ""
+            }
+            placeholder="auto"
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "") {
+                ctx.setRadii(undefined);
+                return;
+              }
+              const n = parseFloat(v);
+              if (!Number.isFinite(n)) return;
+              const current = g.radii ?? { x: 0, y: 0 };
+              ctx.setRadii({ x: Math.max(0, n / 100), y: current.y });
+            }}
+            className="h-7 w-12 rounded border border-border bg-background px-1 text-right text-xs text-foreground"
+            aria-label="Ellipse horizontal radius percent"
+          />
+          <span>×</span>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={
+              g.radii ? Math.round(g.radii.y * 100) : ""
+            }
+            placeholder="auto"
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "") {
+                ctx.setRadii(undefined);
+                return;
+              }
+              const n = parseFloat(v);
+              if (!Number.isFinite(n)) return;
+              const current = g.radii ?? { x: 0, y: 0 };
+              ctx.setRadii({ x: current.x, y: Math.max(0, n / 100) });
+            }}
+            className="h-7 w-12 rounded border border-border bg-background px-1 text-right text-xs text-foreground"
+            aria-label="Ellipse vertical radius percent"
+          />
+          <span>%</span>
+        </span>
+      )}
     </div>
   );
 });

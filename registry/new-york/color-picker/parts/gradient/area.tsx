@@ -581,10 +581,11 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       y = 0.5;
     } else return;
     e.preventDefault();
-    // Mirror the pointer-drag behavior: lock the keyword-derived radii
-    // into explicit numeric values before moving the center so the visible
-    // ring size doesn't shift with every arrow press.
-    lockRadiiFromKeyword();
+    // Intentionally no auto-lock here: kbd nudges keep the gradient in
+    // its current size mode (keyword or already-explicit). Pointer drag
+    // auto-locks at gesture end; kbd users can lock via the numeric
+    // radius input in `<GradientPicker.RadialShape>` when they want a
+    // fixed size.
     ctx.setCenter({
       x: Math.max(0, Math.min(1, x)),
       y: Math.max(0, Math.min(1, y)),
@@ -631,7 +632,6 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     e.stopPropagation();
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
-    if (kind === "center") lockRadiiFromKeyword();
     handleAt(kind, localFromEvent(e.clientX, e.clientY), e.shiftKey);
     const onMove = (ev: PointerEvent) =>
       handleAt(kind, localFromEvent(ev.clientX, ev.clientY), ev.shiftKey);
@@ -644,6 +644,13 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       target.removeEventListener("pointermove", onMove);
       target.removeEventListener("pointerup", cleanup);
       target.removeEventListener("pointercancel", cleanup);
+      // For a center drag, snapshot the current keyword-derived size at the
+      // *end* of the gesture (using the new center) so what the user sees
+      // on release is what gets frozen. Locking at pointerdown would
+      // capture the at-old-center radius, which is typically smaller than
+      // the live keyword radius at the drag-target center — felt like the
+      // gradient was shrinking the moment they let go.
+      if (kind === "center") lockRadiiFromKeyword();
     };
     target.addEventListener("pointermove", onMove);
     target.addEventListener("pointerup", cleanup);

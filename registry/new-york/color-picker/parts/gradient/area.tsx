@@ -523,10 +523,35 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       y = 0.5;
     } else return;
     e.preventDefault();
+    // Mirror the pointer-drag behavior: lock the keyword-derived radii
+    // into explicit numeric values before moving the center so the visible
+    // ring size doesn't shift with every arrow press.
+    lockRadiiFromKeyword();
     ctx.setCenter({
       x: Math.max(0, Math.min(1, x)),
       y: Math.max(0, Math.min(1, y)),
     });
+  };
+
+  /**
+   * Snapshot the current keyword-derived radii into explicit numeric radii.
+   * Called the first time the user moves a radial center so the visible
+   * ring size stays put — CSS extent keywords (`farthest-corner` etc.) are
+   * relative to the center, so without this snapshot the gradient appears
+   * to grow / shrink as the center is dragged toward / away from corners.
+   */
+  const lockRadiiFromKeyword = () => {
+    if (gradient.type !== "radial") return;
+    if (gradient.radii) return;
+    if (dims.w === 0 || dims.h === 0) return;
+    const seeded = keywordToRadii(
+      gradient.shape,
+      gradient.size,
+      gradient.center,
+      dims.w,
+      dims.h,
+    );
+    ctx.setRadii(seeded);
   };
 
   const beginDrag = (kind: HandleKind) => (
@@ -536,6 +561,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     e.stopPropagation();
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
+    if (kind === "center") lockRadiiFromKeyword();
     handleAt(kind, localFromEvent(e.clientX, e.clientY), e.shiftKey);
     const onMove = (ev: PointerEvent) =>
       handleAt(kind, localFromEvent(ev.clientX, ev.clientY), ev.shiftKey);

@@ -316,6 +316,26 @@ export function findMaxChroma(
  * fits inside `<canvas colorSpace="display-p3">` plus the slice that won't
  * paint accurately on any current monitor.
  */
+/**
+ * Hue of an OKLCH color in HSL's hue scale (degrees). Used by the Hue slider
+ * when the active format is `hsl` so the slider position matches what the
+ * channel input shows — OKLCH hue and HSL hue diverge for the same color
+ * (red is OKLCH ~29° but HSL 0°). Returns the OKLCH hue as a fallback when
+ * the conversion fails (achromatic colors where culori returns NaN).
+ */
+export function hslHue(color: OklchColor): number {
+  const c = toHsl({ mode: "oklch", l: color.l, c: color.c, h: color.h });
+  return c?.h ?? color.h;
+}
+
+/**
+ * Hue of an OKLCH color in HSB/HSV's hue scale (degrees). See `hslHue`.
+ */
+export function hsbHue(color: OklchColor): number {
+  const c = toHsv({ mode: "oklch", l: color.l, c: color.c, h: color.h });
+  return c?.h ?? color.h;
+}
+
 export function gamutFromFormat(f: ColorFormat): Gamut {
   switch (f) {
     case "hex":

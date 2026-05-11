@@ -15,20 +15,22 @@ export const CssInput = React.forwardRef<
   const [draft, setDraft] = React.useState(() => formatGradient(ctx.gradient));
   const [invalid, setInvalid] = React.useState(false);
 
-  // Don't clobber an in-progress edit. Re-sync only when the input is not the
-  // active element — otherwise every commit re-renders the parent, the parent
-  // hands us back the canonicalized gradient, and this effect would overwrite
-  // characters the user is currently typing.
-  React.useEffect(() => {
-    if (
+  // Adjust state during render rather than via useEffect — same pattern as the
+  // color `CssInput`, `HexField`, and `ChannelField`. Re-sync the draft only
+  // when the input isn't focused so we don't clobber an in-progress edit.
+  const [prevGradient, setPrevGradient] = React.useState(ctx.gradient);
+  if (ctx.gradient !== prevGradient) {
+    setPrevGradient(ctx.gradient);
+    const inputEl = inputRef.current;
+    const focused =
       typeof document !== "undefined" &&
-      document.activeElement === inputRef.current
-    ) {
-      return;
+      inputEl !== null &&
+      document.activeElement === inputEl;
+    if (!focused) {
+      setDraft(formatGradient(ctx.gradient));
+      setInvalid(false);
     }
-    setDraft(formatGradient(ctx.gradient));
-    setInvalid(false);
-  }, [ctx.gradient]);
+  }
 
   const commit = () => {
     const parsed = parseGradient(draft);

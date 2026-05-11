@@ -166,16 +166,26 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
     [color, background],
   );
 
-  const commitColor = React.useCallback(
-    (next: OklchColor) => {
-      if (!isControlledColor) setInternalColor(next);
-      if (onValueChange) {
-        const all = formatAll(next);
-        onValueChange(next, all[format], all);
-      }
-    },
-    [format, isControlledColor, onValueChange],
-  );
+  // Refs that mirror `format` and `onValueChange` during render so chained
+  // commits within a single event handler — e.g. `setFormat` calling
+  // `commitColor` after a gamut clamp in the same tick — see the updated
+  // values instead of the closure snapshot from the previous render. Without
+  // this, `setFormat`'s clamp call emits `formatted` in the *old* format.
+  const formatRef = React.useRef(format);
+  formatRef.current = format;
+  const onValueChangeRef = React.useRef(onValueChange);
+  onValueChangeRef.current = onValueChange;
+  const isControlledColorRef = React.useRef(isControlledColor);
+  isControlledColorRef.current = isControlledColor;
+
+  const commitColor = React.useCallback((next: OklchColor) => {
+    if (!isControlledColorRef.current) setInternalColor(next);
+    const cb = onValueChangeRef.current;
+    if (cb) {
+      const all = formatAll(next);
+      cb(next, all[formatRef.current], all);
+    }
+  }, []);
 
   const setColor = React.useCallback(
     (next: string | OklchColor) => {
@@ -218,6 +228,11 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
           : targetGamut === "p3"
             ? info.inP3
             : info.inRec2020;
+      // Update the format ref first so the synchronous `commitColor` below
+      // emits `formatted` in the *new* format. The state update for
+      // `internalFormat` happens after the commit and would otherwise leave a
+      // one-call lag where the emitted formatted string is in the prior format.
+      formatRef.current = f;
       if (!alreadyIn) {
         const targetHue = color.h;
         const clamped = toGamut(color, targetGamut);

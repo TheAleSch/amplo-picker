@@ -16,6 +16,11 @@ declare global {
   }
 }
 
+const subscribeNoop = () => () => {};
+const getEyeDropperSupportClient = () =>
+  typeof window !== "undefined" && typeof window.EyeDropper === "function";
+const getEyeDropperSupportServer = () => false;
+
 export interface EyeDropperProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
 export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(function EyeDropper(
@@ -23,11 +28,15 @@ export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(f
   ref,
 ) {
   const { setColor } = useColorPickerContext();
-  const [supported, setSupported] = React.useState(false);
-
-  React.useEffect(() => {
-    setSupported(typeof window !== "undefined" && typeof window.EyeDropper === "function");
-  }, []);
+  // Client-only feature detection without a hydration mismatch and without the
+  // two-paint flash that an `useEffect(setState)` pattern introduces. The
+  // server snapshot returns `false` (matching SSR's empty render); the client
+  // snapshot reads the real value during hydration's reconciliation pass.
+  const supported = React.useSyncExternalStore(
+    subscribeNoop,
+    getEyeDropperSupportClient,
+    getEyeDropperSupportServer,
+  );
 
   if (!supported) return null;
 

@@ -39,7 +39,25 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
   { presets = DEFAULT_PRESETS, onAdd, className, ...rest },
   ref,
 ) {
-  const { color, setColor, formatted } = useColorPickerContext();
+  const { color, setColor } = useColorPickerContext();
+  // Compare presets to the current color in canonical OKLCH form so the active
+  // ring shows regardless of the user's active output format. A hex-string
+  // comparison would never match when the format is anything but `hex`.
+  const isSamePreset = React.useCallback(
+    (preset: OklchColor) => {
+      if (Math.abs(preset.l - color.l) >= 1e-3) return false;
+      if (Math.abs(preset.c - color.c) >= 1e-3) return false;
+      if (Math.abs(preset.alpha - color.alpha) >= 1e-3) return false;
+      // Achromatic colors have an undefined hue; skip the hue check when either
+      // side has near-zero chroma so swatches like `oklch(0.5 0 0)` match the
+      // current gray regardless of its drifted hue.
+      if (preset.c < 1e-3 || color.c < 1e-3) return true;
+      const d = (((preset.h - color.h) % 360) + 360) % 360;
+      const wrapped = d > 180 ? 360 - d : d;
+      return wrapped < 0.1;
+    },
+    [color],
+  );
   return (
     <div
       ref={ref}
@@ -51,7 +69,7 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
     >
       {presets.map((p, i) => {
         const parsed = parseColor(p);
-        const active = parsed ? formatColor(parsed, "hex") === formatted : false;
+        const active = parsed ? isSamePreset(parsed) : false;
         // Paint the swatch with the raw preset string so out-of-sRGB colors
         // (P3 / OKLCH wide-gamut) actually render in their native gamut on
         // capable displays. Hex-conversion would clamp them to sRGB.

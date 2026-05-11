@@ -143,34 +143,36 @@ export function useGradientPicker(
     () => internal.stops[0]?.id ?? "",
   );
 
-  // Track the last gradient we emitted upward so the controlled-sync effect can
+  // Track the last gradient we emitted upward so the controlled-sync path can
   // ignore echoes. Seed with the initial controlled value so the *first* sync
-  // is treated as an echo of our own initial state — without this, the very
-  // first render would unconditionally rebuild internal state and re-emit.
+  // is treated as an echo of our own initial state.
   const lastEmittedRef = React.useRef<Gradient | null>(value ?? null);
 
   // stateRef mirrors `internal` so setters can compute the next state +
   // synchronously emit the cleaned gradient without going through an effect.
-  // We update it both inside `apply` (so chained setters within one event
-  // handler see the latest) and after every commit (so the controlled-sync
-  // effect can write to internal without us missing the change).
+  // Assigned during render (refs are not state; idempotent under Strict Mode)
+  // and re-assigned inside `apply` so chained setters in one event handler each
+  // see the previous result.
   const stateRef = React.useRef(internal);
-  React.useEffect(() => {
-    stateRef.current = internal;
-  });
+  stateRef.current = internal;
 
-  // Latest-callback ref so a fresh arrow each render doesn't re-create our
-  // setters via deps.
+  // Latest-callback ref so a fresh arrow each render doesn't re-create setters.
   const onValueChangeRef = React.useRef(onValueChange);
-  React.useEffect(() => {
-    onValueChangeRef.current = onValueChange;
-  });
+  onValueChangeRef.current = onValueChange;
 
-  // Sync controlled value into internal state, preserving stop ids when possible.
-  React.useEffect(() => {
-    if (!isControlled || !value) return;
-    if (value === lastEmittedRef.current) return;
-    setInternal((prev) => {
+  // Sync controlled value during render (the "adjusting state during render"
+  // pattern from React docs) instead of an effect. An effect would commit a
+  // render with stale `internal`, then schedule a second render — children
+  // would see one frame with the previous gradient. Doing the reconcile here
+  // means the same render that observes a new `value` also renders with the
+  // reconciled internal state.
+  const [prevControlledValue, setPrevControlledValue] = React.useState<
+    Gradient | undefined
+  >(value);
+  if (isControlled && value !== prevControlledValue) {
+    setPrevControlledValue(value);
+    if (value !== lastEmittedRef.current) {
+      const prev = stateRef.current;
       const next: InternalState =
         prev.gradient.type === value.type &&
         prev.stops.length === value.stops.length &&
@@ -181,9 +183,9 @@ export function useGradientPicker(
             }
           : attachIds(value);
       stateRef.current = next;
-      return next;
-    });
-  }, [isControlled, value]);
+      setInternal(next);
+    }
+  }
 
   // Apply a state transition + emit in one shot. Read-modify-write through
   // stateRef so chained calls in one event handler each see the previous

@@ -1,14 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { converter } from "culori";
 import { useColorPickerContext } from "../context";
-import { findMaxChroma, gamutFromFormat } from "../lib/color";
+import {
+  findMaxChroma,
+  gamutFromFormat,
+  hslHue,
+  hsbHue,
+} from "../lib/color";
 import { setColorChannel } from "../lib/channels";
 import { cn } from "@/lib/utils";
-
-const toHsl = converter("hsl");
-const toHsv = converter("hsv");
 
 export interface HueProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onKeyDown"> {
   orientation?: "horizontal" | "vertical";
@@ -27,16 +28,10 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   // p3, oklab) we fall back to OKLCH hue.
   const usesFormatHue = format === "hsl" || format === "hsb";
   const displayedHue = React.useMemo(() => {
-    if (format === "hsl") {
-      const c = toHsl({ mode: "oklch", l: color.l, c: color.c, h: color.h });
-      return c?.h ?? color.h;
-    }
-    if (format === "hsb") {
-      const c = toHsv({ mode: "oklch", l: color.l, c: color.c, h: color.h });
-      return c?.h ?? color.h;
-    }
+    if (format === "hsl") return hslHue(color);
+    if (format === "hsb") return hsbHue(color);
     return color.h;
-  }, [format, color.l, color.c, color.h]);
+  }, [format, color]);
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement);
 
@@ -88,6 +83,10 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
     if (e.buttons !== 1) return;
     moveTo(orientation === "horizontal" ? e.clientX : e.clientY);
   };
+  const releaseCapture = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = e.currentTarget as HTMLDivElement;
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const big = e.shiftKey ? 10 : 1;
@@ -137,6 +136,8 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       tabIndex={0}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
+      onPointerUp={releaseCapture}
+      onPointerCancel={releaseCapture}
       onKeyDown={onKeyDown}
       className={cn(
         "relative cursor-pointer rounded-full outline-none touch-none",

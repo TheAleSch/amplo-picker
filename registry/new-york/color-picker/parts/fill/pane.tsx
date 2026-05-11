@@ -47,9 +47,7 @@ const ColorPaneInner = React.forwardRef<
       : { l: 0, c: 0, h: 0, alpha: 1 };
 
   const setFillRef = React.useRef(fill.setFill);
-  React.useEffect(() => {
-    setFillRef.current = fill.setFill;
-  });
+  setFillRef.current = fill.setFill;
   const onValueChange = React.useCallback((color: OklchColor) => {
     setFillRef.current({ kind: "color", color });
   }, []);
@@ -80,9 +78,7 @@ const GradientPaneInner = React.forwardRef<
     fill.fill.kind === "gradient" ? fill.fill.gradient : DEFAULT_LINEAR;
 
   const setFillRef = React.useRef(fill.setFill);
-  React.useEffect(() => {
-    setFillRef.current = fill.setFill;
-  });
+  setFillRef.current = fill.setFill;
   const onValueChange = React.useCallback((gradient: Gradient) => {
     setFillRef.current({ kind: "gradient", gradient });
   }, []);

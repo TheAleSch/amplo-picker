@@ -72,9 +72,14 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
   if (fill.kind === "color") lastColorRef.current = fill;
   else lastGradientRef.current = fill;
 
+  const isControlledRef = React.useRef(isControlled);
+  isControlledRef.current = isControlled;
+  const isControlledModeRef = React.useRef(isControlledMode);
+  isControlledModeRef.current = isControlledMode;
+
   const setFill = React.useCallback(
     (next: Fill) => {
-      setInternalFill(next);
+      if (!isControlledRef.current) setInternalFill(next);
       onValueChange?.(next, formatFill(next));
     },
     [onValueChange],
@@ -82,11 +87,11 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
 
   const setMode = React.useCallback(
     (next: FillMode) => {
-      setInternalMode(next);
+      if (!isControlledModeRef.current) setInternalMode(next);
       onModeChange?.(next);
       const restored: Fill =
         next === "color" ? lastColorRef.current : lastGradientRef.current;
-      setInternalFill(restored);
+      if (!isControlledRef.current) setInternalFill(restored);
       onValueChange?.(restored, formatFill(restored));
     },
     [onValueChange, onModeChange],

@@ -77,10 +77,27 @@ function warningGamuts(active: AreaGamut): Gamut[] {
   }
 }
 
-const SUPPORTS_P3 =
+/**
+ * Read display-P3 support fresh on the client and re-react if the user moves
+ * the window to a different display. Module-load evaluation locks the value
+ * to `false` in Next.js's SSR module cache (window is undefined there), and
+ * `useState(() => ...)` would diverge between server and client renders.
+ * `useSyncExternalStore` returns `false` on the server (matching SSR) and the
+ * real value on the client during reconciliation — no hydration mismatch.
+ */
+const subscribeP3 =
+  typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? (onChange: () => void) => {
+        const mq = window.matchMedia("(color-gamut: p3)");
+        mq.addEventListener("change", onChange);
+        return () => mq.removeEventListener("change", onChange);
+      }
+    : () => () => {};
+const getP3Client = () =>
   typeof window !== "undefined" &&
   typeof window.matchMedia === "function" &&
   window.matchMedia("(color-gamut: p3)").matches;
+const getP3Server = () => false;
 
 export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   {
@@ -96,6 +113,11 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   ref,
 ) {
   const { color, setColor, format } = useColorPickerContext();
+  const supportsP3 = React.useSyncExternalStore(
+    subscribeP3,
+    getP3Client,
+    getP3Server,
+  );
   const gamut: AreaGamut = gamutProp ?? libGamutFromFormat(format);
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -146,13 +168,13 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     const h = resolution;
     canvas.width = w;
     canvas.height = h;
-    const ctx2dOpts: CanvasRenderingContext2DSettings = SUPPORTS_P3
+    const ctx2dOpts: CanvasRenderingContext2DSettings = supportsP3
       ? { colorSpace: "display-p3" }
       : {};
     const ctx = canvas.getContext("2d", ctx2dOpts);
     if (!ctx) return;
     const img = ctx.createImageData(w, h);
-    paintGradient(img, w, h, mode, color, chromaMax, gamut, SUPPORTS_P3, softProof);
+    paintGradient(img, w, h, mode, color, chromaMax, gamut, supportsP3, softProof);
     ctx.putImageData(img, 0, 0);
     if (gamut === "none" || !showWarningLines) {
       setPaths([]);
@@ -163,8 +185,11 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
         ),
       );
     }
+    // `color` is intentionally omitted — gradient + warning lines depend only
+    // on the locked axis (`fixedAxisValue`), not on every channel of `color`.
+    // Repainting on every pointer tick would stall the bead.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, fixedAxisValue, chromaMax, gamut, showWarningLines, resolution, softProof]);
+  }, [mode, fixedAxisValue, chromaMax, gamut, showWarningLines, resolution, softProof, supportsP3]);
 
   const [derivedPx, derivedPy] = positionFor(mode, color, chromaMax, gamut);
   const [px, py] = pickPos ?? [derivedPx, derivedPy];
@@ -208,6 +233,10 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.buttons !== 1) return;
     handlePointer(e.clientX, e.clientY);
+  };
+  const releaseCapture = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = e.currentTarget as HTMLDivElement;
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -261,6 +290,8 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       tabIndex={0}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
+      onPointerUp={releaseCapture}
+      onPointerCancel={releaseCapture}
       onKeyDown={onKeyDown}
       className={cn(
         "relative h-45 w-full cursor-crosshair overflow-hidden rounded-md border border-border outline-none touch-none select-none",

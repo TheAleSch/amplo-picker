@@ -39,6 +39,10 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
     if (e.buttons !== 1) return;
     moveTo(orientation === "horizontal" ? e.clientX : e.clientY);
   };
+  const releaseCapture = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = e.currentTarget as HTMLDivElement;
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+  };
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const big = e.shiftKey ? 0.1 : 0.01;
     let next = color.alpha;
@@ -82,6 +86,8 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
       tabIndex={0}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
+      onPointerUp={releaseCapture}
+      onPointerCancel={releaseCapture}
       onKeyDown={onKeyDown}
       className={cn(
         "relative cursor-pointer rounded-full outline-none touch-none",

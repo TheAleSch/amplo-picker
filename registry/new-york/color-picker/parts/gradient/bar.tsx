@@ -48,6 +48,17 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   const ctx = useGradientPickerContext();
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const trackRef = React.useRef<HTMLDivElement | null>(null);
+  // Cleanup hook for an active drag's document-level listeners. Lets us tear
+  // them down on unmount so a mid-drag remove of the Bar doesn't leave them
+  // attached to `document` and firing `ctx.moveStop` on a stale context.
+  const activeDragCleanupRef = React.useRef<(() => void) | null>(null);
+  React.useEffect(
+    () => () => {
+      activeDragCleanupRef.current?.();
+      activeDragCleanupRef.current = null;
+    },
+    [],
+  );
   // Forward the consumer's ref to the outer wrapper (the element that carries
   // `data-slot="gradient-bar"`) so `wrapper.querySelector('[data-slot="gradient-bar"]')`
   // works as expected; pointer math still uses the inner trackRef.
@@ -105,15 +116,20 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
         ctx.moveStop(id, fromDisplay(displayed));
       }
     };
-    const onUp = () => {
+    const cleanup = () => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
       document.removeEventListener("pointercancel", onUp);
+      activeDragCleanupRef.current = null;
+    };
+    const onUp = () => {
+      cleanup();
       if (pendingRemove) ctx.removeStop(id);
     };
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
     document.addEventListener("pointercancel", onUp);
+    activeDragCleanupRef.current = cleanup;
   };
 
   const onStopKeyDown =

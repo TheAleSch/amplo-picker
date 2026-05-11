@@ -50,9 +50,7 @@ const Bound: React.FC<
   );
 
   const setStopColorRef = React.useRef(grad.setStopColor);
-  React.useEffect(() => {
-    setStopColorRef.current = grad.setStopColor;
-  });
+  setStopColorRef.current = grad.setStopColor;
   const onValueChange = React.useCallback(
     (color: OklchColor) => setStopColorRef.current(stopId, color),
     [stopId],

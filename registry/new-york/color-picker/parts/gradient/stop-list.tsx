@@ -39,9 +39,7 @@ function StopColorEditor({
 }: React.PropsWithChildren<{ stopId: string; color: OklchColor }>) {
   const ctx = useGradientPickerContext();
   const setStopColorRef = React.useRef(ctx.setStopColor);
-  React.useEffect(() => {
-    setStopColorRef.current = ctx.setStopColor;
-  });
+  setStopColorRef.current = ctx.setStopColor;
   const onValueChange = React.useCallback(
     (c: OklchColor) => setStopColorRef.current(stopId, c),
     [stopId],

@@ -551,7 +551,9 @@ export default function PlaygroundPage() {
           >
             <div
               style={
-                containerMaxWidth !== undefined
+                fillMode !== "color" && gradientParts.externalCanvas
+                  ? { width: "100%", maxWidth: 760 }
+                  : containerMaxWidth !== undefined
                   ? { width: "100%", maxWidth: containerMaxWidth }
                   : {
                       width: "fit-content",

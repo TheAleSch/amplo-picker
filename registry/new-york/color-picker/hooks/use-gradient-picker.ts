@@ -109,6 +109,16 @@ export interface GradientPickerState {
    * implies ellipse). Passing `undefined` clears the override.
    */
   setRadiusPx: (px: number | undefined) => void;
+  /**
+   * Latest reported width of the visual gradient box (px). Set by
+   * `<GradientPicker.Area>` via its `ResizeObserver`. Used by parts that
+   * want to display radius as a percentage of the picker box (e.g. the
+   * radius input on `<GradientPicker.RadialShape>`) — they read this to
+   * convert between the absolute-px storage and a friendlier % display.
+   * `null` when no Area is currently mounted.
+   */
+  containerWidth: number | null;
+  setContainerWidth: (width: number | null) => void;
   selectStop: (id: string) => void;
   addStop: (position: number, color?: OklchColor) => string;
   removeStop: (id: string) => void;
@@ -370,6 +380,9 @@ export function useGradientPicker(
     [apply],
   );
 
+  const [containerWidth, setContainerWidth] =
+    React.useState<number | null>(null);
+
   const setRadiusPx = React.useCallback(
     (px: number | undefined) =>
       apply((prev) => {
@@ -504,6 +517,8 @@ export function useGradientPicker(
     setRadialSize,
     setRadii,
     setRadiusPx,
+    containerWidth,
+    setContainerWidth,
     selectStop,
     addStop,
     removeStop,

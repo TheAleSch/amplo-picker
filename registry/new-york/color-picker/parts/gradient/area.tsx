@@ -158,6 +158,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     w: 0,
     h: height,
   });
+  const setContainerWidth = ctx.setContainerWidth;
   React.useEffect(() => {
     const el = padRef.current;
     if (!el) return;
@@ -166,10 +167,17 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       if (!entry) return;
       const { width, height: h } = entry.contentRect;
       setDims({ w: width, h });
+      // Publish width to context so sibling parts (e.g. the radius input
+      // on `<GradientPicker.RadialShape>`) can convert between absolute
+      // px and a percentage display.
+      setContainerWidth(width);
     });
     ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    return () => {
+      ro.disconnect();
+      setContainerWidth(null);
+    };
+  }, [setContainerWidth]);
 
   const cssBackground = React.useMemo(
     () => formatGradient(gradient),

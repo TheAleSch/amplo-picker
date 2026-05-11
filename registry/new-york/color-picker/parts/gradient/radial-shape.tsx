@@ -68,15 +68,26 @@ export const RadialShape = React.forwardRef<
          the in-Area edge handle can reach by dragging, or when the user
          wants a precise numeric value. */}
       {g.shape === "circle" ? (
+        // Display the circle radius as a percentage of the picker's
+        // current Area width (published via `containerWidth` in context).
+        // CSS spec forbids `circle <percentage>` — the storage stays in
+        // absolute pixels so the emitted gradient remains a true circle
+        // in any consumer container. % is purely a UI convenience.
+        //
+        // When the Area isn't mounted (`containerWidth` is null) we fall
+        // back to showing px so the field still works in headless or
+        // bar-only compositions.
         <label className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
           <span>r</span>
           <input
             type="number"
             min={0}
             step={1}
-            value={
-              g.radiusPx !== undefined ? Math.round(g.radiusPx) : ""
-            }
+            value={(() => {
+              if (g.radiusPx === undefined) return "";
+              if (!ctx.containerWidth) return Math.round(g.radiusPx);
+              return Math.round((g.radiusPx / ctx.containerWidth) * 100);
+            })()}
             placeholder="auto"
             onChange={(e) => {
               const v = e.target.value;
@@ -85,12 +96,21 @@ export const RadialShape = React.forwardRef<
                 return;
               }
               const n = parseFloat(v);
-              if (Number.isFinite(n)) ctx.setRadiusPx(Math.max(0, n));
+              if (!Number.isFinite(n)) return;
+              if (!ctx.containerWidth) {
+                ctx.setRadiusPx(Math.max(0, n));
+                return;
+              }
+              ctx.setRadiusPx(Math.max(0, (n / 100) * ctx.containerWidth));
             }}
             className="h-7 w-16 rounded border border-border bg-background px-1 text-right text-xs text-foreground"
-            aria-label="Circle radius in pixels"
+            aria-label={
+              ctx.containerWidth
+                ? "Circle radius as percent of Area width"
+                : "Circle radius in pixels"
+            }
           />
-          <span>px</span>
+          <span>{ctx.containerWidth ? "%" : "px"}</span>
         </label>
       ) : (
         <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">

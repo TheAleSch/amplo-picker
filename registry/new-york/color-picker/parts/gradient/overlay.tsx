@@ -176,10 +176,14 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       setContainerWidth(width);
     });
     ro.observe(el);
-    return () => {
-      ro.disconnect();
-      setContainerWidth(null);
-    };
+    // Intentionally do NOT clear `containerWidth` on unmount: if multiple
+    // Overlays / an <Area> + an Overlay are mounted simultaneously (e.g.
+    // the playground's "Area + Overlay (demo)" toggle), the surviving
+    // publisher should keep ownership of the value. The next mount will
+    // overwrite it; until then a stale-but-non-null last-known width is
+    // strictly better than null (which would force percentage inputs to
+    // fall back to px and break the user's display unit mid-session).
+    return () => ro.disconnect();
   }, [setContainerWidth]);
 
   // Compute handle positions in *box-local* pixels. Center of the box is

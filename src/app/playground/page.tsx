@@ -1149,8 +1149,11 @@ function buildGradientPartsLines(
     lines.push(
       `${indent}<div className="relative aspect-4/3 w-full overflow-hidden rounded-md border">`,
     );
+    // Match the generated wrapper, which uses `gradient` / `setGradient`
+    // as the controlled state — emitting `formatGradient(g)` here would
+    // pasted-code-error with `g is not defined`.
     lines.push(
-      `${indent}  <div className="absolute inset-0" style={{ background: formatGradient(g) }} />`,
+      `${indent}  <div className="absolute inset-0" style={{ background: formatGradient(gradient) }} />`,
     );
     lines.push(`${indent}  <GradientPicker.Overlay />`);
     lines.push(`${indent}</div>`);

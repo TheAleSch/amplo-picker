@@ -664,14 +664,26 @@ export default function PlaygroundPage() {
                   onValueChange={setGradient}
                   className={
                     gradientParts.externalCanvas
-                      ? "max-w-3xl flex-row items-start"
+                      ? "relative block w-full max-w-none gap-0 rounded-xl bg-muted/40 p-0 shadow-none"
                       : ""
                   }
                 >
+                  {gradientParts.externalCanvas && (
+                    <div className="relative flex min-h-104 items-center justify-center p-10">
+                      <div className="relative aspect-4/3 w-full max-w-md overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/10">
+                        <div
+                          aria-hidden
+                          className="absolute inset-0"
+                          style={{ background: formatGradient(gradient) }}
+                        />
+                        <GradientPicker.Overlay />
+                      </div>
+                    </div>
+                  )}
                   <div
                     className={
                       gradientParts.externalCanvas
-                        ? "flex w-72 shrink-0 flex-col gap-2"
+                        ? "absolute right-6 top-6 flex w-56 flex-col gap-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-lg"
                         : "contents"
                     }
                   >
@@ -729,16 +741,6 @@ export default function PlaygroundPage() {
                   )}
                   {gradientParts.cssInput && <GradientPicker.CssInput />}
                   </div>
-                  {gradientParts.externalCanvas && (
-                    <div className="relative aspect-square flex-1 overflow-hidden rounded-md border border-border bg-muted">
-                      <div
-                        aria-hidden
-                        className="absolute inset-0"
-                        style={{ background: formatGradient(gradient) }}
-                      />
-                      <GradientPicker.Overlay />
-                    </div>
-                  )}
                 </GradientPicker.Root>
               )}
               {fillMode === "fill" && (

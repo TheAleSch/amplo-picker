@@ -280,8 +280,8 @@ export default function DocsPage() {
           />
 
           <Example
-            title="Picker beside an external canvas"
-            description="Compact picker controls on one side, a larger canvas-style preview on the other — both wired up inside a single <GradientPicker.Root> so editing either side updates the other in real time. This is the pattern to reach for when the picker lives in a side panel and the gradient is applied to an object on the main stage."
+            title="Direct-manipulation handles on the object"
+            description="Framer/Figma pattern — the shape on the canvas IS the gradient's interactive surface. Drop GradientPicker.Overlay onto the filled element and the angle, endpoint, center and stop handles ride the object itself. A compact floating picker panel handles the indirect controls (type, stops, colors). Both live inside a single <GradientPicker.Root>, so the shape and the panel stay in sync."
             preview={<GradientCanvasDemo />}
             code={GRADIENT_CANVAS_CODE}
           />
@@ -883,27 +883,33 @@ function GradientOverlayDemo() {
 function GradientCanvasDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
   return (
-    <GradientPicker.Root value={g} onValueChange={setG}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        {/* Picker controls — sit in a side panel. */}
-        <div className="flex w-full max-w-[18rem] flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <GradientPicker.TypeSwitcher />
-            <GradientPicker.ReverseStops />
-          </div>
-          <GradientPicker.Bar />
-          <GradientPicker.StopList />
-        </div>
-        {/* External "canvas object" — paint the gradient on a sibling
-           element inside the same Root so the Overlay handles align to
-           this box and edits flow back through the shared context. */}
-        <div className="relative aspect-square w-full max-w-md flex-1 overflow-hidden rounded-md border border-border bg-muted sm:min-w-48">
+    <GradientPicker.Root
+      value={g}
+      onValueChange={setG}
+      className="block w-full max-w-none gap-0 rounded-xl border-border bg-muted/40 p-0 shadow-none"
+    >
+      <div className="relative flex min-h-104 items-center justify-center p-10">
+        {/* Object on canvas — the shape being filled. Big, rounded,
+           drop-shadow so it reads as a design element on a workspace,
+           not a preview swatch. */}
+        <div className="relative aspect-4/3 w-full max-w-md overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/10">
           <div
             aria-hidden
             className="absolute inset-0"
             style={{ background: formatGradient(g) }}
           />
           <GradientPicker.Overlay />
+        </div>
+        {/* External tool palette — floats beside the canvas object,
+           styled like a detachable popover. Holds only the indirect
+           controls; angle/endpoints/center live on the shape. */}
+        <div className="pointer-events-auto absolute right-6 top-6 flex w-56 flex-col gap-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-lg">
+          <div className="flex items-center justify-between">
+            <GradientPicker.TypeSwitcher />
+            <GradientPicker.ReverseStops />
+          </div>
+          <GradientPicker.Bar />
+          <GradientPicker.StopList />
         </div>
       </div>
     </GradientPicker.Root>
@@ -1233,22 +1239,28 @@ import type { Gradient } from "@/components/ui/color-picker/fill-picker";
 export function GradientCanvasDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
   return (
-    <GradientPicker.Root value={g} onValueChange={setG}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="flex w-full max-w-72 flex-col gap-2">
+    <GradientPicker.Root
+      value={g}
+      onValueChange={setG}
+      className="block w-full max-w-none gap-0 rounded-xl bg-muted/40 p-0 shadow-none"
+    >
+      <div className="relative flex min-h-104 items-center justify-center p-10">
+        {/* The shape being filled — Overlay rides this element. */}
+        <div className="relative aspect-4/3 w-full max-w-md overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/10">
+          <div
+            className="absolute inset-0"
+            style={{ background: formatGradient(g) }}
+          />
+          <GradientPicker.Overlay />
+        </div>
+        {/* External tool palette — floats beside the shape. */}
+        <div className="absolute right-6 top-6 flex w-56 flex-col gap-2 rounded-lg border bg-popover p-3 shadow-lg">
           <div className="flex items-center justify-between">
             <GradientPicker.TypeSwitcher />
             <GradientPicker.ReverseStops />
           </div>
           <GradientPicker.Bar />
           <GradientPicker.StopList />
-        </div>
-        <div className="relative aspect-square w-full max-w-md flex-1 overflow-hidden rounded-md border">
-          <div
-            className="absolute inset-0"
-            style={{ background: formatGradient(g) }}
-          />
-          <GradientPicker.Overlay />
         </div>
       </div>
     </GradientPicker.Root>

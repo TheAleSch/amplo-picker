@@ -324,14 +324,26 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       // strictly non-negative (CSS forbids negative gradient radii).
       const dxPx = Math.abs(p.x - ax);
       const dyPx = Math.abs(p.y - ay);
-      let rx = dxPx / w;
-      let ry = dyPx / h;
-      if (shiftKey) {
-        // Shift = visual circle on screen. Lock the larger pixel radius into
-        // both axes so the ellipse degenerates to a circle of that size.
+      // Match the gradient's declared shape by default. `shape === "circle"`
+      // means the rendered ellipse must have equal pixel radii on both
+      // axes; without this guard a free drag would silently turn a
+      // "circle" radial into an ellipse, which contradicts the model.
+      // Holding Shift inverts: forces an ellipse on a circle, or a circle
+      // on an ellipse.
+      const lockToCircle =
+        (gradient.shape === "circle") !== shiftKey;
+      let rx: number;
+      let ry: number;
+      if (lockToCircle) {
+        // Visual circle: equal pixel radii on both axes. Use the larger
+        // pointer distance so the dot follows the cursor along whichever
+        // axis the user is most committed to.
         const rPx = Math.max(dxPx, dyPx);
         rx = rPx / w;
         ry = rPx / h;
+      } else {
+        rx = dxPx / w;
+        ry = dyPx / h;
       }
       ctx.setRadii({
         x: Math.max(0, Math.min(2, rx)),
@@ -503,6 +515,16 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     else if (e.key === "ArrowDown") y += step;
     else return;
     e.preventDefault();
+    // Same shape-lock convention as the pointer drag: by default the
+    // gradient's declared `shape` wins, Shift inverts. When locked to a
+    // circle, project both axes back to the dominant pixel radius so the
+    // rendered ellipse stays geometrically circular.
+    const lockToCircle = (gradient.shape === "circle") !== e.shiftKey;
+    if (lockToCircle) {
+      const rPx = Math.max(x * w, y * h);
+      x = rPx / w;
+      y = rPx / h;
+    }
     ctx.setRadii({
       x: Math.max(0, Math.min(2, x)),
       y: Math.max(0, Math.min(2, y)),

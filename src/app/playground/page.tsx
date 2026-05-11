@@ -552,7 +552,7 @@ export default function PlaygroundPage() {
             <div
               style={
                 fillMode !== "color" && gradientParts.externalCanvas
-                  ? { width: "100%", maxWidth: 760 }
+                  ? { width: "100%", maxWidth: 600 }
                   : containerMaxWidth !== undefined
                   ? { width: "100%", maxWidth: containerMaxWidth }
                   : {
@@ -664,26 +664,14 @@ export default function PlaygroundPage() {
                   onValueChange={setGradient}
                   className={
                     gradientParts.externalCanvas
-                      ? "relative block w-full max-w-none gap-0 rounded-xl bg-muted/40 p-0 shadow-none"
+                      ? "max-w-none flex-row items-start"
                       : ""
                   }
                 >
-                  {gradientParts.externalCanvas && (
-                    <div className="relative flex min-h-104 items-center justify-center p-10">
-                      <div className="relative aspect-4/3 w-full max-w-md overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/10">
-                        <div
-                          aria-hidden
-                          className="absolute inset-0"
-                          style={{ background: formatGradient(gradient) }}
-                        />
-                        <GradientPicker.Overlay />
-                      </div>
-                    </div>
-                  )}
                   <div
                     className={
                       gradientParts.externalCanvas
-                        ? "absolute right-6 top-6 flex w-56 flex-col gap-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-lg"
+                        ? "flex w-64 shrink-0 flex-col gap-2"
                         : "contents"
                     }
                   >
@@ -741,6 +729,16 @@ export default function PlaygroundPage() {
                   )}
                   {gradientParts.cssInput && <GradientPicker.CssInput />}
                   </div>
+                  {gradientParts.externalCanvas && (
+                    <div className="relative aspect-square w-56 shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-black/10">
+                      <div
+                        aria-hidden
+                        className="absolute inset-0"
+                        style={{ background: formatGradient(gradient) }}
+                      />
+                      <GradientPicker.Overlay />
+                    </div>
+                  )}
                 </GradientPicker.Root>
               )}
               {fillMode === "fill" && (

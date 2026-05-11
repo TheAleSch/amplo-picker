@@ -279,9 +279,23 @@ export default function DocsPage() {
             code={GRADIENT_OVERLAY_CODE}
           />
 
+          <p className="text-sm text-muted-foreground">
+            The recipe to wire this up against your own object on canvas:{" "}
+            (1) put your picker controls and the host element inside the{" "}
+            <em>same</em> <Code>{"<GradientPicker.Root>"}</Code> — that{" "}
+            shared context is what keeps edits on either side in sync;{" "}
+            (2) paint the gradient on the host with{" "}
+            <Code>{"background: formatGradient(value)"}</Code>;{" "}
+            (3) drop <Code>{"<GradientPicker.Overlay />"}</Code> as a{" "}
+            child of that host. The overlay sizes itself to the host's{" "}
+            box, so swapping the host (a rect, a card, an image{" "}
+            <Code>{"<img>"}</Code> wrapper, a video frame) requires no{" "}
+            picker changes.
+          </p>
+
           <Example
-            title="Direct-manipulation handles on the object"
-            description="Framer/Figma pattern — the shape on the canvas IS the gradient's interactive surface. Drop GradientPicker.Overlay onto the filled element and the angle, endpoint, center and stop handles ride the object itself. A compact floating picker panel handles the indirect controls (type, stops, colors). Both live inside a single <GradientPicker.Root>, so the shape and the panel stay in sync."
+            title="Picker panel beside the filled element"
+            description="Compact side panel for the indirect controls (type, stops, colors) wired to a small rect filled with the gradient. The overlay handles ride the rect — drag them on the element itself just like Framer/Figma. Both the panel and the rect share the same Root, so edits on either side update the other."
             preview={<GradientCanvasDemo />}
             code={GRADIENT_CANVAS_CODE}
           />
@@ -886,31 +900,27 @@ function GradientCanvasDemo() {
     <GradientPicker.Root
       value={g}
       onValueChange={setG}
-      className="block w-full max-w-none gap-0 rounded-xl border-border bg-muted/40 p-0 shadow-none"
+      className="max-w-none flex-row items-start"
     >
-      <div className="relative flex min-h-104 items-center justify-center p-10">
-        {/* Object on canvas — the shape being filled. Big, rounded,
-           drop-shadow so it reads as a design element on a workspace,
-           not a preview swatch. */}
-        <div className="relative aspect-4/3 w-full max-w-md overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/10">
-          <div
-            aria-hidden
-            className="absolute inset-0"
-            style={{ background: formatGradient(g) }}
-          />
-          <GradientPicker.Overlay />
+      {/* Picker side panel — same Root as the rect, so edits sync. */}
+      <div className="flex w-64 shrink-0 flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
         </div>
-        {/* External tool palette — floats beside the canvas object,
-           styled like a detachable popover. Holds only the indirect
-           controls; angle/endpoints/center live on the shape. */}
-        <div className="pointer-events-auto absolute right-6 top-6 flex w-56 flex-col gap-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-lg">
-          <div className="flex items-center justify-between">
-            <GradientPicker.TypeSwitcher />
-            <GradientPicker.ReverseStops />
-          </div>
-          <GradientPicker.Bar />
-          <GradientPicker.StopList />
-        </div>
+        <GradientPicker.Bar />
+        <GradientPicker.StopList />
+      </div>
+      {/* The element being filled — drop GradientPicker.Overlay onto
+         any consumer-owned, positioned box. Handles ride this element,
+         not the picker. */}
+      <div className="relative aspect-square w-56 shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-black/10">
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{ background: formatGradient(g) }}
+        />
+        <GradientPicker.Overlay />
       </div>
     </GradientPicker.Root>
   );
@@ -1242,26 +1252,24 @@ export function GradientCanvasDemo() {
     <GradientPicker.Root
       value={g}
       onValueChange={setG}
-      className="block w-full max-w-none gap-0 rounded-xl bg-muted/40 p-0 shadow-none"
+      className="max-w-none flex-row items-start"
     >
-      <div className="relative flex min-h-104 items-center justify-center p-10">
-        {/* The shape being filled — Overlay rides this element. */}
-        <div className="relative aspect-4/3 w-full max-w-md overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/10">
-          <div
-            className="absolute inset-0"
-            style={{ background: formatGradient(g) }}
-          />
-          <GradientPicker.Overlay />
+      {/* Picker side panel */}
+      <div className="flex w-64 shrink-0 flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
         </div>
-        {/* External tool palette — floats beside the shape. */}
-        <div className="absolute right-6 top-6 flex w-56 flex-col gap-2 rounded-lg border bg-popover p-3 shadow-lg">
-          <div className="flex items-center justify-between">
-            <GradientPicker.TypeSwitcher />
-            <GradientPicker.ReverseStops />
-          </div>
-          <GradientPicker.Bar />
-          <GradientPicker.StopList />
-        </div>
+        <GradientPicker.Bar />
+        <GradientPicker.StopList />
+      </div>
+      {/* The element being filled — Overlay handles align to this box. */}
+      <div className="relative aspect-square w-56 shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-black/10">
+        <div
+          className="absolute inset-0"
+          style={{ background: formatGradient(g) }}
+        />
+        <GradientPicker.Overlay />
       </div>
     </GradientPicker.Root>
   );

@@ -26,16 +26,29 @@ export function Footer() {
             GitHub
           </a>
         </nav>
-        <p>
-          © {new Date().getFullYear()} Alexandre Schrammel ·{" "}
-          <a
-            href="https://github.com/TheAleSch/amplo-picker/blob/main/LICENSE"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="underline-offset-2 hover:text-foreground hover:underline"
-          >
-            MIT License
-          </a>
+        <p className="flex flex-col items-center gap-1 sm:items-end">
+          <span>
+            Created with care and love by{" "}
+            <a
+              href="https://ale.design"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline-offset-2 hover:text-foreground hover:underline"
+            >
+              ale.design
+            </a>
+          </span>
+          <span>
+            © {new Date().getFullYear()} Alexandre Schrammel ·{" "}
+            <a
+              href="https://github.com/TheAleSch/amplo-picker/blob/main/LICENSE"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline-offset-2 hover:text-foreground hover:underline"
+            >
+              MIT License
+            </a>
+          </span>
         </p>
       </div>
     </footer>

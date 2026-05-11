@@ -71,6 +71,7 @@ type GradientPartKey =
   | "typeSwitcher"
   | "bar"
   | "area"
+  | "overlayDemo"
   | "angleDial"
   | "centerPad"
   | "radialShape"
@@ -89,6 +90,7 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   reverseStops: true,
   bar: true,
   area: true,
+  overlayDemo: false,
   angleDial: true,
   centerPad: true,
   // RadialShape ships off by default — the new Area edge handle is the
@@ -108,6 +110,7 @@ const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [
   { key: "reverseStops", label: "ReverseStops" },
   { key: "bar", label: "Bar" },
   { key: "area", label: "Area" },
+  { key: "overlayDemo", label: "Overlay (demo)" },
   { key: "angleDial", label: "AngleDial" },
   { key: "centerPad", label: "CenterPad" },
   { key: "radialShape", label: "RadialShape" },
@@ -664,6 +667,16 @@ export default function PlaygroundPage() {
                   )}
                   {gradientParts.bar && <GradientPicker.Bar />}
                   {gradientParts.area && <GradientPicker.Area />}
+                  {gradientParts.overlayDemo && (
+                    <div className="relative aspect-4/3 w-full overflow-hidden rounded-md border border-border bg-muted">
+                      <div
+                        aria-hidden
+                        className="absolute inset-0"
+                        style={{ background: formatGradient(gradient) }}
+                      />
+                      <GradientPicker.Overlay />
+                    </div>
+                  )}
                   {gradientParts.angleDial && <GradientPicker.AngleDial />}
                   {gradientParts.centerPad && <GradientPicker.CenterPad />}
                   {gradientParts.radialShape && <GradientPicker.RadialShape />}
@@ -726,6 +739,16 @@ export default function PlaygroundPage() {
                     )}
                     {gradientParts.bar && <GradientPicker.Bar />}
                     {gradientParts.area && <GradientPicker.Area />}
+                    {gradientParts.overlayDemo && (
+                      <div className="relative aspect-4/3 w-full overflow-hidden rounded-md border border-border bg-muted">
+                        <div
+                          aria-hidden
+                          className="absolute inset-0"
+                          style={{ background: formatGradient(gradient) }}
+                        />
+                        <GradientPicker.Overlay />
+                      </div>
+                    )}
                     {gradientParts.angleDial && <GradientPicker.AngleDial />}
                     {gradientParts.centerPad && <GradientPicker.CenterPad />}
                     {gradientParts.radialShape && <GradientPicker.RadialShape />}
@@ -1122,6 +1145,16 @@ function buildGradientPartsLines(
   }
   if (parts.bar) lines.push(`${indent}<GradientPicker.Bar />`);
   if (parts.area) lines.push(`${indent}<GradientPicker.Area />`);
+  if (parts.overlayDemo) {
+    lines.push(
+      `${indent}<div className="relative aspect-4/3 w-full overflow-hidden rounded-md border">`,
+    );
+    lines.push(
+      `${indent}  <div className="absolute inset-0" style={{ background: formatGradient(g) }} />`,
+    );
+    lines.push(`${indent}  <GradientPicker.Overlay />`);
+    lines.push(`${indent}</div>`);
+  }
   if (parts.angleDial) lines.push(`${indent}<GradientPicker.AngleDial />`);
   if (parts.centerPad) lines.push(`${indent}<GradientPicker.CenterPad />`);
   if (parts.radialShape) lines.push(`${indent}<GradientPicker.RadialShape />`);

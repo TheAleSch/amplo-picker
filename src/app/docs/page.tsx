@@ -9,6 +9,7 @@ import {
   GradientPicker,
   FillPicker,
   DEFAULT_LINEAR,
+  formatGradient,
 } from "@/registry/new-york/color-picker/fill-picker";
 import type {
   Gradient,
@@ -29,6 +30,9 @@ const TOC = [
   ["usage", "Usage"],
   ["examples", "Examples"],
   ["gradient-picker", "Gradient picker"],
+  ["gradient-area", "Visual Area pad"],
+  ["gradient-overlay", "Overlay (on your canvas)"],
+  ["gradient-radial-size", "Radial size + extent keywords"],
   ["gradient-interp", "Interpolation"],
   ["fill-picker", "Fill picker (tabs)"],
   ["anatomy", "Anatomy"],
@@ -241,6 +245,39 @@ export default function DocsPage() {
             <Code>gradient.radii</Code> by ±1% (±5% with Shift); Shift+drag
             on pointer locks the ellipse to a visual circle on screen.
           </p>
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <H2 id="gradient-overlay">Overlay (handles on your canvas)</H2>
+          <p>
+            <Code>{"<GradientPicker.Overlay>"}</Code> is{" "}
+            <Code>{"<GradientPicker.Area>"}</Code> minus the painted
+            background — just the dashed line, endpoint handles, middle
+            stop swatches, and (for radial / conic) the center +
+            edge/dial handles. Drop it over any element you control on a
+            canvas and the user can edit the gradient directly on the
+            object it will be applied to. Works identically for linear,
+            radial, and conic gradients; same context, same setters,
+            same keyboard.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            The host container must establish a positioning context (e.g.{" "}
+            <Code>position: relative</Code>) and represent the same
+            coordinate space the gradient will be applied to. The
+            overlay's root is <Code>pointer-events-none</Code> so empty
+            regions pass clicks through to the canvas object beneath;
+            the handle buttons themselves are{" "}
+            <Code>pointer-events-auto</Code> so they always receive input.
+            If the host is transformed (rotated / scaled), handle
+            positions will not align — keep transforms off the host.
+          </p>
+
+          <Example
+            title="Overlay on a custom canvas object"
+            description="The same handles as Area, but the painted gradient lives on a consumer-owned div instead of inside the picker. Use this when you want users to edit the gradient directly on the object on their canvas."
+            preview={<GradientOverlayDemo />}
+            code={GRADIENT_OVERLAY_CODE}
+          />
         </section>
 
         <section className="flex flex-col gap-4">
@@ -810,6 +847,32 @@ function GradientFullDemo() {
   );
 }
 
+function GradientOverlayDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <div className="flex w-full max-w-xs flex-col gap-3">
+      <GradientPicker.Root value={g} onValueChange={setG}>
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
+        </div>
+        {/* The "canvas object" — could be anything the consumer renders.
+           Place the Overlay as a sibling inside the same relative parent
+           and the handles align to that element's box. */}
+        <div className="relative aspect-4/3 w-full overflow-hidden rounded-md border border-border bg-muted">
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{ background: formatGradient(g) }}
+          />
+          <GradientPicker.Overlay />
+        </div>
+        <GradientPicker.Bar />
+      </GradientPicker.Root>
+    </div>
+  );
+}
+
 function GradientBarOnlyDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
   return (
@@ -1116,6 +1179,37 @@ export function GradientFullDemo() {
       </GradientPicker.StopColor>
       <GradientPicker.InterpSwitcher />
       <GradientPicker.Presets />
+    </GradientPicker.Root>
+  );
+}`;
+
+const GRADIENT_OVERLAY_CODE = `"use client";
+
+import * as React from "react";
+import {
+  GradientPicker,
+  DEFAULT_LINEAR,
+  formatGradient,
+} from "@/components/ui/color-picker/fill-picker";
+import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+
+export function GradientOverlayDemo() {
+  const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <GradientPicker.Root value={g} onValueChange={setG}>
+      <div className="flex items-center justify-between">
+        <GradientPicker.TypeSwitcher />
+        <GradientPicker.ReverseStops />
+      </div>
+      {/* Your canvas object — the Overlay aligns to its box. */}
+      <div className="relative aspect-4/3 w-full overflow-hidden rounded-md border">
+        <div
+          className="absolute inset-0"
+          style={{ background: formatGradient(g) }}
+        />
+        <GradientPicker.Overlay />
+      </div>
+      <GradientPicker.Bar />
     </GradientPicker.Root>
   );
 }`;

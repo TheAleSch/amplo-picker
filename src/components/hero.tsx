@@ -7,13 +7,7 @@ import { GodRayCanvas } from "./godray-canvas";
 import { InstallTabs } from "./install-tabs";
 import { CopyForAi } from "./copy-for-ai";
 import { AMPLO_MARK_PATH, AMPLO_MARK_VIEWBOX } from "./amplo-mark";
-import {
-  ColorPicker,
-  FillPicker,
-  GradientPicker,
-  BUILTIN_GRADIENT_PRESETS,
-  type Fill,
-} from "@/registry/new-york/color-picker/fill-picker";
+import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 
@@ -178,7 +172,7 @@ export function Hero() {
 
         <div className="mt-8 flex w-full flex-col items-center gap-3 lg:mt-12">
           <InstallTabs
-            url="https://amplo.ale.design/r/fill-picker.json"
+            url="https://amplo.ale.design/r/color-picker.json"
             className="w-full max-w-md"
           />
           <CopyForAi className="w-full max-w-md justify-center" />
@@ -273,10 +267,9 @@ function TunerSlider({
 }
 
 function HeroPicker() {
-  const [fill, setFill] = React.useState<Fill>(() => ({
-    kind: "color",
-    color: parseColor("oklch(0.7 0.18 30)")!,
-  }));
+  const [color, setColor] = React.useState<OklchColor>(
+    () => parseColor("oklch(0.7 0.18 30)")!,
+  );
   const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
   const swatches = React.useMemo(
     () => [...P3_VIVID_PRESETS, ...savedSwatches],
@@ -285,78 +278,34 @@ function HeroPicker() {
   const addSwatch = React.useCallback((_c: OklchColor, hex: string) => {
     setSavedSwatches((prev) => (prev.includes(hex) ? prev : [...prev, hex]));
   }, []);
-  const [savedGradients, setSavedGradients] = React.useState<string[]>([]);
-  const gradientPresets = React.useMemo(
-    () => [...BUILTIN_GRADIENT_PRESETS, ...savedGradients],
-    [savedGradients],
-  );
-  const addGradient = React.useCallback((_g: unknown, css: string) => {
-    setSavedGradients((prev) => (prev.includes(css) ? prev : [...prev, css]));
-  }, []);
 
   return (
-    <FillPicker.Root
-      value={fill}
-      onValueChange={setFill}
+    <ColorPicker.Root
+      value={color}
+      onValueChange={setColor}
       className="w-full max-w-70 gap-3"
     >
-      <FillPicker.Tabs className="self-stretch">
-        <FillPicker.Tab mode="color" className="flex-1">
-          Solid
-        </FillPicker.Tab>
-        <FillPicker.Tab mode="gradient" className="flex-1">
-          Gradient
-        </FillPicker.Tab>
-      </FillPicker.Tabs>
-
-      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
-        <div className="flex items-stretch gap-2">
-          <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
-          <ColorPicker.ContrastReadout
-            metrics={["wcag", "apca"]}
-            showLabel={false}
-            showValue={false}
-            className="w-auto flex-1 justify-center"
-          />
-        </div>
-        <ColorPicker.Area mode="oklch-cl" />
-        <div className="flex flex-col gap-1.5">
-          <ColorPicker.Hue />
-          <ColorPicker.Alpha />
-        </div>
-        <div className="flex items-center gap-2">
-          <ColorPicker.FormatSwitcher className="flex-1" />
-          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
-        </div>
-        <ColorPicker.ChannelInput showFormat={false} />
-        <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
-      </FillPicker.Pane>
-
-      <FillPicker.Pane mode="gradient" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <GradientPicker.TypeSwitcher />
-          <GradientPicker.ReverseStops />
-        </div>
-        <GradientPicker.Bar />
-        <GradientPicker.Area />
-        <GradientPicker.AngleDial />
-        <GradientPicker.CenterPad />
-        <GradientPicker.RadialShape />
-        <GradientPicker.StopColor>
-          <ColorPicker.Area mode="oklch-cl" />
-          <div className="flex flex-col gap-1.5">
-            <ColorPicker.Hue />
-            <ColorPicker.Alpha />
-          </div>
-          <div className="flex items-center gap-2">
-            <ColorPicker.FormatSwitcher className="flex-1" />
-            <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
-          </div>
-          <ColorPicker.ChannelInput showFormat={false} />
-        </GradientPicker.StopColor>
-        <GradientPicker.Presets presets={gradientPresets} onAdd={addGradient} />
-      </FillPicker.Pane>
-    </FillPicker.Root>
+      <div className="flex items-stretch gap-2">
+        <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+        <ColorPicker.ContrastReadout
+          metrics={["wcag", "apca"]}
+          showLabel={false}
+          showValue={false}
+          className="w-auto flex-1 justify-center"
+        />
+      </div>
+      <ColorPicker.Area mode="oklch-cl" />
+      <div className="flex flex-col gap-1.5">
+        <ColorPicker.Hue />
+        <ColorPicker.Alpha />
+      </div>
+      <div className="flex items-center gap-2">
+        <ColorPicker.FormatSwitcher className="flex-1" />
+        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+      </div>
+      <ColorPicker.ChannelInput showFormat={false} />
+      <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
+    </ColorPicker.Root>
   );
 }
 

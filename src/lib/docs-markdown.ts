@@ -7,10 +7,10 @@
  */
 
 export const SITE_URL = "https://amplo.ale.design";
-export const REGISTRY_URL = `${SITE_URL}/r/fill-picker.json`;
+export const REGISTRY_URL = `${SITE_URL}/r/color-picker.json`;
 
 /** Short llms.txt index per https://llmstxt.org. */
-export const LLMS_TXT = `# Amplo Fill Picker
+export const LLMS_TXT = `# Amplo Color Picker
 
 > OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one CLI command.
 
@@ -35,7 +35,7 @@ pnpm dlx shadcn@latest add ${REGISTRY_URL}
 `;
 
 /** Full markdown reference. Mirrors /docs page structure. */
-export const DOCS_MARKDOWN = `# Amplo Fill Picker
+export const DOCS_MARKDOWN = `# Amplo Color Picker
 
 OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one CLI command.
 
@@ -50,7 +50,7 @@ pnpm dlx shadcn@latest add ${REGISTRY_URL}
 # or: yarn dlx shadcn@latest add ${REGISTRY_URL}
 \`\`\`
 
-The shadcn CLI drops the picker into \`components/ui/fill-picker/\` and installs \`culori\` + \`lucide-react\` as runtime dependencies. Requires Tailwind v4 and React 19.
+The shadcn CLI drops the picker into \`components/ui/color-picker/\` and installs \`culori\` + \`lucide-react\` as runtime dependencies. Requires Tailwind v4 and React 19.
 
 ## Usage
 
@@ -350,14 +350,14 @@ MIT.
 `;
 
 /** Curated prompt for the "Copy for AI" button. Designed to paste into Claude/Cursor/ChatGPT. */
-export const AI_PROMPT = `I'm integrating Amplo Fill Picker — an OKLCH-native, Display-P3-aware color picker for shadcn — into my Next.js + Tailwind v4 app.
+export const AI_PROMPT = `I'm integrating Amplo Color Picker — an OKLCH-native, Display-P3-aware color picker for shadcn — into my Next.js + Tailwind v4 app.
 
 Read the full reference here before answering: ${SITE_URL}/llms-full.txt
 
 Key constraints:
 - The component is shadcn-style with a Radix compound API. There is no default \`<ColorPicker />\`; consumers compose \`<ColorPicker.Root>\` with the parts they need (\`Area\`, \`Hue\`, \`Lightness\`, \`Alpha\`, \`ChannelInput\`, \`FormatSwitcher\`, \`Swatches\`, \`GamutBadge\`, \`ContrastReadout\`, \`EyeDropper\`, \`Preview\`, \`CssInput\`).
 - Canonical state is \`OklchColor { l, c, h, alpha }\` — pass an object as \`value\` for lossless control. \`onValueChange(color, formatted, formats)\` always provides every format pre-serialized.
-- Install with: \`pnpm dlx shadcn@latest add ${REGISTRY_URL}\` (drops files into \`components/ui/fill-picker/\`).
+- Install with: \`pnpm dlx shadcn@latest add ${REGISTRY_URL}\` (drops files into \`components/ui/color-picker/\`).
 
 My task:
 [describe what you want to build]

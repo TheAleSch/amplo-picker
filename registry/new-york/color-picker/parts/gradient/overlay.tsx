@@ -709,6 +709,40 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
             </svg>
           )}
 
+          {gradient.type === "radial" && handles.b && (
+            <svg
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              width={dims.w}
+              height={dims.h}
+            >
+              {(() => {
+                const ax = handles.a.x;
+                const ay = handles.a.y;
+                const rx = Math.abs(handles.b.x - ax);
+                const ry = Math.abs(handles.b.y - ay);
+                // shape="circle" always renders a true circle outline so
+                // radiusPx-circles (where the edge handle sits on the x
+                // axis and ry === 0) don't collapse to a flat line. For
+                // the keyword-circle path, rx === ry already.
+                const isCircle = gradient.shape === "circle";
+                const stroke = {
+                  fill: "none",
+                  stroke: "white",
+                  strokeWidth: 1.5,
+                  strokeDasharray: "4 4",
+                  strokeOpacity: 0.85,
+                  style: { filter: "drop-shadow(0 0 1px rgba(0,0,0,0.55))" },
+                } as const;
+                return isCircle ? (
+                  <circle cx={ax} cy={ay} r={Math.max(rx, ry)} {...stroke} />
+                ) : (
+                  <ellipse cx={ax} cy={ay} rx={rx} ry={ry} {...stroke} />
+                );
+              })()}
+            </svg>
+          )}
+
           {gradient.type === "linear" ? (
             <>
               <Handle

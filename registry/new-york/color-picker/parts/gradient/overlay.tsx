@@ -592,17 +592,11 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       y = 0.5;
     } else return;
     e.preventDefault();
-    // Intentionally no auto-lock here: kbd nudges keep the gradient in
-    // its current size mode (keyword or already-explicit). Pointer drag
-    // auto-locks at gesture end; kbd users can lock via the numeric
-    // radius input in `<GradientPicker.RadialShape>` when they want a
-    // fixed size.
     ctx.setCenter({
       x: Math.max(0, Math.min(1, x)),
       y: Math.max(0, Math.min(1, y)),
     });
   };
-
 
   const beginDrag = (kind: HandleKind) => (
     e: React.PointerEvent<HTMLButtonElement>,

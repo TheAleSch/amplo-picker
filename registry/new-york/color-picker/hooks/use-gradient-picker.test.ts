@@ -7,6 +7,7 @@ import {
   DEFAULT_CONIC,
   type Gradient,
   type LinearGradient,
+  type RadialGradient,
 } from "../lib/gradient";
 
 describe("useGradientPicker", () => {
@@ -109,6 +110,110 @@ describe("useGradientPicker", () => {
       expect(s.color).toEqual(colorsByOriginalId.get(s.id));
     }
     expect(new Set(result.current.stops.map((s) => s.id))).toEqual(new Set(ids));
+  });
+
+  describe("setRadialShape", () => {
+    const asRadial = (g: Gradient) => g as RadialGradient;
+
+    it("toggling ellipse → circle drops the ellipse `radii` override", () => {
+      const { result } = renderHook(() =>
+        useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+      );
+      // Start on ellipse with an explicit radii override (the picker's
+      // ellipse path produces this state).
+      act(() => {
+        result.current.setRadialShape("ellipse");
+        result.current.setRadii({ x: 0.6, y: 0.3 });
+      });
+      expect(asRadial(result.current.gradient).radii).toEqual({ x: 0.6, y: 0.3 });
+      act(() => {
+        result.current.setRadialShape("circle");
+      });
+      const g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("circle");
+      // Critical: the ellipse override must not survive the shape flip,
+      // otherwise emit falls into the `radii` branch and keeps drawing an
+      // ellipse despite shape === "circle".
+      expect(g.radii).toBeUndefined();
+    });
+
+    it("toggling circle → ellipse drops the circle `radiusPx` override", () => {
+      const { result } = renderHook(() =>
+        useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+      );
+      act(() => {
+        result.current.setRadialShape("circle");
+        result.current.setRadiusPx(120);
+      });
+      expect(asRadial(result.current.gradient).radiusPx).toBe(120);
+      act(() => {
+        result.current.setRadialShape("ellipse");
+      });
+      const g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("ellipse");
+      expect(g.radiusPx).toBeUndefined();
+    });
+
+    it("toggling away and back restores the previous override per shape", () => {
+      const { result } = renderHook(() =>
+        useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+      );
+      act(() => {
+        result.current.setRadialShape("ellipse");
+        result.current.setRadii({ x: 0.6, y: 0.3 });
+      });
+      act(() => {
+        result.current.setRadialShape("circle");
+        result.current.setRadiusPx(80);
+      });
+      let g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("circle");
+      expect(g.radiusPx).toBe(80);
+      expect(g.radii).toBeUndefined();
+      // Toggling back to ellipse must restore the prior ellipse radii (not
+      // leave the user with a cleared override they can't recover from the
+      // UI — the px input is hidden on ellipse).
+      act(() => {
+        result.current.setRadialShape("ellipse");
+      });
+      g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("ellipse");
+      expect(g.radii).toEqual({ x: 0.6, y: 0.3 });
+      expect(g.radiusPx).toBeUndefined();
+      // And back to circle restores radiusPx.
+      act(() => {
+        result.current.setRadialShape("circle");
+      });
+      g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("circle");
+      expect(g.radiusPx).toBe(80);
+      expect(g.radii).toBeUndefined();
+    });
+
+    it("setType to non-radial clears stashes so a later radial starts fresh", () => {
+      const { result } = renderHook(() =>
+        useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+      );
+      act(() => {
+        result.current.setRadialShape("circle");
+        result.current.setRadiusPx(200);
+      });
+      act(() => {
+        result.current.setType("linear");
+      });
+      act(() => {
+        result.current.setType("radial");
+      });
+      // Fresh radial defaults to ellipse with no overrides. Toggling to
+      // circle should NOT pull the old 200px stash from before the type
+      // round-trip.
+      act(() => {
+        result.current.setRadialShape("circle");
+      });
+      const g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("circle");
+      expect(g.radiusPx).toBeUndefined();
+    });
   });
 
   it("onValueChange emits a clean Gradient (no internal ids)", () => {

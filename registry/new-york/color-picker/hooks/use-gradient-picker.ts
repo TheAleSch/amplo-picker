@@ -160,6 +160,20 @@ export function useGradientPicker(
   const onValueChangeRef = React.useRef(onValueChange);
   onValueChangeRef.current = onValueChange;
 
+  // Per-shape override stashes. The radial gradient can carry either an
+  // ellipse override (`radii`) or a circle override (`radiusPx`), never
+  // both at once — `setRadii` / `setRadiusPx` cross-clear. But emit logic
+  // in `formatGradient` checks the override fields before the `shape`
+  // flag, so a stale override left over from the previous shape would
+  // silently keep drawing the old ending shape. We stash whichever
+  // override belongs to the shape we're leaving, strip both off the
+  // gradient, then restore the target shape's stash. Toggling back gives
+  // the user their last numeric value instead of nothing.
+  const radiiStashRef = React.useRef<{ x: number; y: number } | undefined>(
+    undefined,
+  );
+  const radiusPxStashRef = React.useRef<number | undefined>(undefined);
+
   // Sync controlled value during render (the "adjusting state during render"
   // pattern from React docs) instead of an effect. An effect would commit a
   // render with stale `internal`, then schedule a second render — children
@@ -173,15 +187,20 @@ export function useGradientPicker(
     setPrevControlledValue(value);
     if (value !== lastEmittedRef.current) {
       const prev = stateRef.current;
-      const next: InternalState =
+      const structuralMatch =
         prev.gradient.type === value.type &&
         prev.stops.length === value.stops.length &&
-        prev.stops.every((s, i) => s.position === value.stops[i].position)
-          ? {
-              gradient: value,
-              stops: prev.stops.map((s, i) => ({ ...value.stops[i], id: s.id })),
-            }
-          : attachIds(value);
+        prev.stops.every((s, i) => s.position === value.stops[i].position);
+      const next: InternalState = structuralMatch
+        ? {
+            gradient: value,
+            stops: prev.stops.map((s, i) => ({ ...value.stops[i], id: s.id })),
+          }
+        : attachIds(value);
+      if (!structuralMatch) {
+        radiiStashRef.current = undefined;
+        radiusPxStashRef.current = undefined;
+      }
       stateRef.current = next;
       setInternal(next);
     }
@@ -208,6 +227,10 @@ export function useGradientPicker(
 
   const setGradient = React.useCallback(
     (next: Gradient) => {
+      // Wholesale gradient replacement invalidates per-shape stashes — the
+      // user is handing us a brand-new gradient, not toggling the current one.
+      radiiStashRef.current = undefined;
+      radiusPxStashRef.current = undefined;
       apply(() => attachIds(next));
       setSelectedStopId((prev) => stateRef.current.stops[0]?.id ?? prev);
     },
@@ -218,6 +241,8 @@ export function useGradientPicker(
     (type: GradientType) =>
       apply((prev) => {
         if (prev.gradient.type === type) return prev;
+        radiiStashRef.current = undefined;
+        radiusPxStashRef.current = undefined;
         const fallback = defaultsForType(type);
         return {
           gradient: { ...fallback, interp: prev.gradient.interp } as Gradient,
@@ -341,10 +366,31 @@ export function useGradientPicker(
     (shape: "circle" | "ellipse") =>
       apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
-        return {
-          gradient: { ...(prev.gradient as RadialGradient), shape },
-          stops: prev.stops,
-        };
+        const cur = prev.gradient as RadialGradient;
+        if (cur.shape === shape) return prev;
+        if (cur.shape === "circle") {
+          radiusPxStashRef.current = cur.radiusPx;
+        } else {
+          radiiStashRef.current = cur.radii;
+        }
+        const { radii: _r, radiusPx: _px, ...rest } = cur;
+        const next: RadialGradient =
+          shape === "circle"
+            ? {
+                ...rest,
+                shape,
+                ...(radiusPxStashRef.current !== undefined
+                  ? { radiusPx: radiusPxStashRef.current }
+                  : {}),
+              }
+            : {
+                ...rest,
+                shape,
+                ...(radiiStashRef.current
+                  ? { radii: radiiStashRef.current }
+                  : {}),
+              };
+        return { gradient: next, stops: prev.stops };
       }),
     [apply],
   );

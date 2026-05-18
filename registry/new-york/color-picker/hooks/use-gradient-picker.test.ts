@@ -190,6 +190,28 @@ describe("useGradientPicker", () => {
       expect(g.radii).toBeUndefined();
     });
 
+    it("setCenter does not clear an explicit `radiusPx` (move-gradient flow)", () => {
+      // Repro for: shape=circle, user types r=55%, then drags the gradient
+      // by its center handle on the Area. After release, `r` was going
+      // back to "auto" because something was clearing radiusPx.
+      const { result } = renderHook(() =>
+        useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+      );
+      act(() => {
+        result.current.setRadialShape("circle");
+        result.current.setRadiusPx(120);
+      });
+      expect(asRadial(result.current.gradient).radiusPx).toBe(120);
+      act(() => {
+        result.current.setCenter({ x: 0.6, y: 0.4 });
+      });
+      const g = asRadial(result.current.gradient);
+      expect(g.center).toEqual({ x: 0.6, y: 0.4 });
+      // Critical: moving the center must not erase the user's explicit
+      // radius — that override lives independent of the center.
+      expect(g.radiusPx).toBe(120);
+    });
+
     it("setType to non-radial clears stashes so a later radial starts fresh", () => {
       const { result } = renderHook(() =>
         useGradientPicker({ defaultValue: DEFAULT_RADIAL }),

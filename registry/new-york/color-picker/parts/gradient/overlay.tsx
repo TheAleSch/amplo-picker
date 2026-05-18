@@ -139,7 +139,8 @@ function keywordToRadii(
  *   slides it along the gradient line.
  * - **Radial** — center handle + edge handle. Edge handle drives radius
  *   (px for circles, normalized for ellipses); center moves the
- *   gradient and, on drag-end, snapshots the keyword-derived radius.
+ *   gradient and leaves the keyword `size` alone — keyword extents
+ *   (`farthest-corner` etc.) naturally recompute against the new center.
  * - **Conic** — center handle + dial handle for `startAngle`.
  *
  * The root div is `pointer-events-none` so empty regions pass clicks
@@ -602,46 +603,6 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     });
   };
 
-  // Latest-value refs so `lockRadiiFromKeyword` reads the gradient and
-  // dimensions at *pointerup* time, not the values captured when the
-  // pointerdown handler was created. Without this, a fast user can flow
-  // (type a radius → drag the center) faster than React commits the
-  // radius change, so the pointerdown closure sees radiusPx=undefined,
-  // the early-return guard misses, and lockRadii overwrites the user's
-  // explicit value with a keyword-derived seed.
-  const gradientRef = React.useRef(gradient);
-  gradientRef.current = gradient;
-  const dimsRef = React.useRef(dims);
-  dimsRef.current = dims;
-
-  /**
-   * Snapshot the current keyword-derived size into an explicit value so the
-   * visible gradient doesn't grow / shrink as the user drags the center.
-   * CSS extent keywords (`farthest-corner` etc.) recompute relative to the
-   * center on every paint — without this snapshot, a center drag visibly
-   * resizes the gradient.
-   *
-   *   - shape="circle"  → snapshot to `radiusPx` (absolute pixel radius).
-   *     Consumer-side CSS uses `circle <px>px`, which stays a true circle
-   *     in any container aspect.
-   *   - shape="ellipse" → snapshot to `radii` (fractions of box w/h).
-   */
-  const lockRadiiFromKeyword = () => {
-    const g = gradientRef.current;
-    const d = dimsRef.current;
-    if (g.type !== "radial") return;
-    if (g.radii || g.radiusPx !== undefined) return;
-    if (d.w === 0 || d.h === 0) return;
-    const seeded = keywordToRadii(g.shape, g.size, g.center, d.w, d.h);
-    if (g.shape === "circle") {
-      // `keywordToRadii` returns normalized values that, multiplied by the
-      // matching box dimension, yield the same pixel radius — so x*w or
-      // y*h both work here. Use x*w by convention.
-      ctx.setRadiusPx(seeded.x * d.w);
-    } else {
-      ctx.setRadii(seeded);
-    }
-  };
 
   const beginDrag = (kind: HandleKind) => (
     e: React.PointerEvent<HTMLButtonElement>,
@@ -662,13 +623,6 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       target.removeEventListener("pointermove", onMove);
       target.removeEventListener("pointerup", cleanup);
       target.removeEventListener("pointercancel", cleanup);
-      // For a center drag, snapshot the current keyword-derived size at the
-      // *end* of the gesture (using the new center) so what the user sees
-      // on release is what gets frozen. Locking at pointerdown would
-      // capture the at-old-center radius, which is typically smaller than
-      // the live keyword radius at the drag-target center — felt like the
-      // gradient was shrinking the moment they let go.
-      if (kind === "center") lockRadiiFromKeyword();
     };
     target.addEventListener("pointermove", onMove);
     target.addEventListener("pointerup", cleanup);

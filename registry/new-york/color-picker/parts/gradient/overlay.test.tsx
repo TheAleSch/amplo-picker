@@ -146,6 +146,54 @@ describe("Area + RadialShape center-drag preserves explicit radius", () => {
     expect(g.radiusPx).toBeCloseTo((55 / 100) * 400, 0);
   });
 
+  it("center drag in keyword mode does NOT auto-promote to an explicit radiusPx", () => {
+    // Repro for: r shows `auto` (keyword form, radiusPx undefined),
+    // user drags the center on the Area, r jumps to a number like 91%.
+    // The picker used to "lock" the keyword-derived size at drag-end —
+    // that promote was unwanted; users expect drag-center to move ONLY
+    // the center and leave keyword sizing alone.
+    const initial: RadialGradient = {
+      ...DEFAULT_RADIAL,
+      shape: "circle",
+      center: { x: 0.5, y: 0.5 },
+    };
+    let latest: Gradient = initial;
+    render(
+      <Harness
+        initial={initial}
+        onChange={(g) => {
+          latest = g;
+        }}
+      />,
+    );
+    expect((latest as RadialGradient).radiusPx).toBeUndefined();
+    const center = screen.getByLabelText("Gradient center");
+    act(() => {
+      fireEvent.pointerDown(center, {
+        clientX: 200,
+        clientY: 60,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(center, {
+        clientX: 100,
+        clientY: 40,
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(center, {
+        clientX: 100,
+        clientY: 40,
+        pointerId: 1,
+      });
+    });
+    const g = latest as RadialGradient;
+    expect(g.shape).toBe("circle");
+    // Center moved.
+    expect(g.center.x).toBeCloseTo(100 / 400, 3);
+    // Critical: still in keyword mode. No silent promote.
+    expect(g.radiusPx).toBeUndefined();
+    expect(g.radii).toBeUndefined();
+  });
+
   it("ellipse + typed radii survives a center handle drag", () => {
     const initial: RadialGradient = {
       ...DEFAULT_RADIAL,

@@ -602,6 +602,18 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     });
   };
 
+  // Latest-value refs so `lockRadiiFromKeyword` reads the gradient and
+  // dimensions at *pointerup* time, not the values captured when the
+  // pointerdown handler was created. Without this, a fast user can flow
+  // (type a radius → drag the center) faster than React commits the
+  // radius change, so the pointerdown closure sees radiusPx=undefined,
+  // the early-return guard misses, and lockRadii overwrites the user's
+  // explicit value with a keyword-derived seed.
+  const gradientRef = React.useRef(gradient);
+  gradientRef.current = gradient;
+  const dimsRef = React.useRef(dims);
+  dimsRef.current = dims;
+
   /**
    * Snapshot the current keyword-derived size into an explicit value so the
    * visible gradient doesn't grow / shrink as the user drags the center.
@@ -615,21 +627,17 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
    *   - shape="ellipse" → snapshot to `radii` (fractions of box w/h).
    */
   const lockRadiiFromKeyword = () => {
-    if (gradient.type !== "radial") return;
-    if (gradient.radii || gradient.radiusPx !== undefined) return;
-    if (dims.w === 0 || dims.h === 0) return;
-    const seeded = keywordToRadii(
-      gradient.shape,
-      gradient.size,
-      gradient.center,
-      dims.w,
-      dims.h,
-    );
-    if (gradient.shape === "circle") {
+    const g = gradientRef.current;
+    const d = dimsRef.current;
+    if (g.type !== "radial") return;
+    if (g.radii || g.radiusPx !== undefined) return;
+    if (d.w === 0 || d.h === 0) return;
+    const seeded = keywordToRadii(g.shape, g.size, g.center, d.w, d.h);
+    if (g.shape === "circle") {
       // `keywordToRadii` returns normalized values that, multiplied by the
       // matching box dimension, yield the same pixel radius — so x*w or
       // y*h both work here. Use x*w by convention.
-      ctx.setRadiusPx(seeded.x * dims.w);
+      ctx.setRadiusPx(seeded.x * d.w);
     } else {
       ctx.setRadii(seeded);
     }

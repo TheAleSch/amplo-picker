@@ -7,11 +7,16 @@ import { GodRayCanvas } from "./godray-canvas";
 import { InstallTabs } from "./install-tabs";
 import { CopyForAi } from "./copy-for-ai";
 import { AMPLO_MARK_PATH, AMPLO_MARK_VIEWBOX } from "./amplo-mark";
-import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
-import { ColorPickerBase } from "@/registry/new-york/fill-picker-base/color-picker";
+import {
+  ColorPicker,
+  FillPicker,
+  GradientPicker,
+  BUILTIN_GRADIENT_PRESETS,
+  type Fill,
+} from "@/registry/new-york/color-picker/fill-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
-import { cn } from "@/lib/utils";
+import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
 
 // Mark renders inline in the left column. Halo center + width are measured
 // from the actual DOM rect each frame so the godray canvas tracks the mark
@@ -104,7 +109,6 @@ const DEFAULT_HALO: HaloParams = {
 
 export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
-  const [variant, setVariant] = React.useState<"base" | "radix">("base");
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
   const { center, width } = useMeasuredMark(sectionRef, markRef);
@@ -169,44 +173,13 @@ export function Hero() {
 
           {/* Right column: picker */}
           <div className="flex w-full justify-center">
-            <HeroPicker variant={variant} />
+            <HeroPicker />
           </div>
         </div>
 
         <div className="mt-8 flex w-full flex-col items-center gap-3 lg:mt-12">
-          <div
-            role="tablist"
-            aria-label="Component variant"
-            className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
-          >
-            {(["base", "radix"] as const).map((v) => {
-              const isActive = variant === v;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setVariant(v)}
-                  className={cn(
-                    "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
-                    "focus-visible:ring-2 focus-visible:ring-ring",
-                    isActive
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {v === "base" ? "Base UI" : "Radix UI"}
-                </button>
-              );
-            })}
-          </div>
           <InstallTabs
-            url={
-              variant === "base"
-                ? "https://amplo.ale.design/r/fill-picker-base.json"
-                : "https://amplo.ale.design/r/color-picker.json"
-            }
+            url="https://amplo.ale.design/r/fill-picker.json"
             className="w-full max-w-md"
           />
           <CopyForAi className="w-full max-w-md justify-center" />
@@ -300,10 +273,49 @@ function TunerSlider({
   );
 }
 
-function HeroPicker({ variant }: { variant: "base" | "radix" }) {
-  const [color, setColor] = React.useState<OklchColor>(
-    () => parseColor("oklch(0.7 0.18 30)")!,
+function GradientShapeControls() {
+  const ctx = useGradientPickerContext();
+  if (ctx.gradient.type === "linear") {
+    return (
+      <div className="flex items-center gap-2">
+        <GradientPicker.AnglePad />
+        <GradientPicker.AngleInput className="flex-1" />
+      </div>
+    );
+  }
+  if (ctx.gradient.type === "radial") {
+    return (
+      <div className="flex flex-col gap-2">
+        <GradientPicker.ShapeSwitcher />
+        <div className="flex items-center gap-2">
+          <GradientPicker.PositionPad />
+          <GradientPicker.PositionInput />
+          {ctx.gradient.shape === "circle" && (
+            <>
+              <span className="text-xs text-muted-foreground">Radii</span>
+              <GradientPicker.RadiusInput className="flex-1" />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+  // conic
+  return (
+    <div className="flex items-center gap-2">
+      <GradientPicker.PositionPad />
+      <GradientPicker.PositionInput />
+      <GradientPicker.AnglePad />
+      <GradientPicker.AngleInput className="flex-1" />
+    </div>
   );
+}
+
+function HeroPicker() {
+  const [fill, setFill] = React.useState<Fill>(() => ({
+    kind: "color",
+    color: parseColor("oklch(0.7 0.18 30)")!,
+  }));
   const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
   const swatches = React.useMemo(
     () => [...P3_VIVID_PRESETS, ...savedSwatches],
@@ -312,40 +324,76 @@ function HeroPicker({ variant }: { variant: "base" | "radix" }) {
   const addSwatch = React.useCallback((_c: OklchColor, hex: string) => {
     setSavedSwatches((prev) => (prev.includes(hex) ? prev : [...prev, hex]));
   }, []);
-
-  // Both variants expose the identical namespace; the Base UI object is
-  // structurally compatible with the Radix one, so the cast is safe.
-  const CP = (variant === "base"
-    ? (ColorPickerBase as unknown as typeof ColorPicker)
-    : ColorPicker) as typeof ColorPicker;
+  const [savedGradients, setSavedGradients] = React.useState<string[]>([]);
+  const gradientPresets = React.useMemo(
+    () => [...BUILTIN_GRADIENT_PRESETS, ...savedGradients],
+    [savedGradients],
+  );
+  const addGradient = React.useCallback((_g: unknown, css: string) => {
+    setSavedGradients((prev) => (prev.includes(css) ? prev : [...prev, css]));
+  }, []);
 
   return (
-    <CP.Root
-      value={color}
-      onValueChange={setColor}
+    <FillPicker.Root
+      value={fill}
+      onValueChange={setFill}
       className="w-full max-w-70 gap-3"
     >
-      <div className="flex items-stretch gap-2">
-        <CP.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
-        <CP.ContrastReadout
-          metrics={["wcag", "apca"]}
-          showLabel={false}
-          showValue={false}
-          className="w-auto flex-1 justify-center"
-        />
-      </div>
-      <CP.Area mode="oklch-cl" />
-      <div className="flex flex-col gap-1.5">
-        <CP.Hue />
-        <CP.Alpha />
-      </div>
-      <div className="flex items-center gap-2">
-        <CP.FormatSwitcher className="flex-1" />
-        <CP.EyeDropper className="h-8 w-full flex-1" />
-      </div>
-      <CP.ChannelInput showFormat={false} />
-      <CP.Swatches presets={swatches} onAdd={addSwatch} />
-    </CP.Root>
+      <FillPicker.Tabs className="self-stretch">
+        <FillPicker.Tab mode="color" className="flex-1">
+          Solid
+        </FillPicker.Tab>
+        <FillPicker.Tab mode="gradient" className="flex-1">
+          Gradient
+        </FillPicker.Tab>
+      </FillPicker.Tabs>
+
+      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
+        <div className="flex items-stretch gap-2">
+          <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+          <ColorPicker.ContrastReadout
+            metrics={["wcag", "apca"]}
+            showLabel={false}
+            showValue={false}
+            className="w-auto flex-1 justify-center"
+          />
+        </div>
+        <ColorPicker.Area mode="oklch-cl" />
+        <div className="flex flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <div className="flex items-center gap-2">
+          <ColorPicker.FormatSwitcher className="flex-1" />
+          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+        </div>
+        <ColorPicker.ChannelInput showFormat={false} />
+        <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
+      </FillPicker.Pane>
+
+      <FillPicker.Pane mode="gradient" className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <GradientPicker.TypeSwitcher />
+          <GradientPicker.ReverseStops />
+        </div>
+        <GradientPicker.Bar />
+        <GradientPicker.Area />
+        <GradientShapeControls />
+        <GradientPicker.StopColor>
+          <ColorPicker.Area mode="oklch-cl" />
+          <div className="flex flex-col gap-1.5">
+            <ColorPicker.Hue />
+            <ColorPicker.Alpha />
+          </div>
+          <div className="flex items-center gap-2">
+            <ColorPicker.FormatSwitcher className="flex-1" />
+            <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+          </div>
+          <ColorPicker.ChannelInput showFormat={false} />
+        </GradientPicker.StopColor>
+        <GradientPicker.Presets presets={gradientPresets} onAdd={addGradient} />
+      </FillPicker.Pane>
+    </FillPicker.Root>
   );
 }
 

@@ -178,21 +178,6 @@
           "target": "components/ui/fill-picker/parts/gradient/reverse-stops.tsx"
         },
         {
-          "path": "registry/new-york/color-picker/parts/gradient/angle-dial.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/angle-dial.tsx"
-        },
-        {
-          "path": "registry/new-york/color-picker/parts/gradient/center-pad.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/center-pad.tsx"
-        },
-        {
-          "path": "registry/new-york/color-picker/parts/gradient/radial-shape.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/radial-shape.tsx"
-        },
-        {
           "path": "registry/new-york/color-picker/parts/gradient/stop-list.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/stop-list.tsx"
@@ -218,14 +203,54 @@
           "target": "components/ui/fill-picker/parts/gradient/css-input.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/position-pad.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/position-pad.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/position-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/position-input.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/gradient/position-group.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/position-group.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/angle-pad.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/angle-pad.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/angle-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/angle-input.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/gradient/angle-group.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/angle-group.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/shape-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/shape-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/radius-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/radius-input.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/ellipse-radii-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/ellipse-radii-input.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/radial-size-select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/radial-size-select.tsx"
         },
         {
           "path": "registry/new-york/color-picker/fill-picker.tsx",

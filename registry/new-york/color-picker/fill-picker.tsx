@@ -17,13 +17,10 @@ import { Area as GradientArea } from "./parts/gradient/area";
 import { Overlay as GradientOverlay } from "./parts/gradient/overlay";
 import { TypeSwitcher } from "./parts/gradient/type-switcher";
 import { ReverseStops } from "./parts/gradient/reverse-stops";
-import { AngleDial } from "./parts/gradient/angle-dial";
 import { AnglePad } from "./parts/gradient/angle-pad";
 import { AngleInput } from "./parts/gradient/angle-input";
-import { CenterPad } from "./parts/gradient/center-pad";
 import { PositionPad } from "./parts/gradient/position-pad";
 import { PositionInput } from "./parts/gradient/position-input";
-import { RadialShape } from "./parts/gradient/radial-shape";
 import { ShapeSwitcher } from "./parts/gradient/shape-switcher";
 import { RadiusInput } from "./parts/gradient/radius-input";
 import { EllipseRadiiInput } from "./parts/gradient/ellipse-radii-input";
@@ -78,13 +75,10 @@ export const GradientPicker = {
   Overlay: GradientOverlay,
   TypeSwitcher,
   ReverseStops,
-  AngleDial,
   AnglePad,
   AngleInput,
-  CenterPad,
   PositionPad,
   PositionInput,
-  RadialShape,
   ShapeSwitcher,
   RadiusInput,
   EllipseRadiiInput,

@@ -3,7 +3,8 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import * as React from "react";
 import { Root } from "./root";
 import { Area } from "./area";
-import { RadialShape } from "./radial-shape";
+import { RadiusInput } from "./radius-input";
+import { EllipseRadiiInput } from "./ellipse-radii-input";
 import {
   DEFAULT_RADIAL,
   type Gradient,
@@ -92,12 +93,13 @@ function Harness({
       }}
     >
       <Area />
-      <RadialShape />
+      <RadiusInput />
+      <EllipseRadiiInput />
     </Root>
   );
 }
 
-describe("Area + RadialShape center-drag preserves explicit radius", () => {
+describe("Area + radius inputs center-drag preserves explicit radius", () => {
   it("circle + typed radiusPx survives a center handle drag", () => {
     const initial: RadialGradient = {
       ...DEFAULT_RADIAL,

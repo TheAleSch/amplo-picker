@@ -38,7 +38,7 @@ export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
         try {
           target.releasePointerCapture(ev.pointerId);
         } catch {
-          /* already released on cancel */
+          // pointer may already be released on cancel
         }
         target.removeEventListener("pointermove", onMove);
         target.removeEventListener("pointerup", cleanup);

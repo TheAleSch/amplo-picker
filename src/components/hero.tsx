@@ -16,6 +16,7 @@ import {
 } from "@/registry/new-york/color-picker/fill-picker";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
+import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
 
 // Mark renders inline in the left column. Halo center + width are measured
 // from the actual DOM rect each frame so the godray canvas tracks the mark
@@ -272,6 +273,44 @@ function TunerSlider({
   );
 }
 
+function GradientShapeControls() {
+  const ctx = useGradientPickerContext();
+  if (ctx.gradient.type === "linear") {
+    return (
+      <div className="flex items-center gap-2">
+        <GradientPicker.AnglePad />
+        <GradientPicker.AngleInput className="flex-1" />
+      </div>
+    );
+  }
+  if (ctx.gradient.type === "radial") {
+    return (
+      <div className="flex flex-col gap-2">
+        <GradientPicker.ShapeSwitcher />
+        <div className="flex items-center gap-2">
+          <GradientPicker.PositionPad />
+          <GradientPicker.PositionInput />
+          {ctx.gradient.shape === "circle" && (
+            <>
+              <span className="text-xs text-muted-foreground">Radii</span>
+              <GradientPicker.RadiusInput className="flex-1" />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+  // conic
+  return (
+    <div className="flex items-center gap-2">
+      <GradientPicker.PositionPad />
+      <GradientPicker.PositionInput />
+      <GradientPicker.AnglePad />
+      <GradientPicker.AngleInput className="flex-1" />
+    </div>
+  );
+}
+
 function HeroPicker() {
   const [fill, setFill] = React.useState<Fill>(() => ({
     kind: "color",
@@ -339,9 +378,7 @@ function HeroPicker() {
         </div>
         <GradientPicker.Bar />
         <GradientPicker.Area />
-        <GradientPicker.AngleDial />
-        <GradientPicker.CenterPad />
-        <GradientPicker.RadialShape />
+        <GradientShapeControls />
         <GradientPicker.StopColor>
           <ColorPicker.Area mode="oklch-cl" />
           <div className="flex flex-col gap-1.5">

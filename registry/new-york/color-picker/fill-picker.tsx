@@ -19,6 +19,7 @@ import { TypeSwitcher } from "./parts/gradient/type-switcher";
 import { ReverseStops } from "./parts/gradient/reverse-stops";
 import { AngleDial } from "./parts/gradient/angle-dial";
 import { CenterPad } from "./parts/gradient/center-pad";
+import { PositionPad } from "./parts/gradient/position-pad";
 import { RadialShape } from "./parts/gradient/radial-shape";
 import { StopList } from "./parts/gradient/stop-list";
 import { StopColor } from "./parts/gradient/stop-color";
@@ -70,6 +71,7 @@ export const GradientPicker = {
   ReverseStops,
   AngleDial,
   CenterPad,
+  PositionPad,
   RadialShape,
   StopList,
   StopColor,

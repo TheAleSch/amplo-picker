@@ -50,17 +50,17 @@ function GradientShapeControls() {
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type === "linear") {
     return (
-      <div className="flex items-center gap-2">
+      <GradientPicker.AngleGroup>
         <GradientPicker.AnglePad />
         <GradientPicker.AngleInput className="flex-1" />
-      </div>
+      </GradientPicker.AngleGroup>
     );
   }
   if (ctx.gradient.type === "radial") {
     return (
       <div className="flex flex-col gap-2">
         <GradientPicker.ShapeSwitcher />
-        <div className="flex items-center gap-2">
+        <GradientPicker.PositionGroup>
           <GradientPicker.PositionPad />
           <GradientPicker.PositionInput />
           {ctx.gradient.shape === "circle" && (
@@ -69,16 +69,20 @@ function GradientShapeControls() {
               <GradientPicker.RadiusInput className="flex-1" />
             </>
           )}
-        </div>
+        </GradientPicker.PositionGroup>
       </div>
     );
   }
   return (
     <div className="flex items-center gap-2">
-      <GradientPicker.PositionPad />
-      <GradientPicker.PositionInput />
-      <GradientPicker.AnglePad />
-      <GradientPicker.AngleInput className="flex-1" />
+      <GradientPicker.PositionGroup>
+        <GradientPicker.PositionPad />
+        <GradientPicker.PositionInput />
+      </GradientPicker.PositionGroup>
+      <GradientPicker.AngleGroup>
+        <GradientPicker.AnglePad />
+        <GradientPicker.AngleInput className="flex-1" />
+      </GradientPicker.AngleGroup>
     </div>
   );
 }
@@ -1337,22 +1341,22 @@ export function FillPickerTabsDemo() {
 
 const GRADIENT_SHAPE_LINEAR_CODE = `<GradientPicker.Root>
   {/* …area, bar, stops, etc… */}
-  <div className="flex items-center gap-2">
+  <GradientPicker.AngleGroup>
     <GradientPicker.AnglePad />
     <GradientPicker.AngleInput className="flex-1" />
-  </div>
+  </GradientPicker.AngleGroup>
 </GradientPicker.Root>`;
 
 const GRADIENT_SHAPE_RADIAL_CIRCLE_CODE = `<GradientPicker.Root>
   {/* …area, bar, stops, etc… */}
   <div className="flex flex-col gap-2">
     <GradientPicker.ShapeSwitcher />
-    <div className="flex items-center gap-2">
+    <GradientPicker.PositionGroup>
       <GradientPicker.PositionPad />
       <GradientPicker.PositionInput />
       <span className="text-xs text-muted-foreground">Radii</span>
       <GradientPicker.RadiusInput className="flex-1" />
-    </div>
+    </GradientPicker.PositionGroup>
   </div>
 </GradientPicker.Root>`;
 
@@ -1360,10 +1364,10 @@ const GRADIENT_SHAPE_RADIAL_ELLIPSE_CODE = `<GradientPicker.Root>
   {/* …area, bar, stops, etc… */}
   <div className="flex flex-col gap-2">
     <GradientPicker.ShapeSwitcher />
-    <div className="flex items-center gap-2">
+    <GradientPicker.PositionGroup>
       <GradientPicker.PositionPad />
       <GradientPicker.PositionInput />
-    </div>
+    </GradientPicker.PositionGroup>
   </div>
 </GradientPicker.Root>`;
 

@@ -1,13 +1,13 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
-  "name": "amplo-color-picker",
+  "name": "amplo-fill-picker",
   "homepage": "https://amplo.ale.design",
   "items": [
     {
-      "name": "color-picker",
+      "name": "fill-picker",
       "type": "registry:ui",
-      "title": "Amplo Color Picker",
-      "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
+      "title": "Amplo Fill Picker",
+      "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
       "categories": ["color", "input", "design", "accessibility"],
       "dependencies": ["culori", "lucide-react"],
       "registryDependencies": ["utils", "tooltip", "button", "input", "popover"],
@@ -15,143 +15,222 @@
         {
           "path": "registry/new-york/color-picker/lib/types.ts",
           "type": "registry:lib",
-          "target": "components/ui/color-picker/lib/types.ts"
+          "target": "components/ui/fill-picker/lib/types.ts"
         },
         {
           "path": "registry/new-york/color-picker/lib/color.ts",
           "type": "registry:lib",
-          "target": "components/ui/color-picker/lib/color.ts"
+          "target": "components/ui/fill-picker/lib/color.ts"
         },
         {
           "path": "registry/new-york/color-picker/lib/channels.ts",
           "type": "registry:lib",
-          "target": "components/ui/color-picker/lib/channels.ts"
+          "target": "components/ui/fill-picker/lib/channels.ts"
         },
         {
           "path": "registry/new-york/color-picker/hooks/use-color-picker.ts",
           "type": "registry:hook",
-          "target": "components/ui/color-picker/hooks/use-color-picker.ts"
+          "target": "components/ui/fill-picker/hooks/use-color-picker.ts"
         },
         {
           "path": "registry/new-york/color-picker/context.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/context.tsx"
+          "target": "components/ui/fill-picker/context.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/root.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/root.tsx"
+          "target": "components/ui/fill-picker/parts/root.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/area.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/area.tsx"
+          "target": "components/ui/fill-picker/parts/area.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/hue.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/hue.tsx"
+          "target": "components/ui/fill-picker/parts/hue.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/lightness.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/lightness.tsx"
+          "target": "components/ui/fill-picker/parts/lightness.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/alpha.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/alpha.tsx"
+          "target": "components/ui/fill-picker/parts/alpha.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/css-input.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/css-input.tsx"
+          "target": "components/ui/fill-picker/parts/css-input.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/format-switcher.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/format-switcher.tsx"
+          "target": "components/ui/fill-picker/parts/format-switcher.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/channel-input.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/channel-input.tsx"
+          "target": "components/ui/fill-picker/parts/channel-input.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/swatches.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/swatches.tsx"
+          "target": "components/ui/fill-picker/parts/swatches.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/gamut-badge.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/gamut-badge.tsx"
+          "target": "components/ui/fill-picker/parts/gamut-badge.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/contrast-readout.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/contrast-readout.tsx"
+          "target": "components/ui/fill-picker/parts/contrast-readout.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/preview.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/preview.tsx"
+          "target": "components/ui/fill-picker/parts/preview.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/eye-dropper.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/parts/eye-dropper.tsx"
+          "target": "components/ui/fill-picker/parts/eye-dropper.tsx"
         },
         {
           "path": "registry/new-york/color-picker/color-picker.tsx",
           "type": "registry:ui",
-          "target": "components/ui/color-picker/color-picker.tsx"
-        }
-      ]
-    },
-    {
-      "name": "fill-picker-base",
-      "type": "registry:ui",
-      "title": "Amplo Color Picker (Base UI)",
-      "description": "Base UI variant of the Amplo Color Picker — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, and Swatches on RadioGroup. Reuses the color-picker item's OKLCH engine and unstyled parts (Area, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput).",
-      "categories": ["color", "input", "design", "accessibility"],
-      "dependencies": ["@base-ui/react", "culori", "lucide-react"],
-      "registryDependencies": ["color-picker", "utils", "tooltip", "button", "input", "popover"],
-      "files": [
-        {
-          "path": "registry/new-york/fill-picker-base/parts/hue.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/hue.tsx"
+          "target": "components/ui/fill-picker/color-picker.tsx"
         },
         {
-          "path": "registry/new-york/fill-picker-base/parts/lightness.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/lightness.tsx"
+          "path": "registry/new-york/color-picker/lib/gradient.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/lib/gradient.ts"
         },
         {
-          "path": "registry/new-york/fill-picker-base/parts/alpha.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/alpha.tsx"
+          "path": "registry/new-york/color-picker/hooks/use-gradient-picker.ts",
+          "type": "registry:hook",
+          "target": "components/ui/fill-picker/hooks/use-gradient-picker.ts"
         },
         {
-          "path": "registry/new-york/fill-picker-base/parts/format-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/format-switcher.tsx"
+          "path": "registry/new-york/color-picker/hooks/use-fill-picker.ts",
+          "type": "registry:hook",
+          "target": "components/ui/fill-picker/hooks/use-fill-picker.ts"
         },
         {
-          "path": "registry/new-york/fill-picker-base/parts/channel-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/channel-input.tsx"
+          "path": "registry/new-york/color-picker/contexts/fill.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/contexts/fill.ts"
         },
         {
-          "path": "registry/new-york/fill-picker-base/parts/swatches.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/swatches.tsx"
+          "path": "registry/new-york/color-picker/contexts/gradient.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/contexts/gradient.ts"
         },
         {
-          "path": "registry/new-york/fill-picker-base/color-picker.tsx",
+          "path": "registry/new-york/color-picker/parts/fill/root.tsx",
           "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/color-picker.tsx"
+          "target": "components/ui/fill-picker/parts/fill/root.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/tabs.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/pane.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/pane.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/root.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/root.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/bar.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/overlay.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/overlay.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/area.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/area.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/type-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/type-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/reverse-stops.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/reverse-stops.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/angle-dial.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/angle-dial.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/center-pad.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/center-pad.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/radial-shape.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/radial-shape.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/stop-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/stop-list.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/stop-color.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/stop-color.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/interp-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/interp-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/presets.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/presets.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/css-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/css-input.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/position-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/position-group.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/angle-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/angle-group.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/fill-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/fill-picker.tsx"
         }
       ]
     }

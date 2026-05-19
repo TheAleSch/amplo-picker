@@ -72,8 +72,10 @@ type GradientPartKey =
   | "bar"
   | "area"
   | "shapeSwitcher"
+  | "positionGroup"
   | "positionPad"
   | "positionInput"
+  | "angleGroup"
   | "anglePad"
   | "angleInput"
   | "radiusInput"
@@ -95,8 +97,10 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   bar: true,
   area: true,
   shapeSwitcher: true,
+  positionGroup: true,
   positionPad: true,
   positionInput: true,
+  angleGroup: true,
   anglePad: true,
   angleInput: true,
   radiusInput: true,
@@ -116,8 +120,10 @@ const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [
   { key: "bar", label: "Bar" },
   { key: "area", label: "Area" },
   { key: "shapeSwitcher", label: "ShapeSwitcher" },
+  { key: "positionGroup", label: "PositionGroup (wrapper)" },
   { key: "positionPad", label: "PositionPad" },
   { key: "positionInput", label: "PositionInput" },
+  { key: "angleGroup", label: "AngleGroup (wrapper)" },
   { key: "anglePad", label: "AnglePad" },
   { key: "angleInput", label: "AngleInput" },
   { key: "radiusInput", label: "RadiusInput" },
@@ -680,12 +686,35 @@ export default function PlaygroundPage() {
                   {gradientParts.bar && <GradientPicker.Bar />}
                   {gradientParts.area && <GradientPicker.Area />}
                   {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
-                  {gradientParts.positionPad && <GradientPicker.PositionPad />}
-                  {gradientParts.positionInput && <GradientPicker.PositionInput />}
-                  {gradientParts.anglePad && <GradientPicker.AnglePad />}
-                  {gradientParts.angleInput && <GradientPicker.AngleInput />}
-                  {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
-                  {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+
+                  {gradientParts.positionGroup ? (
+                    <GradientPicker.PositionGroup>
+                      {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                      {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                      {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                      {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                    </GradientPicker.PositionGroup>
+                  ) : (
+                    <>
+                      {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                      {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                      {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                      {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                    </>
+                  )}
+
+                  {gradientParts.angleGroup ? (
+                    <GradientPicker.AngleGroup>
+                      {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                      {gradientParts.angleInput && <GradientPicker.AngleInput className="flex-1" />}
+                    </GradientPicker.AngleGroup>
+                  ) : (
+                    <>
+                      {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                      {gradientParts.angleInput && <GradientPicker.AngleInput />}
+                    </>
+                  )}
+
                   {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
                   {gradientParts.stopColor && (
                     <GradientPicker.StopColor>
@@ -747,12 +776,35 @@ export default function PlaygroundPage() {
                     {gradientParts.bar && <GradientPicker.Bar />}
                     {gradientParts.area && <GradientPicker.Area />}
                     {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
-                    {gradientParts.positionPad && <GradientPicker.PositionPad />}
-                    {gradientParts.positionInput && <GradientPicker.PositionInput />}
-                    {gradientParts.anglePad && <GradientPicker.AnglePad />}
-                    {gradientParts.angleInput && <GradientPicker.AngleInput />}
-                    {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
-                    {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+
+                    {gradientParts.positionGroup ? (
+                      <GradientPicker.PositionGroup>
+                        {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                        {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                        {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                        {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                      </GradientPicker.PositionGroup>
+                    ) : (
+                      <>
+                        {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                        {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                        {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                        {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                      </>
+                    )}
+
+                    {gradientParts.angleGroup ? (
+                      <GradientPicker.AngleGroup>
+                        {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                        {gradientParts.angleInput && <GradientPicker.AngleInput className="flex-1" />}
+                      </GradientPicker.AngleGroup>
+                    ) : (
+                      <>
+                        {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                        {gradientParts.angleInput && <GradientPicker.AngleInput />}
+                      </>
+                    )}
+
                     {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
                     {gradientParts.stopColor && (
                       <GradientPicker.StopColor>
@@ -776,11 +828,11 @@ export default function PlaygroundPage() {
                     {gradientParts.stopList && <GradientPicker.StopList />}
                     {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
                     {gradientParts.presets && (
-                    <GradientPicker.Presets
-                      presets={gradientPresets}
-                      onAdd={addGradientPreset}
-                    />
-                  )}
+                      <GradientPicker.Presets
+                        presets={gradientPresets}
+                        onAdd={addGradientPreset}
+                      />
+                    )}
                     {gradientParts.cssInput && <GradientPicker.CssInput />}
                   </FillPicker.Pane>
                 </FillPicker.Root>
@@ -1148,12 +1200,31 @@ function buildGradientPartsLines(
   if (parts.bar) lines.push(`${indent}<GradientPicker.Bar />`);
   if (parts.area) lines.push(`${indent}<GradientPicker.Area />`);
   if (parts.shapeSwitcher) lines.push(`${indent}<GradientPicker.ShapeSwitcher />`);
-  if (parts.positionPad) lines.push(`${indent}<GradientPicker.PositionPad />`);
-  if (parts.positionInput) lines.push(`${indent}<GradientPicker.PositionInput />`);
-  if (parts.anglePad) lines.push(`${indent}<GradientPicker.AnglePad />`);
-  if (parts.angleInput) lines.push(`${indent}<GradientPicker.AngleInput />`);
-  if (parts.radiusInput) lines.push(`${indent}<GradientPicker.RadiusInput />`);
-  if (parts.ellipseRadiiInput) lines.push(`${indent}<GradientPicker.EllipseRadiiInput />`);
+
+  if (parts.positionGroup) {
+    lines.push(`${indent}<GradientPicker.PositionGroup>`);
+    if (parts.positionPad) lines.push(`${indent}  <GradientPicker.PositionPad />`);
+    if (parts.positionInput) lines.push(`${indent}  <GradientPicker.PositionInput />`);
+    if (parts.radiusInput) lines.push(`${indent}  <GradientPicker.RadiusInput />`);
+    if (parts.ellipseRadiiInput) lines.push(`${indent}  <GradientPicker.EllipseRadiiInput />`);
+    lines.push(`${indent}</GradientPicker.PositionGroup>`);
+  } else {
+    if (parts.positionPad) lines.push(`${indent}<GradientPicker.PositionPad />`);
+    if (parts.positionInput) lines.push(`${indent}<GradientPicker.PositionInput />`);
+    if (parts.radiusInput) lines.push(`${indent}<GradientPicker.RadiusInput />`);
+    if (parts.ellipseRadiiInput) lines.push(`${indent}<GradientPicker.EllipseRadiiInput />`);
+  }
+
+  if (parts.angleGroup) {
+    lines.push(`${indent}<GradientPicker.AngleGroup>`);
+    if (parts.anglePad) lines.push(`${indent}  <GradientPicker.AnglePad />`);
+    if (parts.angleInput) lines.push(`${indent}  <GradientPicker.AngleInput className="flex-1" />`);
+    lines.push(`${indent}</GradientPicker.AngleGroup>`);
+  } else {
+    if (parts.anglePad) lines.push(`${indent}<GradientPicker.AnglePad />`);
+    if (parts.angleInput) lines.push(`${indent}<GradientPicker.AngleInput />`);
+  }
+
   if (parts.radialSizeSelect) lines.push(`${indent}<GradientPicker.RadialSizeSelect />`);
   if (parts.stopColor) {
     lines.push(`${indent}<GradientPicker.StopColor>`);

@@ -44,7 +44,7 @@ function angleToDir(angleDeg: number): XY {
  * non-zero direction vector in screen coordinates.
  */
 function dirToAngle(dx: number, dy: number): number {
-  // atan2(dx, -dy): 0 = up, increases clockwise — matches AngleDial.
+  // atan2(dx, -dy): 0 = up, increases clockwise — matches AnglePad.
   const deg = (Math.atan2(dx, -dy) * 180) / Math.PI;
   return (deg + 360) % 360;
 }
@@ -172,7 +172,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       const { width, height: h } = entry.contentRect;
       setDims({ w: width, h });
       // Publish width to context so sibling parts (e.g. the radius input
-      // on `<GradientPicker.RadialShape>`) can convert between absolute
+      // on `<GradientPicker.RadiusInput>`) can convert between absolute
       // px and a percentage display.
       setContainerWidth(width);
     });

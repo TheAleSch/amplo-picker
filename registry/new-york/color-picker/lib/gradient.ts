@@ -178,7 +178,7 @@ function angleFromPoints(
   const dy = -(end.y - start.y);
   if (dx === 0 && dy === 0) return undefined;
   // atan2(x, y) with CSS convention: angle = arctan2(dx, dy) gives 0 = up,
-  // increases clockwise. Same convention used by AngleDial and Area.
+  // increases clockwise. Same convention used by AnglePad and Area.
   const deg = (Math.atan2(dx, dy) * 180) / Math.PI;
   return ((deg % 360) + 360) % 360;
 }

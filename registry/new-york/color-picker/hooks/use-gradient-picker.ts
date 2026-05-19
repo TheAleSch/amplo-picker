@@ -113,7 +113,7 @@ export interface GradientPickerState {
    * Latest reported width of the visual gradient box (px). Set by
    * `<GradientPicker.Area>` via its `ResizeObserver`. Used by parts that
    * want to display radius as a percentage of the picker box (e.g. the
-   * radius input on `<GradientPicker.RadialShape>`) — they read this to
+   * radius input on `<GradientPicker.RadiusInput>`) — they read this to
    * convert between the absolute-px storage and a friendlier % display.
    * `null` when no Area is currently mounted.
    */

@@ -3,7 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
-import { ColorPickerBase } from "@/registry/new-york/fill-picker-base/color-picker";
+import {
+  GradientPicker,
+  FillPicker,
+  DEFAULT_LINEAR,
+  formatGradient,
+  formatFill,
+  BUILTIN_GRADIENT_PRESETS,
+  type Gradient,
+  type Fill,
+} from "@/registry/new-york/color-picker/fill-picker";
 import { parseColor, formatColor } from "@/registry/new-york/color-picker/lib/color";
 import type {
   ColorFormat,
@@ -57,6 +66,70 @@ type PartKey =
   | "eyeDropper";
 
 type PartsState = Record<PartKey, boolean>;
+
+type GradientPartKey =
+  | "typeSwitcher"
+  | "bar"
+  | "area"
+  | "shapeSwitcher"
+  | "positionPad"
+  | "positionInput"
+  | "anglePad"
+  | "angleInput"
+  | "radiusInput"
+  | "ellipseRadiiInput"
+  | "radialSizeSelect"
+  | "stopList"
+  | "stopColor"
+  | "stopSwatches"
+  | "interpSwitcher"
+  | "presets"
+  | "cssInput"
+  | "reverseStops";
+
+type GradientPartsState = Record<GradientPartKey, boolean>;
+
+const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
+  typeSwitcher: true,
+  reverseStops: true,
+  bar: true,
+  area: true,
+  shapeSwitcher: true,
+  positionPad: true,
+  positionInput: true,
+  anglePad: true,
+  angleInput: true,
+  radiusInput: true,
+  ellipseRadiiInput: false,
+  radialSizeSelect: false,
+  stopList: true,
+  stopColor: true,
+  stopSwatches: false,
+  interpSwitcher: false,
+  presets: true,
+  cssInput: false,
+};
+
+const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [
+  { key: "typeSwitcher", label: "TypeSwitcher" },
+  { key: "reverseStops", label: "ReverseStops" },
+  { key: "bar", label: "Bar" },
+  { key: "area", label: "Area" },
+  { key: "shapeSwitcher", label: "ShapeSwitcher" },
+  { key: "positionPad", label: "PositionPad" },
+  { key: "positionInput", label: "PositionInput" },
+  { key: "anglePad", label: "AnglePad" },
+  { key: "angleInput", label: "AngleInput" },
+  { key: "radiusInput", label: "RadiusInput" },
+  { key: "ellipseRadiiInput", label: "EllipseRadiiInput" },
+  { key: "radialSizeSelect", label: "RadialSizeSelect" },
+  { key: "stopList", label: "StopList" },
+  { key: "stopColor", label: "StopColor" },
+  { key: "stopSwatches", label: "StopColor.Swatches" },
+  { key: "interpSwitcher", label: "InterpSwitcher" },
+  { key: "presets", label: "Presets" },
+  { key: "cssInput", label: "CssInput" },
+];
 
 const ALL_OFF: PartsState = {
   area: false,
@@ -236,7 +309,6 @@ const PARTS: Array<{ key: PartKey; label: string }> = [
 ];
 
 export default function PlaygroundPage() {
-  const [uiVariant, setUiVariant] = React.useState<"base" | "radix">("base");
   const [color, setColor] = React.useState<OklchColor>(
     () => parseColor("#2a2a2a")!,
   );
@@ -284,6 +356,31 @@ export default function PlaygroundPage() {
   const [areaHeight, setAreaHeight] = React.useState<number | undefined>(
     VARIANTS[0].areaHeight,
   );
+  const [fillMode, setFillMode] = React.useState<"color" | "gradient" | "fill">(
+    "color",
+  );
+  const [gradientParts, setGradientParts] = React.useState<GradientPartsState>(
+    GRADIENT_PARTS_DEFAULT,
+  );
+  const toggleGradientPart = (k: GradientPartKey) =>
+    setGradientParts((p) => ({ ...p, [k]: !p[k] }));
+  const [gradient, setGradient] = React.useState<Gradient>(DEFAULT_LINEAR);
+  const [savedGradients, setSavedGradients] = React.useState<string[]>([]);
+  const addGradientPreset = React.useCallback((_g: Gradient, css: string) => {
+    setSavedGradients((prev) => (prev.includes(css) ? prev : [...prev, css]));
+  }, []);
+  const gradientPresets = React.useMemo(
+    () => [...BUILTIN_GRADIENT_PRESETS, ...savedGradients],
+    [savedGradients],
+  );
+  const [fill, setFill] = React.useState<Fill>(() => ({
+    kind: "color",
+    color: parseColor("oklch(0.7 0.18 30)")!,
+  }));
+  const gradientCss = React.useMemo(() => formatGradient(gradient), [gradient]);
+  const fillCss = React.useMemo(() => formatFill(fill), [fill]);
+  const previewBg =
+    fillMode === "gradient" ? gradientCss : fillMode === "fill" ? fillCss : bg;
 
   const toggleFormat = (f: ColorFormat) => {
     setFormats((prev) => {
@@ -303,7 +400,6 @@ export default function PlaygroundPage() {
   const code = React.useMemo(
     () =>
       buildSnippet({
-        variant: uiVariant,
         areaMode,
         formats,
         defaultFormat,
@@ -321,7 +417,6 @@ export default function PlaygroundPage() {
         parts,
       }),
     [
-      uiVariant,
       areaMode,
       formats,
       defaultFormat,
@@ -339,12 +434,6 @@ export default function PlaygroundPage() {
       parts,
     ],
   );
-
-  // Both variants expose the identical namespace; the Base UI object is
-  // structurally compatible with the Radix one (verified), so the cast is safe.
-  const CP = (uiVariant === "base"
-    ? (ColorPickerBase as unknown as typeof ColorPicker)
-    : ColorPicker) as typeof ColorPicker;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12">
@@ -369,37 +458,45 @@ export default function PlaygroundPage() {
           parts you want. Toggle, tweak, copy the generated JSX. State lives
           in this page only — refreshing resets the canvas.
         </p>
-        <div
-          role="tablist"
-          aria-label="Component variant"
-          className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
-        >
-          {(["base", "radix"] as const).map((v) => {
-            const isActive = uiVariant === v;
-            return (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setUiVariant(v)}
-                className={cn(
-                  "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
-                  "focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {v === "base" ? "Base UI" : "Radix UI"}
-              </button>
-            );
-          })}
-        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-4">
+          <div
+            role="tablist"
+            aria-label="Fill mode"
+            className="inline-flex w-fit items-center gap-1 rounded-md bg-muted p-1"
+          >
+            {(
+              [
+                ["color", "Solid"],
+                ["gradient", "Gradient"],
+                ["fill", "Fill (tabs)"],
+              ] as const
+            ).map(([m, label]) => {
+              const active = fillMode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  data-state={active ? "active" : "inactive"}
+                  onClick={() => setFillMode(m)}
+                  className={cn(
+                    "rounded-sm px-3 py-1 text-xs font-medium outline-none transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-ring",
+                    active
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          {fillMode === "color" && (
           <div className="flex flex-wrap items-center gap-1.5">
             {VARIANTS.map((v) => {
               const active = partsEqual(parts, v.parts);
@@ -453,9 +550,10 @@ export default function PlaygroundPage() {
               );
             })}
           </div>
+          )}
           <div
             className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
-            style={{ background: bg }}
+            style={{ background: previewBg }}
           >
             <div
               style={
@@ -468,7 +566,8 @@ export default function PlaygroundPage() {
                     }
               }
             >
-              <CP.Root
+              {fillMode === "color" && (
+              <ColorPicker.Root
                 value={color}
                 onValueChange={(c) => setColor(c)}
                 backgroundColor={bg}
@@ -480,13 +579,13 @@ export default function PlaygroundPage() {
                   (parts.contrastReadout && contrastMetrics.length > 0)) && (
                   <div className="flex items-stretch gap-2">
                     {parts.gamutBadge && (
-                      <CP.GamutBadge
+                      <ColorPicker.GamutBadge
                         showLabel={gamutShowLabel}
                         className="w-auto flex-1 justify-center"
                       />
                     )}
                     {parts.contrastReadout && contrastMetrics.length > 0 && (
-                      <CP.ContrastReadout
+                      <ColorPicker.ContrastReadout
                         metrics={contrastMetrics}
                         showLabel={contrastShowLabel}
                         showValue={contrastShowValue}
@@ -497,29 +596,29 @@ export default function PlaygroundPage() {
                   </div>
                 )}
                 {parts.area && (
-                  <CP.Area
+                  <ColorPicker.Area
                     mode={areaMode}
                     showWarningLines={showWarningLines}
                     softProof={softProof}
                     style={areaHeight ? { height: areaHeight } : undefined}
                   />
                 )}
-                {parts.preview && <CP.Preview />}
+                {parts.preview && <ColorPicker.Preview />}
                 {(parts.hue || parts.lightness || parts.alpha) && (
                   eyedropperBesideSliders && parts.eyeDropper ? (
                     <div className="flex items-center gap-2">
-                      <CP.EyeDropper />
+                      <ColorPicker.EyeDropper />
                       <div className="flex flex-1 flex-col gap-1.5">
-                        {parts.hue && <CP.Hue />}
-                        {parts.lightness && <CP.Lightness />}
-                        {parts.alpha && <CP.Alpha />}
+                        {parts.hue && <ColorPicker.Hue />}
+                        {parts.lightness && <ColorPicker.Lightness />}
+                        {parts.alpha && <ColorPicker.Alpha />}
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-1.5">
-                      {parts.hue && <CP.Hue />}
-                      {parts.lightness && <CP.Lightness />}
-                      {parts.alpha && <CP.Alpha />}
+                      {parts.hue && <ColorPicker.Hue />}
+                      {parts.lightness && <ColorPicker.Lightness />}
+                      {parts.alpha && <ColorPicker.Alpha />}
                     </div>
                   )
                 )}
@@ -528,31 +627,31 @@ export default function PlaygroundPage() {
                     (parts.eyeDropper && !eyedropperBesideSliders)) && (
                     <div className="flex items-center gap-2">
                       {parts.formatSwitcher && (
-                        <CP.FormatSwitcher className="flex-1" />
+                        <ColorPicker.FormatSwitcher className="flex-1" />
                       )}
                       {parts.eyeDropper && !eyedropperBesideSliders && (
-                        <CP.EyeDropper className="h-8 w-full flex-1" />
+                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
                       )}
                     </div>
                   )}
                 {parts.channelInput && (
-                  <CP.ChannelInput showFormat={showChannelFormat} />
+                  <ColorPicker.ChannelInput showFormat={showChannelFormat} />
                 )}
                 {formatRowAfterChannel &&
                   (parts.formatSwitcher ||
                     (parts.eyeDropper && !eyedropperBesideSliders)) && (
                     <div className="flex items-center gap-2">
                       {parts.formatSwitcher && (
-                        <CP.FormatSwitcher className="flex-1" />
+                        <ColorPicker.FormatSwitcher className="flex-1" />
                       )}
                       {parts.eyeDropper && !eyedropperBesideSliders && (
-                        <CP.EyeDropper className="h-8 w-full flex-1" />
+                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
                       )}
                     </div>
                   )}
-                {parts.input && <CP.CssInput />}
+                {parts.input && <ColorPicker.CssInput />}
                 {parts.swatches && (
-                  <CP.Swatches
+                  <ColorPicker.Swatches
                     presets={["#fff", "#000", "oklch(0.7 0.18 30)", ...savedSwatches]}
                     onAdd={(_c, hex) =>
                       setSavedSwatches((prev) =>
@@ -561,13 +660,148 @@ export default function PlaygroundPage() {
                     }
                   />
                 )}
-              </CP.Root>
+              </ColorPicker.Root>
+              )}
+              {fillMode === "gradient" && (
+                <GradientPicker.Root
+                  value={gradient}
+                  onValueChange={setGradient}
+                >
+                  {(gradientParts.typeSwitcher || gradientParts.reverseStops) && (
+                    <div className="flex items-center justify-between">
+                      {gradientParts.typeSwitcher ? (
+                        <GradientPicker.TypeSwitcher />
+                      ) : (
+                        <span />
+                      )}
+                      {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                    </div>
+                  )}
+                  {gradientParts.bar && <GradientPicker.Bar />}
+                  {gradientParts.area && <GradientPicker.Area />}
+                  {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
+                  {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                  {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                  {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                  {gradientParts.angleInput && <GradientPicker.AngleInput />}
+                  {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                  {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                  {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
+                  {gradientParts.stopColor && (
+                    <GradientPicker.StopColor>
+                      <ColorPicker.Area />
+                      <div className="flex flex-col gap-1.5">
+                        <ColorPicker.Hue />
+                        <ColorPicker.Alpha />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ColorPicker.FormatSwitcher className="flex-1" />
+                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                      </div>
+                      <ColorPicker.ChannelInput showFormat={false} />
+                      {gradientParts.stopSwatches && (
+                        <ColorPicker.Swatches
+                          presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
+                        />
+                      )}
+                    </GradientPicker.StopColor>
+                  )}
+                  {gradientParts.stopList && <GradientPicker.StopList />}
+                  {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
+                  {gradientParts.presets && (
+                    <GradientPicker.Presets
+                      presets={gradientPresets}
+                      onAdd={addGradientPreset}
+                    />
+                  )}
+                  {gradientParts.cssInput && <GradientPicker.CssInput />}
+                </GradientPicker.Root>
+              )}
+              {fillMode === "fill" && (
+                <FillPicker.Root value={fill} onValueChange={setFill}>
+                  <FillPicker.Tabs className="self-stretch">
+                    <FillPicker.Tab mode="color" className="flex-1">
+                      Solid
+                    </FillPicker.Tab>
+                    <FillPicker.Tab mode="gradient" className="flex-1">
+                      Gradient
+                    </FillPicker.Tab>
+                  </FillPicker.Tabs>
+                  <FillPicker.Pane mode="color" className="flex flex-col gap-2">
+                    <ColorPicker.Area />
+                    <ColorPicker.Hue />
+                    <ColorPicker.Alpha />
+                    <ColorPicker.ChannelInput />
+                  </FillPicker.Pane>
+                  <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
+                    {(gradientParts.typeSwitcher || gradientParts.reverseStops) && (
+                      <div className="flex items-center justify-between">
+                        {gradientParts.typeSwitcher ? (
+                          <GradientPicker.TypeSwitcher />
+                        ) : (
+                          <span />
+                        )}
+                        {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                      </div>
+                    )}
+                    {gradientParts.bar && <GradientPicker.Bar />}
+                    {gradientParts.area && <GradientPicker.Area />}
+                    {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
+                    {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                    {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                    {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                    {gradientParts.angleInput && <GradientPicker.AngleInput />}
+                    {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                    {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                    {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
+                    {gradientParts.stopColor && (
+                      <GradientPicker.StopColor>
+                        <ColorPicker.Area />
+                        <div className="flex flex-col gap-1.5">
+                          <ColorPicker.Hue />
+                          <ColorPicker.Alpha />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ColorPicker.FormatSwitcher className="flex-1" />
+                          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                        </div>
+                        <ColorPicker.ChannelInput showFormat={false} />
+                        {gradientParts.stopSwatches && (
+                          <ColorPicker.Swatches
+                            presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
+                          />
+                        )}
+                      </GradientPicker.StopColor>
+                    )}
+                    {gradientParts.stopList && <GradientPicker.StopList />}
+                    {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
+                    {gradientParts.presets && (
+                    <GradientPicker.Presets
+                      presets={gradientPresets}
+                      onAdd={addGradientPreset}
+                    />
+                  )}
+                    {gradientParts.cssInput && <GradientPicker.CssInput />}
+                  </FillPicker.Pane>
+                </FillPicker.Root>
+              )}
             </div>
           </div>
 
-          <CodeBlock code={code} />
+          {fillMode === "color" ? (
+            <CodeBlock code={code} />
+          ) : fillMode === "gradient" ? (
+            <CodeBlock
+              code={`${buildGradientSnippet(gradientParts)}\n\n/* Output CSS */\n${gradientCss}`}
+            />
+          ) : (
+            <CodeBlock
+              code={`${buildFillSnippet(gradientParts)}\n\n/* Output CSS */\n${fillCss}`}
+            />
+          )}
         </div>
 
+        {fillMode === "color" && (
         <aside className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
           <Knob label="areaMode">
             <div className="flex flex-col gap-1.5">
@@ -731,6 +965,38 @@ export default function PlaygroundPage() {
             />
           </Knob>
         </aside>
+        )}
+        {fillMode !== "color" && (
+        <aside className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
+          <Knob label="parts">
+            <div className="grid grid-cols-2 gap-1.5">
+              {GRADIENT_PARTS.map((p) => (
+                <label
+                  key={p.key}
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={gradientParts[p.key]}
+                    onChange={() => toggleGradientPart(p.key)}
+                  />
+                  <span className="font-mono text-xs">{p.label}</span>
+                </label>
+              ))}
+            </div>
+          </Knob>
+          <Knob label="output">
+            <p className="text-xs text-muted-foreground">
+              Tracks the picker output. Drag stops, change angle, or pick a preset.
+            </p>
+            <div
+              className="mt-1 h-12 rounded-md border border-border"
+              style={{ background: previewBg }}
+              aria-label="Output preview"
+            />
+          </Knob>
+        </aside>
+        )}
       </div>
     </main>
   );
@@ -741,7 +1007,6 @@ function partsEqual(a: PartsState, b: PartsState): boolean {
 }
 
 function buildSnippet({
-  variant,
   areaMode,
   formats,
   defaultFormat,
@@ -758,7 +1023,6 @@ function buildSnippet({
   bg,
   parts,
 }: {
-  variant: "base" | "radix";
   areaMode: AreaMode;
   formats: ColorFormat[];
   defaultFormat: ColorFormat;
@@ -775,13 +1039,7 @@ function buildSnippet({
   bg: string;
   parts: Record<PartKey, boolean>;
 }) {
-  const importPath =
-    variant === "base"
-      ? "@/components/ui/fill-picker-base/color-picker"
-      : "@/components/ui/color-picker/color-picker";
   const lines: string[] = [];
-  lines.push(`import { ColorPicker } from "${importPath}";`);
-  lines.push("");
   lines.push(`<ColorPicker.Root`);
   lines.push(`  value={color}`);
   lines.push(`  onValueChange={setColor}`);
@@ -869,6 +1127,93 @@ function buildSnippet({
     );
 
   lines.push(`</ColorPicker.Root>`);
+  return lines.join("\n");
+}
+
+function buildGradientPartsLines(
+  parts: GradientPartsState,
+  indent: string,
+  stopColorChildren: string[],
+): string[] {
+  const lines: string[] = [];
+  if (parts.typeSwitcher || parts.reverseStops) {
+    lines.push(`${indent}<div className="flex items-center justify-between">`);
+    if (parts.typeSwitcher)
+      lines.push(`${indent}  <GradientPicker.TypeSwitcher />`);
+    else lines.push(`${indent}  <span />`);
+    if (parts.reverseStops)
+      lines.push(`${indent}  <GradientPicker.ReverseStops />`);
+    lines.push(`${indent}</div>`);
+  }
+  if (parts.bar) lines.push(`${indent}<GradientPicker.Bar />`);
+  if (parts.area) lines.push(`${indent}<GradientPicker.Area />`);
+  if (parts.shapeSwitcher) lines.push(`${indent}<GradientPicker.ShapeSwitcher />`);
+  if (parts.positionPad) lines.push(`${indent}<GradientPicker.PositionPad />`);
+  if (parts.positionInput) lines.push(`${indent}<GradientPicker.PositionInput />`);
+  if (parts.anglePad) lines.push(`${indent}<GradientPicker.AnglePad />`);
+  if (parts.angleInput) lines.push(`${indent}<GradientPicker.AngleInput />`);
+  if (parts.radiusInput) lines.push(`${indent}<GradientPicker.RadiusInput />`);
+  if (parts.ellipseRadiiInput) lines.push(`${indent}<GradientPicker.EllipseRadiiInput />`);
+  if (parts.radialSizeSelect) lines.push(`${indent}<GradientPicker.RadialSizeSelect />`);
+  if (parts.stopColor) {
+    lines.push(`${indent}<GradientPicker.StopColor>`);
+    stopColorChildren.forEach((c) => lines.push(`${indent}  ${c}`));
+    lines.push(`${indent}</GradientPicker.StopColor>`);
+  }
+  if (parts.stopList) lines.push(`${indent}<GradientPicker.StopList />`);
+  if (parts.interpSwitcher) lines.push(`${indent}<GradientPicker.InterpSwitcher />`);
+  if (parts.presets) lines.push(`${indent}<GradientPicker.Presets />`);
+  if (parts.cssInput) lines.push(`${indent}<GradientPicker.CssInput />`);
+  return lines;
+}
+
+function stopColorChildren(includeSwatches: boolean): string[] {
+  const lines = [
+    "<ColorPicker.Area />",
+    `<div className="flex flex-col gap-1.5">`,
+    "  <ColorPicker.Hue />",
+    "  <ColorPicker.Alpha />",
+    "</div>",
+    `<div className="flex items-center gap-2">`,
+    `  <ColorPicker.FormatSwitcher className="flex-1" />`,
+    `  <ColorPicker.EyeDropper className="h-8 w-full flex-1" />`,
+    "</div>",
+    "<ColorPicker.ChannelInput showFormat={false} />",
+  ];
+  if (includeSwatches)
+    lines.push(`<ColorPicker.Swatches presets={["#fff", "#000", "oklch(0.7 0.18 30)"]} />`);
+  return lines;
+}
+
+function buildGradientSnippet(parts: GradientPartsState): string {
+  const lines: string[] = [];
+  lines.push(`<GradientPicker.Root value={gradient} onValueChange={setGradient}>`);
+  buildGradientPartsLines(parts, "  ", stopColorChildren(parts.stopSwatches)).forEach(
+    (l) => lines.push(l),
+  );
+  lines.push(`</GradientPicker.Root>`);
+  return lines.join("\n");
+}
+
+function buildFillSnippet(parts: GradientPartsState): string {
+  const lines: string[] = [];
+  lines.push(`<FillPicker.Root value={fill} onValueChange={setFill}>`);
+  lines.push(`  <FillPicker.Tabs className="self-stretch">`);
+  lines.push(`    <FillPicker.Tab mode="color" className="flex-1">Solid</FillPicker.Tab>`);
+  lines.push(`    <FillPicker.Tab mode="gradient" className="flex-1">Gradient</FillPicker.Tab>`);
+  lines.push(`  </FillPicker.Tabs>`);
+  lines.push(`  <FillPicker.Pane mode="color" className="flex flex-col gap-2">`);
+  lines.push(`    <ColorPicker.Area />`);
+  lines.push(`    <ColorPicker.Hue />`);
+  lines.push(`    <ColorPicker.Alpha />`);
+  lines.push(`    <ColorPicker.ChannelInput />`);
+  lines.push(`  </FillPicker.Pane>`);
+  lines.push(`  <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">`);
+  buildGradientPartsLines(parts, "    ", stopColorChildren(parts.stopSwatches)).forEach(
+    (l) => lines.push(l),
+  );
+  lines.push(`  </FillPicker.Pane>`);
+  lines.push(`</FillPicker.Root>`);
   return lines.join("\n");
 }
 

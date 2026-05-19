@@ -27,6 +27,7 @@ import { RadialShape } from "./parts/gradient/radial-shape";
 import { ShapeSwitcher } from "./parts/gradient/shape-switcher";
 import { RadiusInput } from "./parts/gradient/radius-input";
 import { EllipseRadiiInput } from "./parts/gradient/ellipse-radii-input";
+import { RadialSizeSelect } from "./parts/gradient/radial-size-select";
 import { StopList } from "./parts/gradient/stop-list";
 import { StopColor } from "./parts/gradient/stop-color";
 import { InterpSwitcher } from "./parts/gradient/interp-switcher";
@@ -85,6 +86,7 @@ export const GradientPicker = {
   ShapeSwitcher,
   RadiusInput,
   EllipseRadiiInput,
+  RadialSizeSelect,
   StopList,
   StopColor,
   InterpSwitcher,

@@ -33,6 +33,8 @@ import { StopColor } from "./parts/gradient/stop-color";
 import { InterpSwitcher } from "./parts/gradient/interp-switcher";
 import { Presets, BUILTIN_GRADIENT_PRESETS } from "./parts/gradient/presets";
 import { CssInput as GradientCssInput } from "./parts/gradient/css-input";
+import { PositionGroup } from "./parts/gradient/position-group";
+import { AngleGroup } from "./parts/gradient/angle-group";
 
 export type {
   Fill,
@@ -92,6 +94,8 @@ export const GradientPicker = {
   InterpSwitcher,
   Presets,
   CssInput: GradientCssInput,
+  PositionGroup,
+  AngleGroup,
 };
 
 export const FillPicker = {

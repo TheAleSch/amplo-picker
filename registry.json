@@ -218,6 +218,16 @@
           "target": "components/ui/fill-picker/parts/gradient/css-input.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/position-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/position-group.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/angle-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/angle-group.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/fill-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/fill-picker.tsx"

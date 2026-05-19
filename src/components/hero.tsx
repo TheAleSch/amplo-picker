@@ -277,17 +277,17 @@ function GradientShapeControls() {
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type === "linear") {
     return (
-      <div className="flex items-center gap-2">
+      <GradientPicker.AngleGroup>
         <GradientPicker.AnglePad />
         <GradientPicker.AngleInput className="flex-1" />
-      </div>
+      </GradientPicker.AngleGroup>
     );
   }
   if (ctx.gradient.type === "radial") {
     return (
       <div className="flex flex-col gap-2">
         <GradientPicker.ShapeSwitcher />
-        <div className="flex items-center gap-2">
+        <GradientPicker.PositionGroup>
           <GradientPicker.PositionPad />
           <GradientPicker.PositionInput />
           {ctx.gradient.shape === "circle" && (
@@ -296,17 +296,21 @@ function GradientShapeControls() {
               <GradientPicker.RadiusInput className="flex-1" />
             </>
           )}
-        </div>
+        </GradientPicker.PositionGroup>
       </div>
     );
   }
   // conic
   return (
     <div className="flex items-center gap-2">
-      <GradientPicker.PositionPad />
-      <GradientPicker.PositionInput />
-      <GradientPicker.AnglePad />
-      <GradientPicker.AngleInput className="flex-1" />
+      <GradientPicker.PositionGroup>
+        <GradientPicker.PositionPad />
+        <GradientPicker.PositionInput />
+      </GradientPicker.PositionGroup>
+      <GradientPicker.AngleGroup>
+        <GradientPicker.AnglePad />
+        <GradientPicker.AngleInput className="flex-1" />
+      </GradientPicker.AngleGroup>
     </div>
   );
 }

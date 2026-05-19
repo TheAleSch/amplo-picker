@@ -11,6 +11,7 @@ import {
   DEFAULT_LINEAR,
   formatGradient,
 } from "@/registry/new-york/color-picker/fill-picker";
+import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
 import type {
   Gradient,
   Fill,
@@ -35,6 +36,7 @@ const TOC = [
   ["gradient-radial-size", "Radial size + extent keywords"],
   ["gradient-interp", "Interpolation"],
   ["fill-picker", "Fill picker (tabs)"],
+  ["gradient-shape-controls", "Gradient shape controls"],
   ["anatomy", "Anatomy"],
   ["api-root", "API: <ColorPicker.Root>"],
   ["api-parts", "API: Parts"],
@@ -43,6 +45,43 @@ const TOC = [
   ["color-spaces", "Color spaces"],
   ["accessibility", "Accessibility"],
 ] as const;
+
+function GradientShapeControls() {
+  const ctx = useGradientPickerContext();
+  if (ctx.gradient.type === "linear") {
+    return (
+      <div className="flex items-center gap-2">
+        <GradientPicker.AnglePad />
+        <GradientPicker.AngleInput className="flex-1" />
+      </div>
+    );
+  }
+  if (ctx.gradient.type === "radial") {
+    return (
+      <div className="flex flex-col gap-2">
+        <GradientPicker.ShapeSwitcher />
+        <div className="flex items-center gap-2">
+          <GradientPicker.PositionPad />
+          <GradientPicker.PositionInput />
+          {ctx.gradient.shape === "circle" && (
+            <>
+              <span className="text-xs text-muted-foreground">Radii</span>
+              <GradientPicker.RadiusInput className="flex-1" />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <GradientPicker.PositionPad />
+      <GradientPicker.PositionInput />
+      <GradientPicker.AnglePad />
+      <GradientPicker.AngleInput className="flex-1" />
+    </div>
+  );
+}
 
 export default function DocsPage() {
   return (
@@ -172,15 +211,16 @@ export default function DocsPage() {
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Keyboard.</strong>{" "}
             <Code>Bar</Code> stops respond to ← / → (±1%, ±5% with Shift) and
-            Delete / Backspace to remove. <Code>AngleDial</Code> responds to
-            arrow keys (±1°, ±15° with Shift) and Home / End. Every{" "}
+            Delete / Backspace to remove. <Code>AnglePad</Code> /{" "}
+            <Code>AngleInput</Code> respond to arrow keys (±1°, ±15° with
+            Shift) and Home / End. Every{" "}
             <Code>Area</Code> handle is focusable and editable from the
             keyboard too — see the section below. <Code>StopList</Code> is a
             listbox — Enter or Space select the focused row, Delete /
             Backspace removes it. Every interactive part exposes a{" "}
             <Code>data-slot</Code> attribute (
             <Code>gradient-bar</Code>, <Code>gradient-area</Code>,{" "}
-            <Code>gradient-angle-dial</Code>, <Code>gradient-center-pad</Code>,
+            <Code>gradient-angle-pad</Code>, <Code>gradient-position-pad</Code>,
             {" "}<Code>gradient-stop-list</Code>, etc.) for
             unstyled-targetable composition.
           </p>
@@ -191,9 +231,10 @@ export default function DocsPage() {
           <p>
             <Code>{"<GradientPicker.Area>"}</Code> is a 2D pad that paints the
             live gradient and overlays draggable handles on top — a visual
-            complement to <Code>{"<GradientPicker.AngleDial>"}</Code> and{" "}
-            <Code>{"<GradientPicker.CenterPad>"}</Code>. The handles are{" "}
-            <em>type-adaptive</em>:
+            complement to the standalone shape-control primitives (
+            <Code>{"<GradientPicker.AnglePad>"}</Code>,{" "}
+            <Code>{"<GradientPicker.PositionPad>"}</Code>, and friends).
+            The handles are <em>type-adaptive</em>:
           </p>
           <ul className="ml-5 list-disc text-sm text-muted-foreground [&_strong]:text-foreground">
             <li>
@@ -212,7 +253,7 @@ export default function DocsPage() {
               <Code>start</Code>/<Code>end</Code> from the emitted form —
               they are dropped on round-trip through a CSS string.
               <Code>setAngle</Code> (e.g. via{" "}
-              <Code>{"<GradientPicker.AngleDial>"}</Code>) clears both
+              <Code>{"<GradientPicker.AngleInput>"}</Code>) clears both
               endpoints to return to the angle-only model.
             </li>
             <li>
@@ -350,6 +391,22 @@ export default function DocsPage() {
             preview={<FillPickerTabsDemo />}
             code={FILL_PICKER_TABS_CODE}
           />
+        </section>
+
+        <section className="flex flex-col gap-6">
+          <H2 id="gradient-shape-controls">Gradient shape controls</H2>
+          <p>
+            Three Figma layouts compose from the new shape-control primitives.
+            Drop in the recipe that matches your gradient type.
+          </p>
+          <div className="flex flex-col gap-4">
+            <H3>Linear</H3>
+            <CodeBlock code={GRADIENT_SHAPE_LINEAR_CODE} />
+            <H3>Radial · Circle</H3>
+            <CodeBlock code={GRADIENT_SHAPE_RADIAL_CIRCLE_CODE} />
+            <H3>Radial · Ellipse</H3>
+            <CodeBlock code={GRADIENT_SHAPE_RADIAL_ELLIPSE_CODE} />
+          </div>
         </section>
 
         <section className="flex flex-col gap-4">
@@ -831,9 +888,7 @@ function GradientFullDemo() {
         </div>
         <GradientPicker.Bar />
         <GradientPicker.Area />
-        <GradientPicker.AngleDial />
-        <GradientPicker.CenterPad />
-        <GradientPicker.RadialShape />
+        <GradientShapeControls />
         <GradientPicker.StopList />
         <GradientPicker.StopColor>
           <ColorPicker.Area />
@@ -915,8 +970,7 @@ function FillPickerTabsDemo() {
         </div>
         <GradientPicker.Bar />
         <GradientPicker.Area />
-        <GradientPicker.AngleDial />
-        <GradientPicker.CenterPad />
+        <GradientShapeControls />
         <GradientPicker.StopList />
         <GradientPicker.StopColor>
           <ColorPicker.Hue />
@@ -1168,9 +1222,7 @@ export function GradientFullDemo() {
       </div>
       <GradientPicker.Bar />
       <GradientPicker.Area />
-      <GradientPicker.AngleDial />
-      <GradientPicker.CenterPad />
-      <GradientPicker.RadialShape />
+      {/* GradientShapeControls — see "Gradient shape controls" section */}
       <GradientPicker.StopList />
       <GradientPicker.StopColor>
         <ColorPicker.Area />
@@ -1271,8 +1323,7 @@ export function FillPickerTabsDemo() {
         </div>
         <GradientPicker.Bar />
         <GradientPicker.Area />
-        <GradientPicker.AngleDial />
-        <GradientPicker.CenterPad />
+        {/* GradientShapeControls — see "Gradient shape controls" section */}
         <GradientPicker.StopList />
         <GradientPicker.StopColor>
           <ColorPicker.Hue />
@@ -1283,6 +1334,38 @@ export function FillPickerTabsDemo() {
     </FillPicker.Root>
   );
 }`;
+
+const GRADIENT_SHAPE_LINEAR_CODE = `<GradientPicker.Root>
+  {/* …area, bar, stops, etc… */}
+  <div className="flex items-center gap-2">
+    <GradientPicker.AnglePad />
+    <GradientPicker.AngleInput className="flex-1" />
+  </div>
+</GradientPicker.Root>`;
+
+const GRADIENT_SHAPE_RADIAL_CIRCLE_CODE = `<GradientPicker.Root>
+  {/* …area, bar, stops, etc… */}
+  <div className="flex flex-col gap-2">
+    <GradientPicker.ShapeSwitcher />
+    <div className="flex items-center gap-2">
+      <GradientPicker.PositionPad />
+      <GradientPicker.PositionInput />
+      <span className="text-xs text-muted-foreground">Radii</span>
+      <GradientPicker.RadiusInput className="flex-1" />
+    </div>
+  </div>
+</GradientPicker.Root>`;
+
+const GRADIENT_SHAPE_RADIAL_ELLIPSE_CODE = `<GradientPicker.Root>
+  {/* …area, bar, stops, etc… */}
+  <div className="flex flex-col gap-2">
+    <GradientPicker.ShapeSwitcher />
+    <div className="flex items-center gap-2">
+      <GradientPicker.PositionPad />
+      <GradientPicker.PositionInput />
+    </div>
+  </div>
+</GradientPicker.Root>`;
 
 const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.Area />

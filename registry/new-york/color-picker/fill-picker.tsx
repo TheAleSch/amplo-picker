@@ -25,6 +25,7 @@ import { PositionPad } from "./parts/gradient/position-pad";
 import { PositionInput } from "./parts/gradient/position-input";
 import { RadialShape } from "./parts/gradient/radial-shape";
 import { ShapeSwitcher } from "./parts/gradient/shape-switcher";
+import { RadiusInput } from "./parts/gradient/radius-input";
 import { StopList } from "./parts/gradient/stop-list";
 import { StopColor } from "./parts/gradient/stop-color";
 import { InterpSwitcher } from "./parts/gradient/interp-switcher";
@@ -81,6 +82,7 @@ export const GradientPicker = {
   PositionInput,
   RadialShape,
   ShapeSwitcher,
+  RadiusInput,
   StopList,
   StopColor,
   InterpSwitcher,

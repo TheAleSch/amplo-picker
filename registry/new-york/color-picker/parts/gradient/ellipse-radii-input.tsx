@@ -3,6 +3,13 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import {
+  FieldDivider,
+  FieldInput,
+  FieldInputGroup,
+  FieldShell,
+  FieldSuffix,
+} from "../field";
 
 export const EllipseRadiiInput = React.forwardRef<
   HTMLDivElement,
@@ -29,37 +36,42 @@ export const EllipseRadiiInput = React.forwardRef<
   };
 
   return (
-    <div
+    <FieldShell
       ref={ref}
       data-slot="gradient-ellipse-radii-input"
-      className={cn(
-        "inline-flex items-center gap-1 text-xs text-muted-foreground",
-        className,
-      )}
+      className={cn("inline-flex w-fit", className)}
       {...rest}
     >
-      <input
-        type="number"
-        min={0}
-        step={1}
-        value={g.radii ? Math.round(g.radii.x * 100) : ""}
-        placeholder="auto"
-        onChange={(e) => commit("x", e.target.value)}
-        aria-label="Ellipse horizontal radius percent"
-        className="h-7 w-12 rounded border border-border bg-background px-1 text-right text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
-      <span aria-hidden>×</span>
-      <input
-        type="number"
-        min={0}
-        step={1}
-        value={g.radii ? Math.round(g.radii.y * 100) : ""}
-        placeholder="auto"
-        onChange={(e) => commit("y", e.target.value)}
-        aria-label="Ellipse vertical radius percent"
-        className="h-7 w-12 rounded border border-border bg-background px-1 text-right text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
-      <span>%</span>
-    </div>
+      <FieldInputGroup>
+        <span className="sr-only">Ellipse horizontal radius</span>
+        <FieldInput
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          value={g.radii ? Math.round(g.radii.x * 100) : ""}
+          placeholder="auto"
+          onChange={(e) => commit("x", e.target.value)}
+          aria-label="Ellipse horizontal radius percent"
+          className="w-12"
+        />
+      </FieldInputGroup>
+      <FieldDivider />
+      <FieldInputGroup>
+        <span className="sr-only">Ellipse vertical radius</span>
+        <FieldInput
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          value={g.radii ? Math.round(g.radii.y * 100) : ""}
+          placeholder="auto"
+          onChange={(e) => commit("y", e.target.value)}
+          aria-label="Ellipse vertical radius percent"
+          className="w-12"
+        />
+        <FieldSuffix>%</FieldSuffix>
+      </FieldInputGroup>
+    </FieldShell>
   );
 });

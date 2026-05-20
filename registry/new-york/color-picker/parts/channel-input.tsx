@@ -10,6 +10,14 @@ import {
 } from "../lib/channels";
 import type { ColorFormat } from "../lib/types";
 import { cn } from "@/lib/utils";
+import {
+  FieldDivider,
+  FieldInput,
+  FieldInputGroup,
+  FieldSelect,
+  FieldShell,
+  FieldSuffix,
+} from "./field";
 
 export interface ChannelInputProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
@@ -25,6 +33,9 @@ export interface ChannelInputProps
  * field per channel, alpha as %. For `hex` falls back to a single text field
  * (no meaningful per-channel breakdown). Pasting any CSS color string into any
  * field parses it and replaces the whole color.
+ *
+ * Built on the shared field primitives in `./field` so every text input in
+ * the package shares the same border, focus ring, and chevron.
  */
 export const ChannelInput = React.forwardRef<
   HTMLDivElement,
@@ -54,20 +65,28 @@ export const ChannelInput = React.forwardRef<
   };
 
   return (
-    <div
+    <FieldShell
       ref={ref}
       data-slot="color-picker-channel-input"
-      className={cn(
-        "flex h-8 items-stretch overflow-hidden rounded-md border border-input bg-transparent font-mono text-xs shadow-xs",
-        "focus-within:ring-1 focus-within:ring-ring",
-        className,
-      )}
+      className={className}
       {...rest}
     >
       {showFormat && (
         <>
-          <FormatSelect format={format} formats={formats} onChange={setFormat} />
-          <Divider />
+          <FieldSelect
+            data-slot="color-picker-channel-input-format"
+            aria-label="Color format"
+            variant="inline"
+            value={format}
+            onChange={(e) => setFormat(e.target.value as ColorFormat)}
+          >
+            {formats.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </FieldSelect>
+          <FieldDivider />
         </>
       )}
       {format === "hex" ? (
@@ -80,57 +99,13 @@ export const ChannelInput = React.forwardRef<
               onChange={(v) => handleChannelChange(ch.key, v)}
               onPasteColor={setFromString}
             />
-            {i < channels.length - 1 && <Divider />}
+            {i < channels.length - 1 && <FieldDivider />}
           </React.Fragment>
         ))
       )}
-    </div>
+    </FieldShell>
   );
 });
-
-/* ────────────────────── Format select ────────────────────── */
-
-function FormatSelect({
-  format,
-  formats,
-  onChange,
-}: {
-  format: ColorFormat;
-  formats: ColorFormat[];
-  onChange: (next: ColorFormat) => void;
-}) {
-  return (
-    <div className="relative inline-flex shrink-0 items-center">
-      <select
-        data-slot="color-picker-channel-input-format"
-        aria-label="Color format"
-        value={format}
-        onChange={(e) => onChange(e.target.value as ColorFormat)}
-        className="h-full appearance-none bg-transparent pl-2 pr-5 font-mono text-xs uppercase tracking-wide outline-none"
-      >
-        {formats.map((f) => (
-          <option key={f} value={f}>
-            {f}
-          </option>
-        ))}
-      </select>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 12 12"
-        className="pointer-events-none absolute right-1.5 size-3 text-muted-foreground"
-      >
-        <path
-          d="M3 4.5l3 3 3-3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
 
 /* ────────────────────── Hex single field ────────────────────── */
 
@@ -160,13 +135,8 @@ function HexField({
   };
 
   return (
-    <input
+    <FieldInput
       data-slot="color-picker-channel-input-field"
-      type="text"
-      spellCheck={false}
-      autoComplete="off"
-      autoCorrect="off"
-      autoCapitalize="off"
       aria-label="Hex value"
       aria-invalid={error || undefined}
       value={draft}
@@ -185,7 +155,7 @@ function HexField({
         }
       }}
       className={cn(
-        "min-w-0 flex-1 bg-transparent px-2 outline-none",
+        "flex-1 px-2 text-left",
         error && "text-destructive",
       )}
     />
@@ -231,16 +201,11 @@ function ChannelField({
   };
 
   return (
-    <label className="relative inline-flex h-full min-w-0 flex-1 items-center">
+    <FieldInputGroup>
       <span className="sr-only">{channel.label}</span>
-      <input
+      <FieldInput
         data-slot="color-picker-channel-input-field"
-        type="text"
         inputMode="decimal"
-        spellCheck={false}
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
         aria-label={channel.label}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -267,25 +232,13 @@ function ChannelField({
             setDraft(display);
           }
         }}
-        className="w-full min-w-0 bg-transparent px-1.5 text-center outline-none tabular-nums"
       />
-      {channel.suffix && (
-        <span
-          aria-hidden
-          className="pointer-events-none pr-1.5 text-muted-foreground"
-        >
-          {channel.suffix}
-        </span>
-      )}
-    </label>
+      {channel.suffix && <FieldSuffix>{channel.suffix}</FieldSuffix>}
+    </FieldInputGroup>
   );
 }
 
 /* ────────────────────── Helpers ────────────────────── */
-
-function Divider() {
-  return <div aria-hidden className="w-px self-stretch bg-border" />;
-}
 
 function formatNumber(value: number, precision: number): string {
   return precision === 0 ? String(Math.round(value)) : value.toFixed(precision);

@@ -3,10 +3,16 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import {
+  FieldInput,
+  FieldInputGroup,
+  FieldShell,
+  FieldSuffix,
+} from "../field";
 
 export const RadiusInput = React.forwardRef<
-  HTMLLabelElement,
-  React.HTMLAttributes<HTMLLabelElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(function RadiusInput({ className, ...rest }, ref) {
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type !== "radial") return null;
@@ -36,30 +42,31 @@ export const RadiusInput = React.forwardRef<
   };
 
   return (
-    <label
+    <FieldShell
       ref={ref}
       data-slot="gradient-radius-input"
-      className={cn(
-        "inline-flex h-8 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs text-foreground",
-        className,
-      )}
+      className={cn("inline-flex w-fit", className)}
       {...rest}
     >
-      <input
-        type="number"
-        min={0}
-        step={1}
-        value={display}
-        placeholder="auto"
-        onChange={onChange}
-        aria-label={
-          usePercent
-            ? "Circle radius as percent of Area width"
-            : "Circle radius in pixels"
-        }
-        className="w-12 bg-transparent text-right outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-      />
-      <span className="text-muted-foreground">{usePercent ? "%" : "px"}</span>
-    </label>
+      <FieldInputGroup>
+        <span className="sr-only">Circle radius</span>
+        <FieldInput
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          value={display}
+          placeholder="auto"
+          onChange={onChange}
+          aria-label={
+            usePercent
+              ? "Circle radius as percent of Area width"
+              : "Circle radius in pixels"
+          }
+          className="w-12"
+        />
+        <FieldSuffix>{usePercent ? "%" : "px"}</FieldSuffix>
+      </FieldInputGroup>
+    </FieldShell>
   );
 });

@@ -4,6 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import { formatGradient, parseGradient } from "../../lib/gradient";
+import { FieldInput, FieldShell } from "../field";
 
 export const CssInput = React.forwardRef<
   HTMLInputElement,
@@ -43,24 +44,27 @@ export const CssInput = React.forwardRef<
   };
 
   return (
-    <input
-      ref={inputRef}
+    <FieldShell
       data-slot="gradient-css-input"
-      type="text"
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") commit();
-      }}
-      aria-invalid={invalid}
-      aria-label="Gradient CSS"
       className={cn(
-        "h-8 w-full rounded-md border bg-background px-2 font-mono text-[10px]",
-        invalid ? "border-destructive" : "border-border",
+        "w-full",
+        invalid && "border-destructive focus-within:ring-destructive",
         className,
       )}
-      {...rest}
-    />
+    >
+      <FieldInput
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+        }}
+        aria-invalid={invalid}
+        aria-label="Gradient CSS"
+        className="flex-1 px-2 text-left text-[10px]"
+        {...rest}
+      />
+    </FieldShell>
   );
 });

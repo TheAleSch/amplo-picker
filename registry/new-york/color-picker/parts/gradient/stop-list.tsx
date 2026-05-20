@@ -21,6 +21,12 @@ import { Area as ColorArea } from "../area";
 import { Hue } from "../hue";
 import { Alpha } from "../alpha";
 import { ChannelInput } from "../channel-input";
+import {
+  FieldInput,
+  FieldInputGroup,
+  FieldShell,
+  FieldSuffix,
+} from "../field";
 
 const CHECKERBOARD =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
@@ -136,20 +142,27 @@ export const StopList = React.forwardRef<
                 </StopColorEditor>
               </PopoverContent>
             </Popover>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              step={1}
-              value={Math.round(toDisplay(s.position) * 100)}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                if (Number.isFinite(v)) ctx.moveStop(s.id, fromDisplay(v / 100));
-              }}
-              className="h-7 w-14 rounded border border-border bg-background px-1 text-right"
-              aria-label="Stop position"
-            />
-            <span className="text-muted-foreground">%</span>
+            <FieldShell className="h-7 w-fit">
+              <FieldInputGroup>
+                <span className="sr-only">Stop position</span>
+                <FieldInput
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Math.round(toDisplay(s.position) * 100)}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (Number.isFinite(v))
+                      ctx.moveStop(s.id, fromDisplay(v / 100));
+                  }}
+                  aria-label="Stop position"
+                  className="w-10"
+                />
+                <FieldSuffix>%</FieldSuffix>
+              </FieldInputGroup>
+            </FieldShell>
             <button
               type="button"
               onClick={(e) => {

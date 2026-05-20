@@ -43,6 +43,11 @@
           "target": "components/ui/fill-picker/parts/root.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/field.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/area.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/area.tsx"

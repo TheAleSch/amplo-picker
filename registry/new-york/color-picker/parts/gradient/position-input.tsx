@@ -3,6 +3,13 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import {
+  FieldDivider,
+  FieldInput,
+  FieldInputGroup,
+  FieldShell,
+  FieldSuffix,
+} from "../field";
 
 export const PositionInput = React.forwardRef<
   HTMLDivElement,
@@ -25,42 +32,43 @@ export const PositionInput = React.forwardRef<
   };
 
   return (
-    <div
+    <FieldShell
       ref={ref}
       data-slot="gradient-position-input"
-      className={cn(
-        "inline-flex items-center gap-0 rounded-md border border-border bg-background text-xs text-foreground",
-        className,
-      )}
+      className={cn("inline-flex w-fit", className)}
       {...rest}
     >
-      <label className="inline-flex items-center gap-1 px-2 py-1">
-        <input
+      <FieldInputGroup>
+        <span className="sr-only">Gradient center x</span>
+        <FieldInput
           type="number"
+          inputMode="numeric"
           min={0}
           max={100}
           step={1}
           value={Math.round(center.x * 100)}
           onChange={(e) => commit("x", e.target.value)}
           aria-label="Gradient center x percent"
-          className="w-10 bg-transparent text-right outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          className="w-10"
         />
-        <span className="text-muted-foreground">%</span>
-      </label>
-      <span aria-hidden className="h-4 w-px bg-border" />
-      <label className="inline-flex items-center gap-1 px-2 py-1">
-        <input
+        <FieldSuffix>%</FieldSuffix>
+      </FieldInputGroup>
+      <FieldDivider />
+      <FieldInputGroup>
+        <span className="sr-only">Gradient center y</span>
+        <FieldInput
           type="number"
+          inputMode="numeric"
           min={0}
           max={100}
           step={1}
           value={Math.round(center.y * 100)}
           onChange={(e) => commit("y", e.target.value)}
           aria-label="Gradient center y percent"
-          className="w-10 bg-transparent text-right outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          className="w-10"
         />
-        <span className="text-muted-foreground">%</span>
-      </label>
-    </div>
+        <FieldSuffix>%</FieldSuffix>
+      </FieldInputGroup>
+    </FieldShell>
   );
 });

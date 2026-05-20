@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { RadialSizeKeyword } from "../../lib/gradient";
+import { FieldSelect } from "../field";
 
 const SIZE_OPTIONS: RadialSizeKeyword[] = [
   "closest-side",
@@ -19,16 +19,13 @@ export const RadialSizeSelect = React.forwardRef<
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type !== "radial") return null;
   return (
-    <select
+    <FieldSelect
       ref={ref}
       data-slot="gradient-radial-size-select"
+      aria-label="Radial size"
       value={ctx.gradient.size}
       onChange={(e) => ctx.setRadialSize(e.target.value as RadialSizeKeyword)}
-      aria-label="Radial size"
-      className={cn(
-        "h-8 rounded-md border border-border bg-background px-2 text-xs",
-        className,
-      )}
+      wrapperProps={{ className }}
       {...rest}
     >
       {SIZE_OPTIONS.map((s) => (
@@ -36,6 +33,6 @@ export const RadialSizeSelect = React.forwardRef<
           {s}
         </option>
       ))}
-    </select>
+    </FieldSelect>
   );
 });

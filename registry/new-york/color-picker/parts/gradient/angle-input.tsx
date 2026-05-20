@@ -3,10 +3,16 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import {
+  FieldInput,
+  FieldInputGroup,
+  FieldShell,
+  FieldSuffix,
+} from "../field";
 
 export const AngleInput = React.forwardRef<
-  HTMLLabelElement,
-  React.HTMLAttributes<HTMLLabelElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(function AngleInput({ className, ...rest }, ref) {
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type === "radial") return null;
@@ -24,26 +30,27 @@ export const AngleInput = React.forwardRef<
   };
 
   return (
-    <label
+    <FieldShell
       ref={ref}
       data-slot="gradient-angle-input"
-      className={cn(
-        "inline-flex h-12 items-center justify-center gap-1 rounded-md border border-border bg-background px-3 text-sm text-foreground",
-        className,
-      )}
+      className={cn("inline-flex w-fit", className)}
       {...rest}
     >
-      <input
-        type="number"
-        min={0}
-        max={360}
-        step={1}
-        value={Math.round(angle)}
-        onChange={onChange}
-        aria-label="Gradient angle in degrees"
-        className="w-16 bg-transparent text-right outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-      />
-      <span className="text-muted-foreground">°</span>
-    </label>
+      <FieldInputGroup>
+        <span className="sr-only">Gradient angle</span>
+        <FieldInput
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={360}
+          step={1}
+          value={Math.round(angle)}
+          onChange={onChange}
+          aria-label="Gradient angle in degrees"
+          className="w-12"
+        />
+        <FieldSuffix>°</FieldSuffix>
+      </FieldInputGroup>
+    </FieldShell>
   );
 });

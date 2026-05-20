@@ -9,7 +9,7 @@ export interface AnglePadProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const AnglePad = React.forwardRef<HTMLDivElement, AnglePadProps>(
-  function AnglePad({ className, size = 48, ...rest }, ref) {
+  function AnglePad({ className, size = 32, ...rest }, ref) {
     const ctx = useGradientPickerContext();
     const padRef = React.useRef<HTMLDivElement | null>(null);
     React.useImperativeHandle(ref, () => padRef.current as HTMLDivElement);

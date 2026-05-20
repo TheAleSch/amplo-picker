@@ -24,8 +24,8 @@ describe("<GradientPicker.EllipseRadiiInput>", () => {
     );
     const rx = screen.getByLabelText(/ellipse horizontal radius/i);
     const ry = screen.getByLabelText(/ellipse vertical radius/i);
-    expect(rx).toHaveValue(30);
-    expect(ry).toHaveValue(60);
+    expect(rx).toHaveValue("30");
+    expect(ry).toHaveValue("60");
     fireEvent.change(rx, { target: { value: "50" } });
     expect(onValueChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ radii: { x: 0.5, y: 0.6 } }),

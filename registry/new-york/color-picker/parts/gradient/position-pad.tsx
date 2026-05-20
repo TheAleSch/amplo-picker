@@ -81,7 +81,6 @@ export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
         style={{ width: size, height: size }}
         className={cn(
           "relative shrink-0 cursor-crosshair rounded-md border border-border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          "bg-[linear-gradient(to_right,theme(colors.border)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.border)_1px,transparent_1px)] bg-[length:33.33%_33.33%]",
           className,
         )}
         {...rest}

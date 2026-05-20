@@ -14,7 +14,7 @@ describe("<GradientPicker.AngleInput>", () => {
       </GradientPicker.Root>,
     );
     const input = screen.getByLabelText("Gradient angle in degrees");
-    expect(input).toHaveValue(90);
+    expect(input).toHaveValue("90");
     fireEvent.change(input, { target: { value: "270" } });
     expect(onValueChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ angle: 270 }),

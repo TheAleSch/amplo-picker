@@ -14,7 +14,7 @@ export const AngleGroup = React.forwardRef<
     <div
       ref={ref}
       data-slot="gradient-angle-group"
-      className={cn("inline-flex items-center gap-2", className)}
+      className={cn("flex w-full items-center gap-2", className)}
       {...rest}
     >
       {children}

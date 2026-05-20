@@ -734,20 +734,23 @@ export default function PlaygroundPage() {
                   {gradientParts.area && <GradientPicker.Area />}
                   {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
 
-                  {gradientParts.positionGroup && (
-                    <GradientPicker.PositionGroup>
-                      {gradientParts.positionPad && <GradientPicker.PositionPad />}
-                      {gradientParts.positionInput && <GradientPicker.PositionInput />}
-                      {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
-                      {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
-                    </GradientPicker.PositionGroup>
-                  )}
-
-                  {gradientParts.angleGroup && (
-                    <GradientPicker.AngleGroup>
-                      {gradientParts.anglePad && <GradientPicker.AnglePad />}
-                      {gradientParts.angleInput && <GradientPicker.AngleInput className="flex-1" />}
-                    </GradientPicker.AngleGroup>
+                  {(gradientParts.positionGroup || gradientParts.angleGroup) && (
+                    <div className="flex w-full items-center gap-2">
+                      {gradientParts.positionGroup && (
+                        <GradientPicker.PositionGroup>
+                          {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                          {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                          {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                          {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                        </GradientPicker.PositionGroup>
+                      )}
+                      {gradientParts.angleGroup && (
+                        <GradientPicker.AngleGroup>
+                          {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                          {gradientParts.angleInput && <GradientPicker.AngleInput />}
+                        </GradientPicker.AngleGroup>
+                      )}
+                    </div>
                   )}
 
                   {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
@@ -812,20 +815,23 @@ export default function PlaygroundPage() {
                     {gradientParts.area && <GradientPicker.Area />}
                     {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
 
-                    {gradientParts.positionGroup && (
-                      <GradientPicker.PositionGroup>
-                        {gradientParts.positionPad && <GradientPicker.PositionPad />}
-                        {gradientParts.positionInput && <GradientPicker.PositionInput />}
-                        {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
-                        {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
-                      </GradientPicker.PositionGroup>
-                    )}
-
-                    {gradientParts.angleGroup && (
-                      <GradientPicker.AngleGroup>
-                        {gradientParts.anglePad && <GradientPicker.AnglePad />}
-                        {gradientParts.angleInput && <GradientPicker.AngleInput className="flex-1" />}
-                      </GradientPicker.AngleGroup>
+                    {(gradientParts.positionGroup || gradientParts.angleGroup) && (
+                      <div className="flex w-full items-center gap-2">
+                        {gradientParts.positionGroup && (
+                          <GradientPicker.PositionGroup>
+                            {gradientParts.positionPad && <GradientPicker.PositionPad />}
+                            {gradientParts.positionInput && <GradientPicker.PositionInput />}
+                            {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
+                            {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
+                          </GradientPicker.PositionGroup>
+                        )}
+                        {gradientParts.angleGroup && (
+                          <GradientPicker.AngleGroup>
+                            {gradientParts.anglePad && <GradientPicker.AnglePad />}
+                            {gradientParts.angleInput && <GradientPicker.AngleInput />}
+                          </GradientPicker.AngleGroup>
+                        )}
+                      </div>
                     )}
 
                     {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}

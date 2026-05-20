@@ -9,7 +9,7 @@ export interface PositionPadProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
-  function PositionPad({ className, size = 48, ...rest }, ref) {
+  function PositionPad({ className, size = 32, ...rest }, ref) {
     const ctx = useGradientPickerContext();
     const padRef = React.useRef<HTMLDivElement | null>(null);
     React.useImperativeHandle(ref, () => padRef.current as HTMLDivElement);

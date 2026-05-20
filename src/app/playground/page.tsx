@@ -114,27 +114,74 @@ const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   cssInput: false,
 };
 
-const GRADIENT_PARTS: Array<{ key: GradientPartKey; label: string }> = [
-  { key: "typeSwitcher", label: "TypeSwitcher" },
-  { key: "reverseStops", label: "ReverseStops" },
-  { key: "bar", label: "Bar" },
-  { key: "area", label: "Area" },
-  { key: "shapeSwitcher", label: "ShapeSwitcher" },
-  { key: "positionGroup", label: "PositionGroup (wrapper)" },
-  { key: "positionPad", label: "PositionPad" },
-  { key: "positionInput", label: "PositionInput" },
-  { key: "angleGroup", label: "AngleGroup (wrapper)" },
-  { key: "anglePad", label: "AnglePad" },
-  { key: "angleInput", label: "AngleInput" },
-  { key: "radiusInput", label: "RadiusInput" },
-  { key: "ellipseRadiiInput", label: "EllipseRadiiInput" },
-  { key: "radialSizeSelect", label: "RadialSizeSelect" },
-  { key: "stopList", label: "StopList" },
-  { key: "stopColor", label: "StopColor" },
-  { key: "stopSwatches", label: "StopColor.Swatches" },
-  { key: "interpSwitcher", label: "InterpSwitcher" },
-  { key: "presets", label: "Presets" },
-  { key: "cssInput", label: "CssInput" },
+type GradientCheckbox = { key: GradientPartKey; label: string };
+type GradientCluster =
+  // Plain visual section: header label + divider, no parent toggle.
+  | { kind: "section"; id: string; label: string; items: GradientCheckbox[] }
+  // Parent toggle gates its children — children hide entirely when off.
+  | { kind: "group"; key: GradientPartKey; label: string; items: GradientCheckbox[] };
+
+const GRADIENT_CLUSTERS: GradientCluster[] = [
+  {
+    kind: "section",
+    id: "header",
+    label: "Header",
+    items: [
+      { key: "typeSwitcher", label: "TypeSwitcher" },
+      { key: "reverseStops", label: "ReverseStops" },
+      { key: "shapeSwitcher", label: "ShapeSwitcher" },
+    ],
+  },
+  {
+    kind: "section",
+    id: "surface",
+    label: "Surface",
+    items: [
+      { key: "bar", label: "Bar" },
+      { key: "area", label: "Area" },
+    ],
+  },
+  {
+    kind: "group",
+    key: "positionGroup",
+    label: "Position group",
+    items: [
+      { key: "positionPad", label: "PositionPad" },
+      { key: "positionInput", label: "PositionInput" },
+      { key: "radiusInput", label: "RadiusInput" },
+      { key: "ellipseRadiiInput", label: "EllipseRadiiInput" },
+    ],
+  },
+  {
+    kind: "group",
+    key: "angleGroup",
+    label: "Angle group",
+    items: [
+      { key: "anglePad", label: "AnglePad" },
+      { key: "angleInput", label: "AngleInput" },
+    ],
+  },
+  {
+    kind: "section",
+    id: "stops",
+    label: "Stops",
+    items: [
+      { key: "stopList", label: "StopList" },
+      { key: "stopColor", label: "StopColor" },
+      { key: "stopSwatches", label: "StopColor.Swatches" },
+    ],
+  },
+  {
+    kind: "section",
+    id: "misc",
+    label: "Misc",
+    items: [
+      { key: "radialSizeSelect", label: "RadialSizeSelect" },
+      { key: "interpSwitcher", label: "InterpSwitcher" },
+      { key: "presets", label: "Presets" },
+      { key: "cssInput", label: "CssInput" },
+    ],
+  },
 ];
 
 const ALL_OFF: PartsState = {
@@ -687,32 +734,20 @@ export default function PlaygroundPage() {
                   {gradientParts.area && <GradientPicker.Area />}
                   {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
 
-                  {gradientParts.positionGroup ? (
+                  {gradientParts.positionGroup && (
                     <GradientPicker.PositionGroup>
                       {gradientParts.positionPad && <GradientPicker.PositionPad />}
                       {gradientParts.positionInput && <GradientPicker.PositionInput />}
                       {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
                       {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
                     </GradientPicker.PositionGroup>
-                  ) : (
-                    <>
-                      {gradientParts.positionPad && <GradientPicker.PositionPad />}
-                      {gradientParts.positionInput && <GradientPicker.PositionInput />}
-                      {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
-                      {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
-                    </>
                   )}
 
-                  {gradientParts.angleGroup ? (
+                  {gradientParts.angleGroup && (
                     <GradientPicker.AngleGroup>
                       {gradientParts.anglePad && <GradientPicker.AnglePad />}
                       {gradientParts.angleInput && <GradientPicker.AngleInput className="flex-1" />}
                     </GradientPicker.AngleGroup>
-                  ) : (
-                    <>
-                      {gradientParts.anglePad && <GradientPicker.AnglePad />}
-                      {gradientParts.angleInput && <GradientPicker.AngleInput />}
-                    </>
                   )}
 
                   {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
@@ -777,32 +812,20 @@ export default function PlaygroundPage() {
                     {gradientParts.area && <GradientPicker.Area />}
                     {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
 
-                    {gradientParts.positionGroup ? (
+                    {gradientParts.positionGroup && (
                       <GradientPicker.PositionGroup>
                         {gradientParts.positionPad && <GradientPicker.PositionPad />}
                         {gradientParts.positionInput && <GradientPicker.PositionInput />}
                         {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
                         {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
                       </GradientPicker.PositionGroup>
-                    ) : (
-                      <>
-                        {gradientParts.positionPad && <GradientPicker.PositionPad />}
-                        {gradientParts.positionInput && <GradientPicker.PositionInput />}
-                        {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
-                        {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
-                      </>
                     )}
 
-                    {gradientParts.angleGroup ? (
+                    {gradientParts.angleGroup && (
                       <GradientPicker.AngleGroup>
                         {gradientParts.anglePad && <GradientPicker.AnglePad />}
                         {gradientParts.angleInput && <GradientPicker.AngleInput className="flex-1" />}
                       </GradientPicker.AngleGroup>
-                    ) : (
-                      <>
-                        {gradientParts.anglePad && <GradientPicker.AnglePad />}
-                        {gradientParts.angleInput && <GradientPicker.AngleInput />}
-                      </>
                     )}
 
                     {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
@@ -1021,19 +1044,52 @@ export default function PlaygroundPage() {
         {fillMode !== "color" && (
         <aside className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
           <Knob label="parts">
-            <div className="grid grid-cols-2 gap-1.5">
-              {GRADIENT_PARTS.map((p) => (
-                <label
-                  key={p.key}
-                  className="flex cursor-pointer items-center gap-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={gradientParts[p.key]}
-                    onChange={() => toggleGradientPart(p.key)}
-                  />
-                  <span className="font-mono text-xs">{p.label}</span>
-                </label>
+            <div className="flex flex-col gap-3">
+              {GRADIENT_CLUSTERS.map((cluster, i) => (
+                <React.Fragment key={clusterId(cluster)}>
+                  {i > 0 && <div className="h-px bg-border" aria-hidden />}
+                  {cluster.kind === "section" ? (
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {cluster.label}
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {cluster.items.map((p) => (
+                          <GradientPartCheckbox
+                            key={p.key}
+                            checkbox={p}
+                            checked={gradientParts[p.key]}
+                            onToggle={() => toggleGradientPart(p.key)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="flex cursor-pointer items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={gradientParts[cluster.key]}
+                          onChange={() => toggleGradientPart(cluster.key)}
+                        />
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {cluster.label}
+                        </span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5 pl-5">
+                        {cluster.items.map((p) => (
+                          <GradientPartCheckbox
+                            key={p.key}
+                            checkbox={p}
+                            checked={gradientParts[p.key]}
+                            onToggle={() => toggleGradientPart(p.key)}
+                            disabled={!gradientParts[cluster.key]}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </div>
           </Knob>
@@ -1286,6 +1342,39 @@ function buildFillSnippet(parts: GradientPartsState): string {
   lines.push(`  </FillPicker.Pane>`);
   lines.push(`</FillPicker.Root>`);
   return lines.join("\n");
+}
+
+function clusterId(c: GradientCluster): string {
+  return c.kind === "section" ? `section:${c.id}` : `group:${c.key}`;
+}
+
+function GradientPartCheckbox({
+  checkbox,
+  checked,
+  onToggle,
+  disabled = false,
+}: {
+  checkbox: GradientCheckbox;
+  checked: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex items-center gap-2",
+        disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
+      )}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onToggle}
+        disabled={disabled}
+      />
+      <span className="font-mono text-xs">{checkbox.label}</span>
+    </label>
+  );
 }
 
 function Knob({

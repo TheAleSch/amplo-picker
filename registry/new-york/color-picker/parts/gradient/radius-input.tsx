@@ -45,7 +45,7 @@ export const RadiusInput = React.forwardRef<
     <FieldShell
       ref={ref}
       data-slot="gradient-radius-input"
-      className={cn("min-w-0 flex-1", className)}
+      className={cn("min-w-0 shrink-0", className)}
       {...rest}
     >
       <FieldInputGroup>

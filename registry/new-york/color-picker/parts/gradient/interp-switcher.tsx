@@ -1,72 +1,152 @@
 "use client";
 
 import * as React from "react";
+import { Info } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { GradientInterp } from "../../lib/gradient";
-import { FieldSelect } from "../field";
 
 /**
  * Selectable interpolation spaces. Each maps to the CSS Color 4
  * `<gradient> in <space>` clause emitted by `formatGradient`.
  *
- * - `oklch`      → `in oklch` — perceptually uniform; smooth hue arc, no muddy mids.
- * - `oklab`      → `in oklab` — perceptual but cartesian; straight line through OK space.
- * - `srgb`       → `in srgb`  — legacy browser default; often grays in the middle.
- * - `hsl`        → `in hsl`   — walks the hue circle the *shorter* way.
- * - `hsl-longer` → `in hsl longer hue` — walks the hue circle the *longer* way (rainbow sweep).
+ * The description is surfaced via the ⓘ icon next to each option, so
+ * users hovering an option in the open menu see *why* they'd pick it.
  */
-const OPTIONS: { value: GradientInterp; label: string }[] = [
-  { value: "oklch", label: "OKLCH" },
-  { value: "oklab", label: "OKLab" },
-  { value: "srgb", label: "sRGB" },
-  { value: "hsl", label: "HSL" },
-  { value: "hsl-longer", label: "HSL (longer hue)" },
+const OPTIONS: {
+  value: GradientInterp;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "oklch",
+    label: "OKLCH",
+    description:
+      "Perceptually uniform polar space. Smooth hue arcs, no muddy mid-tones. Recommended default.",
+  },
+  {
+    value: "oklab",
+    label: "OKLab",
+    description:
+      "Perceptual but cartesian — a straight line through OK space. Smooth lightness, no hue rotation.",
+  },
+  {
+    value: "srgb",
+    label: "sRGB",
+    description:
+      "Legacy browser default. Mixes in gamma-encoded sRGB; often grays through the middle of two saturated colors.",
+  },
+  {
+    value: "hsl",
+    label: "HSL",
+    description:
+      "Walks the hue circle the shorter way between the two stops.",
+  },
+  {
+    value: "hsl-longer",
+    label: "HSL (longer hue)",
+    description:
+      "Walks the hue circle the longer way — produces a full rainbow sweep between two stops.",
+  },
 ];
 
+export interface InterpSwitcherProps {
+  className?: string;
+  /** Applied to the SelectTrigger. */
+  triggerClassName?: string;
+}
+
 /**
- * Native `<select>` bound to the active gradient's `interp` property.
- *
- * Reads `gradient.interp` from `<GradientPicker.Root>` context and dispatches
- * `setInterp` on change. Only the *blending math between stops* changes — stop
- * positions and stop colors stay identical. Switching does not mutate any stop.
- *
- * Built on `<FieldSelect>` so it shares its border, focus ring, font, and
- * chevron with every other select in the picker.
- *
- * Forwards a ref to the underlying `<select>` and accepts every standard
- * `SelectHTMLAttributes` prop. Internally fixes `value`, `onChange`, and
- * `aria-label`; passing those is harmless but they will be overwritten.
+ * Bound to the active gradient's `interp` property. Switching only
+ * changes the blending math between stops — stop positions and colors
+ * stay identical.
  *
  * Must render inside `<GradientPicker.Root>` — throws otherwise.
  */
 export const InterpSwitcher = React.forwardRef<
-  HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement>
->(function InterpSwitcher({ className, ...rest }, ref) {
+  HTMLButtonElement,
+  InterpSwitcherProps
+>(function InterpSwitcher({ className, triggerClassName }, ref) {
   const ctx = useGradientPickerContext();
   return (
-    <FieldSelect
-      ref={ref}
-      data-slot="gradient-interp-switcher-select"
-      aria-label="Interpolation space"
-      value={ctx.gradient.interp}
-      onChange={(e) => ctx.setInterp(e.target.value as GradientInterp)}
-      className="w-full"
-      wrapperProps={{
-        "data-slot": "gradient-interp-switcher",
-        className: cn("w-full", className),
-      }}
-      {...rest}
-    >
-      {OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </FieldSelect>
+    <TooltipProvider delayDuration={150}>
+      <Select
+        value={ctx.gradient.interp}
+        onValueChange={(v) => ctx.setInterp(v as GradientInterp)}
+      >
+        <SelectTrigger
+          ref={ref}
+          data-slot="gradient-interp-switcher"
+          aria-label="Interpolation space"
+          size="sm"
+          className={cn(
+            "w-full font-mono text-xs uppercase tracking-wide",
+            triggerClassName,
+            className,
+          )}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="font-mono text-xs uppercase tracking-wide">
+          {OPTIONS.map((opt) => (
+            <RowWithInfo
+              key={opt.value}
+              value={opt.value}
+              label={opt.label}
+              description={opt.description}
+            />
+          ))}
+        </SelectContent>
+      </Select>
+    </TooltipProvider>
   );
 });
 
-function cn(...args: Array<string | false | null | undefined>) {
-  return args.filter(Boolean).join(" ");
+function RowWithInfo({
+  value,
+  label,
+  description,
+}: {
+  value: string;
+  label: string;
+  description: string;
+}) {
+  return (
+    <SelectItem value={value} className="pr-8">
+      <span className="flex w-full items-center gap-2">
+        <span className="flex-1">{label}</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              role="img"
+              aria-label={`About ${label}`}
+              className="inline-flex shrink-0 cursor-help text-muted-foreground hover:text-foreground"
+            >
+              <Info className="size-3" aria-hidden />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            align="center"
+            className="max-w-[220px] text-[11px] normal-case tracking-normal"
+          >
+            {description}
+          </TooltipContent>
+        </Tooltip>
+      </span>
+    </SelectItem>
+  );
 }

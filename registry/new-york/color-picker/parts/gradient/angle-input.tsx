@@ -39,15 +39,11 @@ export const AngleInput = React.forwardRef<
       <FieldInputGroup>
         <span className="sr-only">Gradient angle</span>
         <FieldInput
-          type="number"
           inputMode="numeric"
-          min={0}
-          max={360}
-          step={1}
           value={Math.round(angle)}
           onChange={onChange}
           aria-label="Gradient angle in degrees"
-          className="w-12"
+          className="w-10"
         />
         <FieldSuffix>°</FieldSuffix>
       </FieldInputGroup>

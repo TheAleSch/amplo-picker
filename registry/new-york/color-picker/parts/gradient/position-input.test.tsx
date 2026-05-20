@@ -15,8 +15,8 @@ describe("<GradientPicker.PositionInput>", () => {
     );
     const cx = screen.getByLabelText("Gradient center x percent");
     const cy = screen.getByLabelText("Gradient center y percent");
-    expect(cx).toHaveValue(50);
-    expect(cy).toHaveValue(50);
+    expect(cx).toHaveValue("50");
+    expect(cy).toHaveValue("50");
     fireEvent.change(cx, { target: { value: "25" } });
     expect(onValueChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ center: { x: 0.25, y: 0.5 } }),

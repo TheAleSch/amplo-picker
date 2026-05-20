@@ -45,10 +45,7 @@ export const EllipseRadiiInput = React.forwardRef<
       <FieldInputGroup>
         <span className="sr-only">Ellipse horizontal radius</span>
         <FieldInput
-          type="number"
           inputMode="numeric"
-          min={0}
-          step={1}
           value={g.radii ? Math.round(g.radii.x * 100) : ""}
           placeholder="auto"
           onChange={(e) => commit("x", e.target.value)}
@@ -60,10 +57,7 @@ export const EllipseRadiiInput = React.forwardRef<
       <FieldInputGroup>
         <span className="sr-only">Ellipse vertical radius</span>
         <FieldInput
-          type="number"
           inputMode="numeric"
-          min={0}
-          step={1}
           value={g.radii ? Math.round(g.radii.y * 100) : ""}
           placeholder="auto"
           onChange={(e) => commit("y", e.target.value)}

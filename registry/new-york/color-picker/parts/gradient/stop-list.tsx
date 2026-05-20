@@ -146,11 +146,7 @@ export const StopList = React.forwardRef<
               <FieldInputGroup>
                 <span className="sr-only">Stop position</span>
                 <FieldInput
-                  type="number"
                   inputMode="numeric"
-                  min={0}
-                  max={100}
-                  step={1}
                   value={Math.round(toDisplay(s.position) * 100)}
                   onChange={(e) => {
                     const v = parseFloat(e.target.value);

@@ -10,7 +10,7 @@
       "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
       "categories": ["color", "input", "design", "accessibility"],
       "dependencies": ["culori", "lucide-react"],
-      "registryDependencies": ["utils", "tooltip", "button", "input", "popover", "select"],
+      "registryDependencies": ["utils", "tooltip", "button", "input", "popover", "select", "toggle"],
       "files": [
         {
           "path": "registry/new-york/color-picker/lib/types.ts",

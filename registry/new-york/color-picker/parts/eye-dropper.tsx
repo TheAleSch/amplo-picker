@@ -68,7 +68,7 @@ export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(f
       onClick={onClick}
       className={cn(
         "cursor-pointer",
-        active && "border-foreground/60 bg-foreground/10 hover:bg-foreground/15",
+        active && "border-foreground/70 bg-foreground/10 text-foreground hover:bg-foreground/15",
         className,
       )}
       {...rest}

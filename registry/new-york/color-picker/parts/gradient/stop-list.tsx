@@ -15,7 +15,7 @@ import {
   reverseProjectStopPosition,
   sampleStopsAt,
 } from "../../lib/gradient";
-import { formatColor } from "../../lib/color";
+import { formatColor, parseColor } from "../../lib/color";
 import { ColorPickerContext } from "../../context";
 import { useColorPicker } from "../../hooks/use-color-picker";
 import type { OklchColor } from "../../lib/types";
@@ -118,98 +118,13 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
       {ctx.stops.map((s) => {
         const selected = s.id === ctx.selectedStopId;
         return (
-          <div
+          <StopRow
             key={s.id}
-            role="option"
-            aria-selected={selected}
-            tabIndex={selected ? 0 : -1}
-            data-selected={selected}
-            onClick={() => ctx.selectStop(s.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                ctx.selectStop(s.id);
-              } else if (e.key === "Delete" || e.key === "Backspace") {
-                e.preventDefault();
-                ctx.removeStop(s.id);
-              }
-            }}
-            className={cn(
-              "flex cursor-pointer items-center gap-2 rounded-md border p-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              selected ? "border-foreground" : "border-border",
-            )}
-          >
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  // Layered swatch: actual stop color (alpha intact) on top
-                  // of a small-scale checkerboard so transparency reads.
-                  // Clicking opens a full ColorPicker popover bound to this
-                  // specific stop — not necessarily the currently selected
-                  // one, so users can edit any stop without first selecting
-                  // it. `e.stopPropagation()` prevents the row click from
-                  // double-firing `selectStop`.
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ctx.selectStop(s.id);
-                  }}
-                  aria-label="Edit stop color"
-                  style={{
-                    backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD}`,
-                    backgroundSize: "auto, 6px 6px",
-                  }}
-                  className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </PopoverTrigger>
-              <PopoverContent
-                className="flex w-72 flex-col gap-3 p-3"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <StopColorEditor key={s.id} stopId={s.id} color={s.color}>
-                  <ColorArea mode="oklch-cl" />
-                  <div className="flex flex-col gap-1.5">
-                    <Hue />
-                    <Alpha />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FormatSwitcher className="flex-1" />
-                    <EyeDropper className="h-8 w-full flex-1" />
-                  </div>
-                  <ChannelInput showFormat={false} />
-                </StopColorEditor>
-              </PopoverContent>
-            </Popover>
-            <FieldShell className="h-7 w-fit">
-              <FieldInputGroup>
-                <span className="sr-only">Stop position</span>
-                <FieldInput
-                  inputMode="numeric"
-                  value={Math.round(toDisplay(s.position) * 100)}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (Number.isFinite(v))
-                      ctx.moveStop(s.id, fromDisplay(v / 100));
-                  }}
-                  aria-label="Stop position"
-                  className="w-10"
-                />
-                <FieldSuffix>%</FieldSuffix>
-              </FieldInputGroup>
-            </FieldShell>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                ctx.removeStop(s.id);
-              }}
-              disabled={ctx.stops.length <= 1}
-              className="ml-auto inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
-              aria-label="Remove stop"
-            >
-              <Minus className="size-3.5" />
-            </button>
-          </div>
+            stop={s}
+            selected={selected}
+            toDisplay={toDisplay}
+            fromDisplay={fromDisplay}
+          />
         );
       })}
       {showAddStop && (
@@ -227,3 +142,149 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     </div>
   );
 });
+
+function StopRow({
+  stop: s,
+  selected,
+  toDisplay,
+  fromDisplay,
+}: {
+  stop: ReturnType<typeof useGradientPickerContext>["stops"][number];
+  selected: boolean;
+  toDisplay: (n: number) => number;
+  fromDisplay: (n: number) => number;
+}) {
+  const ctx = useGradientPickerContext();
+  // Keep a local draft so typing a partial hex like "#ff" doesn't fight
+  // the formatted live value. Resync on external color changes (drag,
+  // popover edit, etc.) so the field reflects reality when the user
+  // isn't editing it.
+  const hex = formatColor(s.color, "hex");
+  const [draft, setDraft] = React.useState(hex);
+  const focusedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!focusedRef.current) setDraft(hex);
+  }, [hex]);
+  const commitDraft = (raw: string) => {
+    const parsed = parseColor(raw.trim());
+    if (parsed) ctx.setStopColor(s.id, parsed);
+    else setDraft(hex);
+  };
+  return (
+    <div
+      role="option"
+      aria-selected={selected}
+      tabIndex={selected ? 0 : -1}
+      data-selected={selected}
+      onClick={() => ctx.selectStop(s.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          ctx.selectStop(s.id);
+        } else if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          ctx.removeStop(s.id);
+        }
+      }}
+      className={cn(
+        "flex cursor-pointer items-center gap-2 rounded-md border p-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        selected ? "border-foreground" : "border-border",
+      )}
+    >
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              ctx.selectStop(s.id);
+            }}
+            aria-label="Edit stop color"
+            style={{
+              backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD}`,
+              backgroundSize: "auto, 6px 6px",
+            }}
+            className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </PopoverTrigger>
+        <PopoverContent
+          className="flex w-72 flex-col gap-3 p-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <StopColorEditor stopId={s.id} color={s.color}>
+            <ColorArea mode="oklch-cl" />
+            <div className="flex flex-col gap-1.5">
+              <Hue />
+              <Alpha />
+            </div>
+            <div className="flex items-center gap-2">
+              <FormatSwitcher className="flex-1" />
+              <EyeDropper className="h-8 w-full flex-1" />
+            </div>
+            <ChannelInput showFormat={false} />
+          </StopColorEditor>
+        </PopoverContent>
+      </Popover>
+      <FieldShell className="h-7 w-fit">
+        <FieldInputGroup>
+          <span className="sr-only">Stop position</span>
+          <FieldInput
+            inputMode="numeric"
+            value={Math.round(toDisplay(s.position) * 100)}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (Number.isFinite(v))
+                ctx.moveStop(s.id, fromDisplay(v / 100));
+            }}
+            aria-label="Stop position"
+            className="w-10"
+          />
+          <FieldSuffix>%</FieldSuffix>
+        </FieldInputGroup>
+      </FieldShell>
+      <FieldShell className="h-7 min-w-0 flex-1">
+        <FieldInputGroup>
+          <span className="sr-only">Stop color (paste hex / css)</span>
+          <FieldInput
+            value={draft}
+            spellCheck={false}
+            onFocus={() => {
+              focusedRef.current = true;
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={(e) => {
+              focusedRef.current = false;
+              commitDraft(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitDraft((e.target as HTMLInputElement).value);
+                (e.target as HTMLInputElement).blur();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                setDraft(hex);
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            aria-label="Stop color value"
+            className="text-left"
+          />
+        </FieldInputGroup>
+      </FieldShell>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          ctx.removeStop(s.id);
+        }}
+        disabled={ctx.stops.length <= 1}
+        className="inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+        aria-label="Remove stop"
+      >
+        <Minus className="size-3.5" />
+      </button>
+    </div>
+  );
+}

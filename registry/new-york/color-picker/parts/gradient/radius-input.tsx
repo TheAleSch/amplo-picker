@@ -52,6 +52,7 @@ export const RadiusInput = React.forwardRef<
         <span className="sr-only">Circle radius</span>
         <FieldInput
           inputMode="numeric"
+          nudge={1}
           value={display}
           placeholder="auto"
           onChange={onChange}

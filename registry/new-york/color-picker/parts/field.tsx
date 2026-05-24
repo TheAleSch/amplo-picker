@@ -43,27 +43,60 @@ export function FieldDivider() {
  * channel-input numeric field: full width of its slot, right-aligned
  * tabular digits, transparent background. Pass `className` to override
  * per use (e.g. left-align for hex / CSS strings).
+ *
+ * When `nudge` is set, ↑/↓ step the numeric value by `nudge` (Shift × 10).
+ * Implemented by dispatching a native input event so the consumer's
+ * existing `onChange` handler runs unchanged — no parallel commit path,
+ * no double validation. Non-numeric values are ignored.
  */
-export const FieldInput = React.forwardRef<
-  HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
->(function FieldInput({ className, type = "text", ...rest }, ref) {
-  return (
-    <input
-      ref={ref}
-      type={type}
-      spellCheck={false}
-      autoComplete="off"
-      autoCorrect="off"
-      autoCapitalize="off"
-      className={cn(
-        "w-full min-w-0 bg-transparent px-1.5 text-right outline-none tabular-nums",
-        className,
-      )}
-      {...rest}
-    />
-  );
-});
+export interface FieldInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  /**
+   * Step amount for ↑/↓ keyboard nudge. Shift multiplies by 10. Omit
+   * to disable nudge (text fields and non-numeric inputs).
+   */
+  nudge?: number;
+}
+
+export const FieldInput = React.forwardRef<HTMLInputElement, FieldInputProps>(
+  function FieldInput({ className, type = "text", nudge, onKeyDown, ...rest }, ref) {
+    return (
+      <input
+        ref={ref}
+        type={type}
+        spellCheck={false}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        onKeyDown={(e) => {
+          if (nudge && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+            const cur = parseFloat(e.currentTarget.value);
+            if (Number.isFinite(cur)) {
+              e.preventDefault();
+              const delta =
+                (e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? nudge * 10 : nudge);
+              const next = cur + delta;
+              // Use the native value setter so React's synthetic onChange
+              // fires — directly assigning `.value` is swallowed by React's
+              // controlled-input tracker.
+              const setter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype,
+                "value",
+              )?.set;
+              setter?.call(e.currentTarget, String(next));
+              e.currentTarget.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+          }
+          onKeyDown?.(e);
+        }}
+        className={cn(
+          "w-full min-w-0 bg-transparent px-1.5 text-right outline-none tabular-nums",
+          className,
+        )}
+        {...rest}
+      />
+    );
+  },
+);
 
 /**
  * Flex slot that pairs a `FieldInput` with an optional `FieldSuffix`

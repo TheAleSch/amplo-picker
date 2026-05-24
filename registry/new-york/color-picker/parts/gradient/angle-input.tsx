@@ -40,6 +40,7 @@ export const AngleInput = React.forwardRef<
         <span className="sr-only">Gradient angle</span>
         <FieldInput
           inputMode="numeric"
+          nudge={1}
           value={Math.round(angle)}
           onChange={onChange}
           aria-label="Gradient angle in degrees"

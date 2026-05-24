@@ -234,6 +234,7 @@ function StopRow({
           <span className="sr-only">Stop position</span>
           <FieldInput
             inputMode="numeric"
+            nudge={1}
             value={Math.round(toDisplay(s.position) * 100)}
             onChange={(e) => {
               const v = parseFloat(e.target.value);

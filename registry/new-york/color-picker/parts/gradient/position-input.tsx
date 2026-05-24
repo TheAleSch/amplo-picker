@@ -42,6 +42,7 @@ export const PositionInput = React.forwardRef<
         <span className="sr-only">Gradient center x</span>
         <FieldInput
           inputMode="numeric"
+          nudge={1}
           value={Math.round(center.x * 100)}
           onChange={(e) => commit("x", e.target.value)}
           aria-label="Gradient center x percent"
@@ -54,6 +55,7 @@ export const PositionInput = React.forwardRef<
         <span className="sr-only">Gradient center y</span>
         <FieldInput
           inputMode="numeric"
+          nudge={1}
           value={Math.round(center.y * 100)}
           onChange={(e) => commit("y", e.target.value)}
           aria-label="Gradient center y percent"

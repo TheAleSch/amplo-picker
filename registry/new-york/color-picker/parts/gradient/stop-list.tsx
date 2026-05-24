@@ -22,6 +22,10 @@ import { Area as ColorArea } from "../area";
 import { Hue } from "../hue";
 import { Alpha } from "../alpha";
 import { ChannelInput } from "../channel-input";
+import { FormatSwitcher } from "../format-switcher";
+import { EyeDropper } from "../eye-dropper";
+import { GamutBadge } from "../gamut-badge";
+import { ContrastReadout } from "../contrast-readout";
 import {
   FieldInput,
   FieldInputGroup,
@@ -163,14 +167,32 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
                 />
               </PopoverTrigger>
               <PopoverContent
-                className="flex w-64 flex-col gap-2 p-3"
+                className="flex w-72 flex-col gap-3 p-3"
                 onClick={(e) => e.stopPropagation()}
               >
                 <StopColorEditor key={s.id} stopId={s.id} color={s.color}>
-                  <ColorArea />
-                  <Hue />
-                  <Alpha />
-                  <ChannelInput />
+                  <div className="flex items-stretch gap-2">
+                    <GamutBadge
+                      showLabel={false}
+                      className="w-auto flex-1 justify-center"
+                    />
+                    <ContrastReadout
+                      metrics={["wcag", "apca"]}
+                      showLabel={false}
+                      showValue={false}
+                      className="w-auto flex-1 justify-center"
+                    />
+                  </div>
+                  <ColorArea mode="oklch-cl" />
+                  <div className="flex flex-col gap-1.5">
+                    <Hue />
+                    <Alpha />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FormatSwitcher className="flex-1" />
+                    <EyeDropper className="h-8 w-full flex-1" />
+                  </div>
+                  <ChannelInput showFormat={false} />
                 </StopColorEditor>
               </PopoverContent>
             </Popover>

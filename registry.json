@@ -63,6 +63,11 @@
           "target": "components/ui/fill-picker/parts/lightness.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/chroma.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/chroma.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/alpha.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/alpha.tsx"

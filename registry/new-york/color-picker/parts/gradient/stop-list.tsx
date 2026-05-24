@@ -118,8 +118,8 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
       {ctx.stops.map((s) => {
         const selected = s.id === ctx.selectedStopId;
         return (
+          <StopColorEditor key={s.id} stopId={s.id} color={s.color}>
           <div
-            key={s.id}
             role="option"
             aria-selected={selected}
             tabIndex={selected ? 0 : -1}
@@ -143,13 +143,6 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  // Layered swatch: actual stop color (alpha intact) on top
-                  // of a small-scale checkerboard so transparency reads.
-                  // Clicking opens a full ColorPicker popover bound to this
-                  // specific stop — not necessarily the currently selected
-                  // one, so users can edit any stop without first selecting
-                  // it. `e.stopPropagation()` prevents the row click from
-                  // double-firing `selectStop`.
                   onClick={(e) => {
                     e.stopPropagation();
                     ctx.selectStop(s.id);
@@ -166,14 +159,18 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
                 className="flex w-64 flex-col gap-2 p-3"
                 onClick={(e) => e.stopPropagation()}
               >
-                <StopColorEditor key={s.id} stopId={s.id} color={s.color}>
-                  <ColorArea />
-                  <Hue />
-                  <Alpha />
-                  <ChannelInput />
-                </StopColorEditor>
+                <ColorArea />
+                <Hue />
+                <Alpha />
+                <ChannelInput />
               </PopoverContent>
             </Popover>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="min-w-0 flex-1"
+            >
+              <ChannelInput showFormat={false} />
+            </div>
             <FieldShell className="h-7 w-fit">
               <FieldInputGroup>
                 <span className="sr-only">Stop position</span>
@@ -204,8 +201,10 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
               <Trash2 className="size-3.5" />
             </button>
           </div>
+          </StopColorEditor>
         );
       })}
+
       {showAddStop && (
         <button
           type="button"

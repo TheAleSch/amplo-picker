@@ -131,6 +131,7 @@ function StopRow({
   formatted: string;
 }) {
   const ctx = useGradientPickerContext();
+  const [open, setOpen] = React.useState(false);
   const [draft, setDraft] = React.useState(formatted);
   const focusedRef = React.useRef(false);
   React.useEffect(() => {
@@ -162,12 +163,13 @@ function StopRow({
         selected ? "border-foreground" : "border-border",
       )}
     >
-      <StopEditorPopover stopId={s.id}>
+      <StopEditorPopover stopId={s.id} open={open} onOpenChange={setOpen}>
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             ctx.selectStop(s.id);
+            setOpen((o) => !o);
           }}
           aria-label="Edit stop color"
           style={{

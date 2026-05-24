@@ -3,8 +3,8 @@
 import * as React from "react";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
-  PopoverTrigger,
 } from "@/components/ui/popover";
 import { ColorPickerContext } from "../../context";
 import { useGradientPickerContext } from "../../contexts/gradient";
@@ -19,10 +19,15 @@ import { EyeDropper } from "../eye-dropper";
 export interface StopEditorPopoverProps {
   /** Stop the popover edits — color + per-stop format are read/written via gradient context. */
   stopId: string;
-  /** Controlled open state. Omit for trigger-managed open. */
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** Trigger element (rendered via Radix `asChild`). */
+  /**
+   * Controlled open state. Required — open is always external because
+   * the anchor element typically has its own pointer handling (drag on
+   * Bar handles, click on StopList swatches) that would conflict with
+   * a Radix-managed trigger.
+   */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Anchor element (rendered via Radix `asChild`). Provides positioning only. */
   children: React.ReactNode;
 }
 
@@ -51,7 +56,7 @@ export function StopEditorPopover({
   });
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverAnchor asChild>{children}</PopoverAnchor>
       <PopoverContent
         className="flex w-72 flex-col gap-3 p-3"
         onClick={(e) => e.stopPropagation()}

@@ -90,9 +90,14 @@ export const AnglePad = React.forwardRef<HTMLDivElement, AnglePadProps>(
       >
         <div
           aria-hidden
-          className="absolute left-1/2 top-1/2 h-1/2 w-px origin-top -translate-x-1/2 bg-foreground"
-          style={{ transform: `translate(-50%, 0) rotate(${angle}deg)` }}
-        />
+          className="absolute left-1/2 top-1/2 size-0 origin-center"
+          style={{ transform: `translate(-50%, -50%) rotate(${angle}deg)` }}
+        >
+          <div
+            className="absolute left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-foreground shadow-sm ring-1 ring-background/40"
+            style={{ top: `calc(-${size / 2}px + 4px)` }}
+          />
+        </div>
       </div>
     );
   },

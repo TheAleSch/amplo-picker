@@ -32,6 +32,7 @@ export const TypeSwitcher = React.forwardRef<
       aria-label="Gradient type"
       value={ctx.gradient.type}
       onChange={(e) => ctx.setType(e.target.value as GradientType)}
+      className="normal-case"
       wrapperProps={{
         "data-slot": "gradient-type-switcher",
         className,

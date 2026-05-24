@@ -21,6 +21,10 @@ export const RepeatingToggle = React.forwardRef<
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(function RepeatingToggle({ className, ...rest }, ref) {
   const ctx = useGradientPickerContext();
+  // Conic gradients already wrap a full 360° sweep, so `repeating-conic` only
+  // changes the paint when stops cover less than the full circle — too niche
+  // to expose as a top-level toggle. Hide the affordance there.
+  if (ctx.gradient.type === "conic") return null;
   const on = !!ctx.gradient.repeating;
   return (
     <Button

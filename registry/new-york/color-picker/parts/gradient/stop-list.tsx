@@ -116,9 +116,16 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     const anchorIdx = selectedIdx === -1 ? sorted.length - 1 : selectedIdx;
     const anchor = sorted[anchorIdx];
     const next = sorted[anchorIdx + 1];
+    const prev = sorted[anchorIdx - 1];
+    // When the selected stop is the last one, fall back to inserting
+    // *between* it and the previous neighbor — so a quick add doesn't
+    // squeeze a new stop into the gap between the last stop and the
+    // bar's end (often near-zero) and instead lands somewhere visible.
     const position = next
       ? (anchor.position + next.position) / 2
-      : Math.min(1, (anchor.position + 1) / 2);
+      : prev
+        ? (prev.position + anchor.position) / 2
+        : Math.min(1, (anchor.position + 1) / 2);
     const id = ctx.addStop(position, sampleStopsAt(sorted, position));
     ctx.selectStop(id);
   };

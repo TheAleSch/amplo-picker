@@ -307,7 +307,7 @@ function StopRow({
           ctx.removeStop(s.id);
         }}
         disabled={ctx.stops.length <= 1}
-        className="inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+        className="inline-flex size-7 items-center justify-center rounded-md border border-input text-muted-foreground shadow-xs hover:text-foreground disabled:opacity-30"
         aria-label="Remove stop"
       >
         <Minus className="size-3.5" />

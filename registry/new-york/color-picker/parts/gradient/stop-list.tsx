@@ -161,7 +161,7 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
                     backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD}`,
                     backgroundSize: "auto, 6px 6px",
                   }}
-                  className="size-7 shrink-0 rounded border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
+                  className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </PopoverTrigger>
               <PopoverContent

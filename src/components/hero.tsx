@@ -428,7 +428,7 @@ function HeroPicker() {
             <GradientPicker.ReverseStops />
           </div>
         </div>
-        <GradientPicker.Bar editOnClick />
+        <GradientPicker.Bar />
         <GradientPicker.Area />
         <HeroGradientShapeControls />
         <GradientPicker.StopList />

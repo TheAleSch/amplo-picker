@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Diamond, Plus, RotateCcw, Trash2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -115,11 +115,66 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
       className={cn("flex flex-col gap-1", className)}
       {...rest}
     >
-      {ctx.stops.map((s) => {
+      {ctx.stops.map((s, i) => {
         const selected = s.id === ctx.selectedStopId;
+        const prev = i > 0 ? ctx.stops[i - 1] : null;
+        const segmentMin = prev ? toDisplay(prev.position) : 0;
+        const segmentMax = toDisplay(s.position);
+        // Auto midpoint = halfway between the surrounding stops, in displayed
+        // space. When the user has set a hint, mirror it through `toDisplay`
+        // so positioned-linears stay consistent with the Bar/StopList axis.
+        const hintAuto = prev ? (segmentMin + segmentMax) / 2 : 0;
+        const hintDisplayed =
+          s.hint !== undefined ? toDisplay(s.hint) : hintAuto;
+        const hintActive = s.hint !== undefined;
         return (
+          <React.Fragment key={s.id}>
+            {prev && (
+              <div
+                data-slot="gradient-midpoint-row"
+                className="flex items-center gap-2 pl-1 text-xs text-muted-foreground"
+              >
+                <Diamond
+                  aria-hidden
+                  className="size-3 shrink-0"
+                  fill={hintActive ? "currentColor" : "none"}
+                />
+                <FieldShell className="h-6 w-fit">
+                  <FieldInputGroup>
+                    <span className="sr-only">Midpoint position</span>
+                    <FieldInput
+                      inputMode="numeric"
+                      value={Math.round(hintDisplayed * 100)}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        if (!Number.isFinite(v)) return;
+                        const authored = fromDisplay(v / 100);
+                        const eps = 1e-4;
+                        const clamped = Math.max(
+                          prev.position + eps,
+                          Math.min(s.position - eps, authored),
+                        );
+                        ctx.setStopHint(s.id, clamped);
+                      }}
+                      aria-label="Midpoint position"
+                      className="w-10"
+                    />
+                    <FieldSuffix>%</FieldSuffix>
+                  </FieldInputGroup>
+                </FieldShell>
+                {hintActive && (
+                  <button
+                    type="button"
+                    onClick={() => ctx.setStopHint(s.id, undefined)}
+                    aria-label="Reset midpoint"
+                    className="inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                  >
+                    <RotateCcw className="size-3" />
+                  </button>
+                )}
+              </div>
+            )}
           <div
-            key={s.id}
             role="option"
             aria-selected={selected}
             tabIndex={selected ? 0 : -1}
@@ -204,6 +259,7 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
               <Trash2 className="size-3.5" />
             </button>
           </div>
+          </React.Fragment>
         );
       })}
       {showAddStop && (

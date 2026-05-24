@@ -155,7 +155,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     <div
       ref={wrapperRef}
       data-slot="gradient-bar"
-      className={cn("group/bar relative w-full select-none", className)}
+      className={cn("relative w-full select-none", className)}
       style={{ height }}
       {...rest}
     >
@@ -167,33 +167,6 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
           background: `${buildPreviewGradient(ctx.gradient)}, repeating-conic-gradient(#bbb 0 25%, #fff 0 50%) 0 0/8px 8px`,
         }}
       />
-      {ctx.stops.map((s, i) => {
-        if (i === 0) return null;
-        const prev = ctx.stops[i - 1];
-        const mid = (prev.position + s.position) / 2;
-        const displayed = Math.max(0, Math.min(1, toDisplay(mid)));
-        return (
-          <button
-            key={`insert-${s.id}`}
-            type="button"
-            tabIndex={-1}
-            aria-label="Insert stop at midpoint"
-            onClick={(e) => {
-              e.stopPropagation();
-              const id = ctx.addStop(mid, sampleStopsAt(ctx.stops, mid));
-              ctx.selectStop(id);
-            }}
-            style={{
-              left: `${displayed * 100}%`,
-              width: handleSize * 0.7,
-              height: handleSize * 0.7,
-            }}
-            className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-foreground/70 text-[10px] leading-none text-background opacity-0 shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-opacity group-hover/bar:opacity-100"
-          >
-            +
-          </button>
-        );
-      })}
       {ctx.stops.map((s) => {
         const selected = s.id === ctx.selectedStopId;
         const displayed = Math.max(0, Math.min(1, toDisplay(s.position)));

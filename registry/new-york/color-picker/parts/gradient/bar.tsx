@@ -132,38 +132,6 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     activeDragCleanupRef.current = cleanup;
   };
 
-  const startHintDrag =
-    (hintStopId: string, prevPos: number, nextPos: number) =>
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      e.stopPropagation();
-      e.preventDefault();
-      // Hints live in *authored* space (0..1 on the CSS gradient line) —
-      // same space the surrounding stops use. Clamp inside the (prev, next)
-      // interval so the diamond can't cross either neighbor; CSS midpoint
-      // hints outside that range are invalid per spec.
-      const onMove = (ev: PointerEvent) => {
-        const displayed = displayedPositionFromEvent(ev.clientX);
-        const authored = fromDisplay(displayed);
-        const eps = 1e-4;
-        const clamped = Math.max(
-          prevPos + eps,
-          Math.min(nextPos - eps, authored),
-        );
-        ctx.setStopHint(hintStopId, clamped);
-      };
-      const cleanup = () => {
-        document.removeEventListener("pointermove", onMove);
-        document.removeEventListener("pointerup", onUp);
-        document.removeEventListener("pointercancel", onUp);
-        activeDragCleanupRef.current = null;
-      };
-      const onUp = () => cleanup();
-      document.addEventListener("pointermove", onMove);
-      document.addEventListener("pointerup", onUp);
-      document.addEventListener("pointercancel", onUp);
-      activeDragCleanupRef.current = cleanup;
-    };
-
   const onStopKeyDown =
     (id: string, position: number) => (e: React.KeyboardEvent<HTMLDivElement>) => {
       const step = e.shiftKey ? 0.05 : 0.01;
@@ -202,36 +170,28 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       {ctx.stops.map((s, i) => {
         if (i === 0) return null;
         const prev = ctx.stops[i - 1];
-        // Auto midpoint when no hint is set — matches CSS default behavior.
-        const authored = s.hint ?? (prev.position + s.position) / 2;
-        const displayed = Math.max(0, Math.min(1, toDisplay(authored)));
-        const active = s.hint !== undefined;
+        const mid = (prev.position + s.position) / 2;
+        const displayed = Math.max(0, Math.min(1, toDisplay(mid)));
         return (
-          <div
-            key={`hint-${s.id}`}
-            role="slider"
-            aria-label={`Midpoint hint between stops ${i} and ${i + 1}`}
-            aria-valuemin={Math.round(toDisplay(prev.position) * 100)}
-            aria-valuemax={Math.round(toDisplay(s.position) * 100)}
-            aria-valuenow={Math.round(displayed * 100)}
+          <button
+            key={`insert-${s.id}`}
+            type="button"
             tabIndex={-1}
-            onPointerDown={startHintDrag(s.id, prev.position, s.position)}
-            onDoubleClick={(e) => {
+            aria-label="Insert stop at midpoint"
+            onClick={(e) => {
               e.stopPropagation();
-              ctx.setStopHint(s.id, undefined);
+              const id = ctx.addStop(mid, sampleStopsAt(ctx.stops, mid));
+              ctx.selectStop(id);
             }}
             style={{
               left: `${displayed * 100}%`,
-              width: handleSize * 0.6,
-              height: handleSize * 0.6,
+              width: handleSize * 0.7,
+              height: handleSize * 0.7,
             }}
-            className={cn(
-              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab rounded-xs border border-white/80 bg-foreground/70 shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-opacity",
-              active
-                ? "opacity-100"
-                : "opacity-0 group-hover/bar:opacity-40 hover:opacity-100!",
-            )}
-          />
+            className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-foreground/70 text-[10px] leading-none text-background opacity-0 shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-opacity group-hover/bar:opacity-100"
+          >
+            +
+          </button>
         );
       })}
       {ctx.stops.map((s) => {

@@ -18,7 +18,7 @@ import {
 import { formatColor, parseColor } from "../../lib/color";
 import { ColorPickerContext } from "../../context";
 import { useColorPicker } from "../../hooks/use-color-picker";
-import type { OklchColor } from "../../lib/types";
+import type { ColorFormat, OklchColor } from "../../lib/types";
 import { Area as ColorArea } from "../area";
 import { Hue } from "../hue";
 import { Alpha } from "../alpha";
@@ -71,10 +71,21 @@ export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
    * this is an explicit affordance for layouts where the bar isn't visible.
    */
   showAddStop?: boolean;
+  /**
+   * Format used by the inline color text input on each row. Defaults to
+   * `oklch` — lossless across the full P3/Rec.2020 gamut that stop colors
+   * can occupy. Pasting any CSS color string still parses regardless of
+   * this setting (parser is format-agnostic); this only controls what
+   * the field *displays*.
+   */
+  colorFormat?: ColorFormat;
 }
 
 export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
-  function StopList({ className, showAddStop = true, ...rest }, ref) {
+  function StopList(
+    { className, showAddStop = true, colorFormat = "oklch", ...rest },
+    ref,
+  ) {
   const ctx = useGradientPickerContext();
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
@@ -124,6 +135,7 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
             selected={selected}
             toDisplay={toDisplay}
             fromDisplay={fromDisplay}
+            colorFormat={colorFormat}
           />
         );
       })}
@@ -148,27 +160,28 @@ function StopRow({
   selected,
   toDisplay,
   fromDisplay,
+  colorFormat,
 }: {
   stop: ReturnType<typeof useGradientPickerContext>["stops"][number];
   selected: boolean;
   toDisplay: (n: number) => number;
   fromDisplay: (n: number) => number;
+  colorFormat: ColorFormat;
 }) {
   const ctx = useGradientPickerContext();
-  // Keep a local draft so typing a partial hex like "#ff" doesn't fight
-  // the formatted live value. Resync on external color changes (drag,
-  // popover edit, etc.) so the field reflects reality when the user
-  // isn't editing it.
-  const hex = formatColor(s.color, "hex");
-  const [draft, setDraft] = React.useState(hex);
+  // Keep a local draft so partial typing doesn't fight the live formatted
+  // value. Resync on external color changes (drag, popover edit, etc.) so
+  // the field reflects reality when the user isn't editing it.
+  const formatted = formatColor(s.color, colorFormat);
+  const [draft, setDraft] = React.useState(formatted);
   const focusedRef = React.useRef(false);
   React.useEffect(() => {
-    if (!focusedRef.current) setDraft(hex);
-  }, [hex]);
+    if (!focusedRef.current) setDraft(formatted);
+  }, [formatted]);
   const commitDraft = (raw: string) => {
     const parsed = parseColor(raw.trim());
     if (parsed) ctx.setStopColor(s.id, parsed);
-    else setDraft(hex);
+    else setDraft(formatted);
   };
   return (
     <div
@@ -264,7 +277,7 @@ function StopRow({
                 (e.target as HTMLInputElement).blur();
               } else if (e.key === "Escape") {
                 e.preventDefault();
-                setDraft(hex);
+                setDraft(formatted);
                 (e.target as HTMLInputElement).blur();
               }
             }}

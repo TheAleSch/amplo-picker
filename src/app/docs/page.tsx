@@ -36,6 +36,7 @@ const TOC = [
   ["gradient-radial-size", "Radial size + extent keywords"],
   ["gradient-interp", "Interpolation"],
   ["gradient-stop-list", "Stop editor (StopList)"],
+  ["gradient-output", "Output: state shape + CSS"],
   ["fill-picker", "Fill picker (tabs)"],
   ["gradient-shape-controls", "Gradient shape controls"],
   ["anatomy", "Anatomy"],
@@ -433,6 +434,51 @@ export default function DocsPage() {
             <Code>oklch</Code>) is the initial format for the inline color
             field; the popover's <Code>FormatSwitcher</Code> can change it
             at runtime.
+          </p>
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <H2 id="gradient-output">Output: state shape + CSS</H2>
+          <p>
+            <Code>{"<GradientPicker.Root onValueChange={…}>"}</Code> fires with
+            a single <Code>Gradient</Code> argument — a discriminated union
+            (linear / radial / conic). Stops carry canonical{" "}
+            <Code>OklchColor</Code> objects (
+            <Code>{"{ l, c, h, alpha }"}</Code>), not strings. Wide-gamut
+            chroma you authored (via{" "}
+            <Code>{"color(display-p3 …)"}</Code>, hand-cranked OKLCH, etc.)
+            is preserved verbatim — no sRGB clamp on the way in.
+          </p>
+          <CodeBlock code={GRADIENT_OUTPUT_TYPE_CODE} />
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">CSS string.</strong> Already
+            exported from the public barrel — no need to roll your own
+            serializer. Store the <Code>Gradient</Code> object as your
+            source of truth (lossless, JSON-serializable, easy to edit)
+            and format to CSS at render time:
+          </p>
+          <CodeBlock code={GRADIENT_OUTPUT_CSS_CODE} />
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Round-trip.</strong>{" "}
+            <Code>parseGradient(formatGradient(g))</Code> ≈ <Code>g</Code>{" "}
+            — visually lossless. Notation is normalized (all stops emit
+            in the active format) and <Code>start</Code>/<Code>end</Code>{" "}
+            endpoints on positioned linears are dropped (CSS can't
+            represent an offset line; the angle + projected stop positions
+            preserve the visual offset). Hue, lightness, and stop
+            positions round-trip exactly.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Wide gamut.</strong> The
+            picker is wide-gamut-first: internal state is unbounded
+            OKLCH, the default emit format is <Code>oklch(…)</Code> (no
+            sRGB cap), interpolation defaults to <Code>in oklch</Code>{" "}
+            (vivid midpoints, not muddy), and the area canvas paints in{" "}
+            <Code>display-p3</Code> on capable displays. To author past
+            display-P3, keep the format on <Code>oklch</Code> or{" "}
+            <Code>oklab</Code> — both are unbounded; switching to{" "}
+            <Code>p3</Code> emit will gamut-map to P3 at format time
+            (state still keeps the wide value).
           </p>
         </section>
 
@@ -1432,6 +1478,62 @@ const GRADIENT_SHAPE_RADIAL_ELLIPSE_CODE = `<GradientPicker.Root>
     </GradientPicker.PositionGroup>
   </div>
 </GradientPicker.Root>`;
+
+const GRADIENT_OUTPUT_TYPE_CODE = `type Gradient = LinearGradient | RadialGradient | ConicGradient;
+
+interface LinearGradient {
+  type: "linear";
+  angle: number;                    // 0..360, 0 = up
+  stops: GradientStop[];
+  interp: "oklch" | "oklab" | "srgb" | "hsl" | "hsl-longer";
+  repeating?: boolean;
+  start?: { x: number; y: number }; // optional positioned line, 0..1
+  end?:   { x: number; y: number };
+}
+
+interface RadialGradient {
+  type: "radial";
+  shape: "circle" | "ellipse";
+  center: { x: number; y: number }; // 0..1
+  size: "closest-side" | "closest-corner" | "farthest-side" | "farthest-corner";
+  stops: GradientStop[];
+  interp: GradientInterp;
+  repeating?: boolean;
+  radii?: { x: number; y: number }; // explicit ellipse radii (fractions)
+  radiusPx?: number;                // explicit circle radius (aspect-safe)
+}
+
+interface ConicGradient {
+  type: "conic";
+  startAngle: number;               // degrees
+  center: { x: number; y: number };
+  stops: GradientStop[];
+  interp: GradientInterp;
+  repeating?: boolean;
+}
+
+interface GradientStop {
+  color: OklchColor;                // { l, c, h, alpha }, unbounded
+  position: number;                 // 0..1
+  hint?: number;                    // CSS midpoint hint, 0..1
+}`;
+
+const GRADIENT_OUTPUT_CSS_CODE = `import { GradientPicker, formatGradient } from "amplo-color-picker";
+
+function MyPicker() {
+  const [g, setG] = useState(DEFAULT_LINEAR);
+  return (
+    <>
+      <GradientPicker.Root value={g} onValueChange={setG}>
+        <GradientPicker.Bar />
+        <GradientPicker.StopList />
+      </GradientPicker.Root>
+
+      {/* Paint the live gradient anywhere */}
+      <div style={{ background: formatGradient(g) }} />
+    </>
+  );
+}`;
 
 const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.Area />

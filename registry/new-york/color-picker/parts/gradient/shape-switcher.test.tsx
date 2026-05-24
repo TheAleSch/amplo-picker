@@ -22,8 +22,8 @@ describe("<GradientPicker.ShapeSwitcher>", () => {
         <GradientPicker.ShapeSwitcher />
       </GradientPicker.Root>,
     );
-    const ellipsesTab = screen.getByRole("tab", { name: "Ellipses" });
-    fireEvent.click(ellipsesTab);
+    const ellipseTab = screen.getByRole("tab", { name: "Ellipse" });
+    fireEvent.click(ellipseTab);
     expect(onValueChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ shape: "ellipse" }),
       expect.any(String),

@@ -54,6 +54,7 @@ const AREA_MODES: Array<{ value: AreaMode; label: string; hint: string }> = [
 type PartKey =
   | "area"
   | "hue"
+  | "chroma"
   | "lightness"
   | "alpha"
   | "preview"
@@ -190,6 +191,7 @@ const GRADIENT_CLUSTERS: GradientCluster[] = [
 const ALL_OFF: PartsState = {
   area: false,
   hue: false,
+  chroma: false,
   lightness: false,
   alpha: false,
   preview: false,
@@ -352,11 +354,12 @@ const VARIANTS: Array<{
 const PARTS: Array<{ key: PartKey; label: string }> = [
   { key: "area", label: "Area" },
   { key: "hue", label: "Hue" },
+  { key: "chroma", label: "Chroma" },
   { key: "lightness", label: "Lightness" },
   { key: "alpha", label: "Alpha" },
   { key: "preview", label: "Preview" },
   { key: "channelInput", label: "ChannelInput" },
-  { key: "input", label: "Input" },
+  { key: "input", label: "CssInput" },
   { key: "formatSwitcher", label: "FormatSwitcher" },
   { key: "swatches", label: "Swatches" },
   { key: "gamutBadge", label: "GamutBadge" },
@@ -660,12 +663,13 @@ export default function PlaygroundPage() {
                   />
                 )}
                 {parts.preview && <ColorPicker.Preview />}
-                {(parts.hue || parts.lightness || parts.alpha) && (
+                {(parts.hue || parts.chroma || parts.lightness || parts.alpha) && (
                   eyedropperBesideSliders && parts.eyeDropper ? (
                     <div className="flex items-center gap-2">
                       <ColorPicker.EyeDropper />
                       <div className="flex flex-1 flex-col gap-1.5">
                         {parts.hue && <ColorPicker.Hue />}
+                        {parts.chroma && <ColorPicker.Chroma />}
                         {parts.lightness && <ColorPicker.Lightness />}
                         {parts.alpha && <ColorPicker.Alpha />}
                       </div>
@@ -673,6 +677,7 @@ export default function PlaygroundPage() {
                   ) : (
                     <div className="flex flex-col gap-1.5">
                       {parts.hue && <ColorPicker.Hue />}
+                      {parts.chroma && <ColorPicker.Chroma />}
                       {parts.lightness && <ColorPicker.Lightness />}
                       {parts.alpha && <ColorPicker.Alpha />}
                     </div>
@@ -1214,6 +1219,7 @@ function buildSnippet({
 
   const sliders: string[] = [];
   if (parts.hue) sliders.push(`<ColorPicker.Hue />`);
+  if (parts.chroma) sliders.push(`<ColorPicker.Chroma />`);
   if (parts.lightness) sliders.push(`<ColorPicker.Lightness />`);
   if (parts.alpha) sliders.push(`<ColorPicker.Alpha />`);
   if (sliders.length) {

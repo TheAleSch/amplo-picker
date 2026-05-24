@@ -203,7 +203,7 @@ export default function DocsPage() {
 
           <Example
             title="Full"
-            description="All gradient parts composed together: type switcher, bar, the visual Area pad, angle dial, center pad, radial shape, stop list, full color editor, interpolation switcher, and presets."
+            description="All gradient parts composed together: type switcher, bar, the visual Area pad, shape controls (angle / position / radii), stop list, full color editor, interpolation switcher, and presets."
             preview={<GradientFullDemo />}
             code={GRADIENT_FULL_CODE}
           />
@@ -276,9 +276,12 @@ export default function DocsPage() {
               <Code>gradient.radii</Code> — an optional{" "}
               <Code>{"{ x, y }"}</Code> pair (fractions of box width / height)
               that overrides the keyword <Code>shape</Code> +{" "}
-              <Code>size</Code> form at emit time. Until the user touches the
-              edge handle, the radii stay <Code>undefined</Code> and the
-              keyword form is emitted verbatim.
+              <Code>size</Code> form at emit time. For{" "}
+              <Code>shape: &quot;circle&quot;</Code>,{" "}
+              <Code>radiusPx</Code> (absolute px) is emitted instead so the
+              gradient stays visually circular regardless of container
+              aspect. Until the user touches the edge handle, both stay{" "}
+              <Code>undefined</Code> and the keyword form is emitted verbatim.
             </li>
             <li>
               <strong>Conic.</strong> Center handle plus a dial handle locked
@@ -292,7 +295,7 @@ export default function DocsPage() {
             <Code>role</Code> / <Code>aria-*</Code>. The conic dial — and
             the linear endpoints in their angle-only default mode — nudge
             the angle by ±1° (±15° with Shift), Home / End jump to 0° /
-            359°. Once a linear gradient is in positioned mode, the linear
+            360° (wraps to 0°). Once a linear gradient is in positioned mode, the linear
             endpoint arrows nudge the corresponding endpoint by ±1% (±5%
             with Shift) in the box. The center handle nudges{" "}
             <Code>gradient.center</Code> by ±1% per arrow (±5% with Shift),
@@ -410,7 +413,7 @@ export default function DocsPage() {
             whatever format they had. New stops mount on{" "}
             <Code>defaultStopColorFormat</Code> (default{" "}
             <Code>oklch</Code>, lossless across the full P3/Rec.2020
-            gamut stop colors can occupy). Override on the parent:{" "}
+            gamut that stop colors can occupy). Override on the parent:{" "}
             <Code>
               {'<GradientPicker.Root defaultStopColorFormat="hex">'}
             </Code>
@@ -1596,7 +1599,7 @@ const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.Area />
   <ColorPicker.Preview />
   <ColorPicker.Hue />
-  <ColorPicker.Lightness />     {/* used with areaMode="oklch-hc" */}
+  <ColorPicker.Lightness />     {/* used with Area mode="oklch-hc" */}
   <ColorPicker.Chroma />        {/* OKLCH chroma slider, 0..0.4 */}
   <ColorPicker.Alpha />
   <ColorPicker.EyeDropper />
@@ -1833,7 +1836,7 @@ const GRADIENT_PART_ROWS: PropRow[] = [
     name: "<GradientPicker.Root>",
     type: "value, defaultValue, onValueChange, defaultStopColorFormat",
     desc: "Controlled or uncontrolled gradient state. `onValueChange(gradient, css)` fires with the canonical Gradient object and the pre-serialized CSS string. `defaultStopColorFormat` (default `oklch`) seeds the per-stop display format used by every StopList row and StopColor FormatSwitcher.",
-    default: 'format: "oklch"',
+    default: 'defaultStopColorFormat: "oklch"',
   },
   {
     name: "<GradientPicker.TypeSwitcher>",
@@ -1946,7 +1949,7 @@ const GRADIENT_PART_ROWS: PropRow[] = [
   {
     name: "<GradientPicker.InterpSwitcher>",
     type: "—",
-    desc: "Native <select> bound to `gradient.interp` (oklch / oklab / lab / lch / srgb / hsl / longer hue / shorter hue / …). Emits the matching CSS Color 4 `in <space>` clause.",
+    desc: "Native <select> bound to `gradient.interp` (oklch / oklab / srgb / hsl / hsl-longer). Emits the matching CSS Color 4 `in <space>` clause.",
     default: 'interp: "oklch"',
   },
   {

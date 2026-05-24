@@ -6,7 +6,7 @@ import { useGradientPickerContext } from "../../contexts/gradient";
 
 const OPTIONS = [
   { value: "circle", label: "Circle" },
-  { value: "ellipse", label: "Ellipses" },
+  { value: "ellipse", label: "Ellipse" },
 ] as const;
 
 export const ShapeSwitcher = React.forwardRef<

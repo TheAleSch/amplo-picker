@@ -62,7 +62,7 @@ export const AnglePad = React.forwardRef<HTMLDivElement, AnglePadProps>(
       if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = angle - step;
       else if (e.key === "ArrowRight" || e.key === "ArrowUp") next = angle + step;
       else if (e.key === "Home") next = 0;
-      else if (e.key === "End") next = 359;
+      else if (e.key === "End") next = 360;
       else return;
       e.preventDefault();
       setAngle(((next % 360) + 360) % 360);

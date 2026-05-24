@@ -26,9 +26,9 @@ export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * Render a trailing "+ Add stop" row that inserts a new stop in the
    * largest gap between adjacent stops, sampling the gradient's existing
-   * ramp at that position so the new color blends in. Defaults to `false`
-   * — clicking on `<GradientPicker.Bar>` is the canonical add-stop UI;
-   * this is an explicit affordance for layouts where the bar isn't visible.
+   * ramp at that position so the new color blends in. Defaults to `true`.
+   * Set `false` to hide it when `<GradientPicker.Bar>` (the canonical
+   * add-stop UI) is visible and the trailing row would be redundant.
    */
   showAddStop?: boolean;
 }

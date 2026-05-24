@@ -72,10 +72,10 @@ export const Root = React.forwardRef<HTMLDivElement, RootProps>(function Root(
             "transition-[height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
           className,
         )}
+        {...rest}
         style={
           innerHeight !== null ? { height: innerHeight, ...rest.style } : rest.style
         }
-        {...rest}
       >
         <div ref={innerRef} className="flex flex-col gap-2 p-3">
           {children}

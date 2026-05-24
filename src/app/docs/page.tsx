@@ -1075,11 +1075,30 @@ function FillPickerTabsDemo() {
         </FillPicker.Tab>
       </FillPicker.Tabs>
 
-      <FillPicker.Pane mode="color" className="flex flex-col gap-2">
-        <ColorPicker.Area />
-        <ColorPicker.Hue />
-        <ColorPicker.Alpha />
-        <ColorPicker.ChannelInput />
+      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
+        <div className="flex items-stretch gap-2">
+          <ColorPicker.GamutBadge
+            showLabel={false}
+            className="w-auto flex-1 justify-center"
+          />
+          <ColorPicker.ContrastReadout
+            metrics={["wcag", "apca"]}
+            showLabel={false}
+            showValue={false}
+            className="w-auto flex-1 justify-center"
+          />
+        </div>
+        <ColorPicker.Area mode="oklch-cl" />
+        <div className="flex flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <div className="flex items-center gap-2">
+          <ColorPicker.FormatSwitcher className="flex-1" />
+          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+        </div>
+        <ColorPicker.ChannelInput showFormat={false} />
+        <ColorPicker.Swatches />
       </FillPicker.Pane>
 
       <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
@@ -1428,11 +1447,30 @@ export function FillPickerTabsDemo() {
         <FillPicker.Tab mode="gradient" className="flex-1">Gradient</FillPicker.Tab>
       </FillPicker.Tabs>
 
-      <FillPicker.Pane mode="color" className="flex flex-col gap-2">
-        <ColorPicker.Area />
-        <ColorPicker.Hue />
-        <ColorPicker.Alpha />
-        <ColorPicker.ChannelInput />
+      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
+        <div className="flex items-stretch gap-2">
+          <ColorPicker.GamutBadge
+            showLabel={false}
+            className="w-auto flex-1 justify-center"
+          />
+          <ColorPicker.ContrastReadout
+            metrics={["wcag", "apca"]}
+            showLabel={false}
+            showValue={false}
+            className="w-auto flex-1 justify-center"
+          />
+        </div>
+        <ColorPicker.Area mode="oklch-cl" />
+        <div className="flex flex-col gap-1.5">
+          <ColorPicker.Hue />
+          <ColorPicker.Alpha />
+        </div>
+        <div className="flex items-center gap-2">
+          <ColorPicker.FormatSwitcher className="flex-1" />
+          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+        </div>
+        <ColorPicker.ChannelInput showFormat={false} />
+        <ColorPicker.Swatches />
       </FillPicker.Pane>
 
       <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">

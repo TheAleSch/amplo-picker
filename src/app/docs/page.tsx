@@ -1583,6 +1583,7 @@ const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.Preview />
   <ColorPicker.Hue />
   <ColorPicker.Lightness />     {/* used with areaMode="oklch-hc" */}
+  <ColorPicker.Chroma />        {/* OKLCH chroma slider, 0..0.4 */}
   <ColorPicker.Alpha />
   <ColorPicker.EyeDropper />
   <ColorPicker.GamutBadge />
@@ -1749,6 +1750,12 @@ const PART_ROWS: PropRow[] = [
     name: "<ColorPicker.Lightness>",
     type: "orientation",
     desc: 'Lightness slider (OKLCH `l` 0→1). Gradient is sampled at the current hue+chroma. Pair with Area mode "oklch-hc".',
+    default: "—",
+  },
+  {
+    name: "<ColorPicker.Chroma>",
+    type: "orientation",
+    desc: "Chroma slider (OKLCH `c` 0→0.4). Track is painted at the current hue × lightness so the ramp shows how chroma changes the user's color (not a generic gray→vivid). Keyboard: arrows ±0.005, Shift ±0.05, Home/End, PageUp/Down ±0.05.",
     default: "—",
   },
   {

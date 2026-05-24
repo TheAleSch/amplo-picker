@@ -380,21 +380,9 @@ function HeroPicker() {
           <GradientPicker.TypeSwitcher />
           <GradientPicker.ReverseStops />
         </div>
-        <GradientPicker.Bar />
-        <GradientPicker.Area />
+        <GradientPicker.Bar editOnClick />
         <GradientShapeControls />
-        <GradientPicker.StopColor>
-          <ColorPicker.Area mode="oklch-cl" />
-          <div className="flex flex-col gap-1.5">
-            <ColorPicker.Hue />
-            <ColorPicker.Alpha />
-          </div>
-          <div className="flex items-center gap-2">
-            <ColorPicker.FormatSwitcher className="flex-1" />
-            <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
-          </div>
-          <ColorPicker.ChannelInput showFormat={false} />
-        </GradientPicker.StopColor>
+        <GradientPicker.StopList />
         <GradientPicker.Presets presets={gradientPresets} onAdd={addGradient} />
       </FillPicker.Pane>
     </FillPicker.Root>

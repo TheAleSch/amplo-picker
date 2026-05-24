@@ -36,6 +36,27 @@ export const Pane = React.forwardRef<HTMLDivElement, PaneProps>(function Pane(
   );
 });
 
+/**
+ * Tiny mount-fade hook. Pane swaps unmount one tree and mount another;
+ * starting at opacity 0 and flipping to 1 on the next frame gives a
+ * dependency-free crossfade. Two RAFs because a single one can land in
+ * the same browser tick as the React commit on some engines.
+ */
+function useMountFade() {
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(() => {
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setVisible(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, []);
+  return visible;
+}
+
 const ColorPaneInner = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -53,6 +74,7 @@ const ColorPaneInner = React.forwardRef<
   }, []);
 
   const state = useColorPicker({ value: colorValue, onValueChange });
+  const visible = useMountFade();
 
   return (
     <ColorPickerContext.Provider value={state}>
@@ -60,7 +82,11 @@ const ColorPaneInner = React.forwardRef<
         ref={ref}
         data-slot="fill-picker-pane"
         data-mode="color"
-        className={cn(className)}
+        className={cn(
+          "transition-opacity duration-300 ease-in",
+          visible ? "opacity-100" : "opacity-0",
+          className,
+        )}
         {...rest}
       >
         {children}
@@ -84,6 +110,7 @@ const GradientPaneInner = React.forwardRef<
   }, []);
 
   const state = useGradientPicker({ value: gradientValue, onValueChange });
+  const visible = useMountFade();
 
   return (
     <GradientPickerContext.Provider value={state}>
@@ -91,7 +118,11 @@ const GradientPaneInner = React.forwardRef<
         ref={ref}
         data-slot="fill-picker-pane"
         data-mode="gradient"
-        className={cn(className)}
+        className={cn(
+          "transition-opacity duration-300 ease-in",
+          visible ? "opacity-100" : "opacity-0",
+          className,
+        )}
         {...rest}
       >
         {children}

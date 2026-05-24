@@ -113,7 +113,7 @@ export const FieldInputGroup = React.forwardRef<
     <label
       ref={ref}
       className={cn(
-        "relative inline-flex h-full min-w-0 flex-1 items-center",
+        "relative inline-flex h-full min-w-0 flex-1 items-center justify-end",
         className,
       )}
       {...rest}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -12,6 +12,7 @@ import { useGradientPickerContext } from "../../contexts/gradient";
 import {
   projectStopPosition,
   reverseProjectStopPosition,
+  sampleStopsAt,
 } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 import { ColorPickerContext } from "../../context";
@@ -58,10 +59,19 @@ function StopColorEditor({
   );
 }
 
-export const StopList = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(function StopList({ className, ...rest }, ref) {
+export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Render a trailing "+ Add stop" row that inserts a new stop in the
+   * largest gap between adjacent stops, sampling the gradient's existing
+   * ramp at that position so the new color blends in. Defaults to `false`
+   * — clicking on `<GradientPicker.Bar>` is the canonical add-stop UI;
+   * this is an explicit affordance for layouts where the bar isn't visible.
+   */
+  showAddStop?: boolean;
+}
+
+export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
+  function StopList({ className, showAddStop = false, ...rest }, ref) {
   const ctx = useGradientPickerContext();
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
@@ -74,6 +84,28 @@ export const StopList = React.forwardRef<
     projectStopPosition(authored, start, end);
   const fromDisplay = (displayed: number) =>
     reverseProjectStopPosition(displayed, start, end);
+
+  const handleAddStop = () => {
+    // Insert in the largest gap between adjacent stops so the new entry
+    // splits the most underutilized span. Sample the existing ramp at
+    // that position so the inserted color visually blends in rather than
+    // jumping to a default.
+    const sorted = [...ctx.stops].sort((a, b) => a.position - b.position);
+    let bestIdx = 0;
+    let bestGap = -1;
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const gap = sorted[i + 1].position - sorted[i].position;
+      if (gap > bestGap) {
+        bestGap = gap;
+        bestIdx = i;
+      }
+    }
+    const position =
+      sorted.length < 2
+        ? Math.min(1, (sorted[0]?.position ?? 0) + 0.5)
+        : (sorted[bestIdx].position + sorted[bestIdx + 1].position) / 2;
+    ctx.addStop(position, sampleStopsAt(sorted, position));
+  };
   return (
     <div
       ref={ref}
@@ -174,6 +206,17 @@ export const StopList = React.forwardRef<
           </div>
         );
       })}
+      {showAddStop && (
+        <button
+          type="button"
+          onClick={handleAddStop}
+          aria-label="Add stop"
+          className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border p-1 text-xs text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+        >
+          <Plus aria-hidden className="size-3.5" />
+          Add stop
+        </button>
+      )}
     </div>
   );
 });

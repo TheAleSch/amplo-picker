@@ -45,12 +45,14 @@ const CHECKERBOARD =
 function StopColorEditor({
   stopId,
   color,
-  defaultFormat,
+  format,
+  onFormatChange,
   children,
 }: React.PropsWithChildren<{
   stopId: string;
   color: OklchColor;
-  defaultFormat?: ColorFormat;
+  format?: ColorFormat;
+  onFormatChange?: (f: ColorFormat) => void;
 }>) {
   const ctx = useGradientPickerContext();
   const setStopColorRef = React.useRef(ctx.setStopColor);
@@ -59,7 +61,12 @@ function StopColorEditor({
     (c: OklchColor) => setStopColorRef.current(stopId, c),
     [stopId],
   );
-  const state = useColorPicker({ value: color, onValueChange, defaultFormat });
+  const state = useColorPicker({
+    value: color,
+    onValueChange,
+    format,
+    onFormatChange,
+  });
   return (
     <ColorPickerContext.Provider value={state}>
       {children}
@@ -92,6 +99,12 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     ref,
   ) {
   const ctx = useGradientPickerContext();
+  // Single shared format for every row. The FormatSwitcher inside each
+  // popover writes here too — picking P3 in one popover updates the
+  // inline color text of every row to P3 simultaneously, keeping the
+  // list visually consistent.
+  const [sharedFormat, setSharedFormat] =
+    React.useState<ColorFormat>(colorFormat);
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
   // sees in the Area and Bar. Authored positions still live in 0..1 of the
@@ -145,7 +158,8 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
             key={s.id}
             stopId={s.id}
             color={s.color}
-            defaultFormat={colorFormat}
+            format={sharedFormat}
+            onFormatChange={setSharedFormat}
           >
             <StopRow
               stop={s}

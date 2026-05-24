@@ -392,16 +392,15 @@ export default function DocsPage() {
             stop), sampling the existing ramp so the inserted color blends in.
           </p>
           <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Format sync.</strong> The
-            inline color field and the popover's{" "}
-            <Code>{"<ColorPicker.FormatSwitcher>"}</Code> share one per-stop{" "}
-            <Code>ColorPickerContext</Code>. Switching format in the popover
-            updates the inline text on the row instantly — change to{" "}
-            <Code>P3</Code> and the row shows{" "}
+            <strong className="text-foreground">Format sync.</strong> All
+            rows share one format. Opening any stop's popover and switching{" "}
+            <Code>{"<ColorPicker.FormatSwitcher>"}</Code> updates the inline
+            color text on <em>every</em> row simultaneously — change to{" "}
+            <Code>P3</Code> and the whole list shows{" "}
             <Code>color(display-p3 …)</Code>; change to <Code>HEX</Code> and
-            it shows <Code>#…</Code>. Defaults to <Code>oklch</Code> (the
-            canonical, lossless representation across the full P3/Rec.2020
-            gamut stop colors can occupy); set{" "}
+            the whole list shows <Code>#…</Code>. Defaults to{" "}
+            <Code>oklch</Code> (the canonical, lossless representation
+            across the full P3/Rec.2020 gamut stop colors can occupy); set{" "}
             <Code>{'<GradientPicker.StopList colorFormat="hex" />'}</Code> to
             pick a different initial format.
           </p>

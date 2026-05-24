@@ -35,7 +35,9 @@ export const RepeatingToggle = React.forwardRef<
       onClick={() => ctx.setRepeating(!on)}
       className={cn(
         "cursor-pointer",
-        on && "border-foreground/40 text-foreground",
+        on
+          ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+          : "text-muted-foreground",
         className,
       )}
       {...rest}

@@ -1009,12 +1009,6 @@ function GradientFullDemo() {
         <GradientPicker.Area />
         <GradientShapeControls />
         <GradientPicker.StopList />
-        <GradientPicker.StopColor>
-          <ColorPicker.Area />
-          <ColorPicker.Hue />
-          <ColorPicker.Alpha />
-          <ColorPicker.ChannelInput />
-        </GradientPicker.StopColor>
         <GradientPicker.InterpSwitcher />
         <GradientPicker.Presets />
       </GradientPicker.Root>
@@ -1344,7 +1338,6 @@ const GRADIENT_FULL_CODE = `"use client";
 
 import * as React from "react";
 import {
-  ColorPicker,
   GradientPicker,
   DEFAULT_LINEAR,
 } from "@/components/ui/color-picker/fill-picker";
@@ -1362,12 +1355,6 @@ export function GradientFullDemo() {
       <GradientPicker.Area />
       {/* GradientShapeControls — see "Gradient shape controls" section */}
       <GradientPicker.StopList />
-      <GradientPicker.StopColor>
-        <ColorPicker.Area />
-        <ColorPicker.Hue />
-        <ColorPicker.Alpha />
-        <ColorPicker.ChannelInput />
-      </GradientPicker.StopColor>
       <GradientPicker.InterpSwitcher />
       <GradientPicker.Presets />
     </GradientPicker.Root>

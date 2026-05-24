@@ -216,10 +216,9 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={handleAddStop}
           aria-label="Add stop"
-          className="cursor-pointer"
+          className="h-8 cursor-pointer font-mono text-xs tracking-wide shadow-xs"
         >
           <Plus aria-hidden className="size-3.5" />
           Add stop

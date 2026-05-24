@@ -427,8 +427,19 @@ export function useGradientPicker(
     (size: RadialSizeKeyword) =>
       apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
+        const base = prev.gradient as RadialGradient;
+        // The keyword form and the explicit `radii` / `radiusPx` overrides
+        // are mutually exclusive at emit time — `formatGradient` reads the
+        // overrides first and never falls through to `shape size`. Picking
+        // a size keyword is the user explicitly opting back into the
+        // keyword path, so drop the numeric overrides (and the stash) in
+        // the same commit. Without this, the dropdown changes the model
+        // field but the rendered CSS doesn't move.
+        radiiStashRef.current = undefined;
+        radiusPxStashRef.current = undefined;
+        const { radii: _r, radiusPx: _px, ...rest } = base;
         return {
-          gradient: { ...(prev.gradient as RadialGradient), size },
+          gradient: { ...rest, size } as RadialGradient,
           stops: prev.stops,
         };
       }),

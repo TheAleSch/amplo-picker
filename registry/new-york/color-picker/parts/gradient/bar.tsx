@@ -187,7 +187,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     <div
       ref={wrapperRef}
       data-slot="gradient-bar"
-      className={cn("relative w-full select-none", className)}
+      className={cn("group/bar relative w-full select-none", className)}
       style={{ height }}
       {...rest}
     >
@@ -227,7 +227,9 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             }}
             className={cn(
               "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab rounded-xs border border-white/80 bg-foreground/70 shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-opacity",
-              active ? "opacity-100" : "opacity-40 hover:opacity-100",
+              active
+                ? "opacity-100"
+                : "opacity-0 group-hover/bar:opacity-40 hover:opacity-100!",
             )}
           />
         );

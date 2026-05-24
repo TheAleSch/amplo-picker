@@ -51,7 +51,7 @@ export const FieldInput = React.forwardRef<
       autoCorrect="off"
       autoCapitalize="off"
       className={cn(
-        "w-full min-w-0 bg-transparent px-1.5 text-center outline-none tabular-nums",
+        "w-full min-w-0 bg-transparent px-1.5 text-right outline-none tabular-nums",
         className,
       )}
       {...rest}

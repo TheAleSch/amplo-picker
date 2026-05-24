@@ -38,15 +38,20 @@ export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(f
     getEyeDropperSupportServer,
   );
 
+  const [active, setActive] = React.useState(false);
+
   if (!supported) return null;
 
   const onClick = async () => {
+    setActive(true);
     try {
       const ed = new window.EyeDropper!();
       const result = await ed.open();
       if (result?.sRGBHex) setColor(result.sRGBHex);
     } catch {
       // user cancelled
+    } finally {
+      setActive(false);
     }
   };
 
@@ -54,12 +59,18 @@ export const EyeDropper = React.forwardRef<HTMLButtonElement, EyeDropperProps>(f
     <Button
       ref={ref}
       data-slot="color-picker-eye-dropper"
+      data-state={active ? "on" : "off"}
       type="button"
       variant="outline"
       size="icon-sm"
       aria-label="Pick color from screen"
+      aria-pressed={active}
       onClick={onClick}
-      className={cn("cursor-pointer", className)}
+      className={cn(
+        "cursor-pointer",
+        active && "border-foreground/60 bg-foreground/10 hover:bg-foreground/15",
+        className,
+      )}
       {...rest}
     >
       <Pipette className="size-4" />

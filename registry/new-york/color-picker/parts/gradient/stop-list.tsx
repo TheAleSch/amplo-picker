@@ -16,7 +16,7 @@ import {
   sampleStopsAt,
 } from "../../lib/gradient";
 import { formatColor, parseColor } from "../../lib/color";
-import { ColorPickerContext, useColorPickerContext } from "../../context";
+import { ColorPickerContext } from "../../context";
 import { useColorPicker } from "../../hooks/use-color-picker";
 import type { ColorFormat, OklchColor } from "../../lib/types";
 import { Area as ColorArea } from "../area";
@@ -166,6 +166,7 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
               selected={selected}
               toDisplay={toDisplay}
               fromDisplay={fromDisplay}
+              formatted={formatColor(s.color, sharedFormat)}
             />
           </StopColorEditor>
         );
@@ -191,18 +192,15 @@ function StopRow({
   selected,
   toDisplay,
   fromDisplay,
+  formatted,
 }: {
   stop: ReturnType<typeof useGradientPickerContext>["stops"][number];
   selected: boolean;
   toDisplay: (n: number) => number;
   fromDisplay: (n: number) => number;
+  formatted: string;
 }) {
   const ctx = useGradientPickerContext();
-  // Read the formatted color string from the per-stop ColorPickerContext
-  // (mounted by the enclosing StopColorEditor). This means the popover's
-  // FormatSwitcher and the inline text input share the same format —
-  // change the format in the popover and this row reflects it instantly.
-  const { formatted } = useColorPickerContext();
   const [draft, setDraft] = React.useState(formatted);
   const focusedRef = React.useRef(false);
   React.useEffect(() => {

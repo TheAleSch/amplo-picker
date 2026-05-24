@@ -393,19 +393,16 @@ export default function DocsPage() {
             stop), sampling the existing ramp so the inserted color blends in.
           </p>
           <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Format sync.</strong> The
-            display format lives on{" "}
-            <Code>{"<GradientPicker.Root>"}</Code> context and is shared by
-            every stop-color surface — the inline text in each{" "}
-            <Code>StopList</Code> row, the row's own popover{" "}
-            <Code>FormatSwitcher</Code>, and any sibling{" "}
-            <Code>{"<GradientPicker.StopColor>"}</Code> block. Switch
-            format anywhere and all of them update together: pick{" "}
-            <Code>P3</Code> and the whole list shows{" "}
-            <Code>color(display-p3 …)</Code>; pick <Code>HEX</Code> and the
-            whole list shows <Code>#…</Code>. Defaults to{" "}
-            <Code>oklch</Code> (lossless across the full P3/Rec.2020 gamut
-            stop colors can occupy); override the initial value with{" "}
+            <strong className="text-foreground">Per-stop format.</strong>{" "}
+            Each row tracks its own display format. Changing format in a
+            stop's popover (or in a sibling{" "}
+            <Code>{"<GradientPicker.StopColor>"}</Code>'s{" "}
+            <Code>FormatSwitcher</Code>, which is bound to the selected
+            stop) only updates that one row — the others stay on
+            whatever format they had. New stops mount on{" "}
+            <Code>defaultStopColorFormat</Code> (default{" "}
+            <Code>oklch</Code>, lossless across the full P3/Rec.2020
+            gamut stop colors can occupy). Override on the parent:{" "}
             <Code>
               {'<GradientPicker.Root defaultStopColorFormat="hex">'}
             </Code>
@@ -436,8 +433,9 @@ export default function DocsPage() {
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Props.</strong>{" "}
             <Code>showAddStop</Code> (default <Code>true</Code>) toggles the
-            trailing add-stop button. The initial display format is set on
-            the parent: <Code>{"<GradientPicker.Root defaultStopColorFormat>"}</Code>{" "}
+            trailing add-stop button. The initial per-stop format comes
+            from the parent:{" "}
+            <Code>{"<GradientPicker.Root defaultStopColorFormat>"}</Code>{" "}
             (default <Code>oklch</Code>).
           </p>
         </section>

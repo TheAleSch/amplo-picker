@@ -56,11 +56,16 @@ const Bound: React.FC<
     [stopId],
   );
 
+  const format = grad.getStopColorFormat(stopId);
+  const onFormatChange = React.useCallback(
+    (f: typeof format) => grad.setStopColorFormat(stopId, f),
+    [grad, stopId],
+  );
   const state = useColorPicker({
     value: liveColor,
     onValueChange,
-    format: grad.stopColorFormat,
-    onFormatChange: grad.setStopColorFormat,
+    format,
+    onFormatChange,
   });
 
   return (

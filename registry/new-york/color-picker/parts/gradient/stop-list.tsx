@@ -51,12 +51,6 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     ref,
   ) {
   const ctx = useGradientPickerContext();
-  // The display format lives on the GradientPicker context — shared with
-  // any sibling <GradientPicker.StopColor> so picking a format in either
-  // surface updates the other instantly. Default is set by
-  // `GradientPicker.Root`'s `defaultStopColorFormat` (oklch).
-  const sharedFormat = ctx.stopColorFormat;
-  const setSharedFormat = ctx.setStopColorFormat;
   // Resolve the currently-selected stop (the one any open popover edits).
   // Falls back to the first stop when nothing is selected yet.
   const selectedStop =
@@ -65,13 +59,21 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
   // Closing+reopening the popover for the same stop is safe — stops are
   // stored as OklchColor objects (hue preserved across achromatic edges),
   // so `lastGoodHueRef` is just an intra-drag optimization here.
+  // Format is per-stop: the popover's FormatSwitcher writes to this
+  // stop's slot only, so changing format on one row doesn't ripple to
+  // the others' inline text.
+  const selectedFormat = selectedStop
+    ? ctx.getStopColorFormat(selectedStop.id)
+    : "oklch";
   const colorState = useColorPicker({
     value: selectedStop?.color,
     onValueChange: (c) => {
       if (selectedStop) ctx.setStopColor(selectedStop.id, c);
     },
-    format: sharedFormat,
-    onFormatChange: setSharedFormat,
+    format: selectedFormat,
+    onFormatChange: (f) => {
+      if (selectedStop) ctx.setStopColorFormat(selectedStop.id, f);
+    },
   });
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
@@ -129,7 +131,7 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
               selected={selected}
               toDisplay={toDisplay}
               fromDisplay={fromDisplay}
-              formatted={formatColor(s.color, sharedFormat)}
+              formatted={formatColor(s.color, ctx.getStopColorFormat(s.id))}
             />
           );
         })}

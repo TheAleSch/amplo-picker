@@ -2,11 +2,6 @@
 
 import * as React from "react";
 import { Plus, Minus } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
@@ -16,14 +11,7 @@ import {
   sampleStopsAt,
 } from "../../lib/gradient";
 import { formatColor, parseColor } from "../../lib/color";
-import { ColorPickerContext } from "../../context";
-import { useColorPicker } from "../../hooks/use-color-picker";
-import { Area as ColorArea } from "../area";
-import { Hue } from "../hue";
-import { Alpha } from "../alpha";
-import { ChannelInput } from "../channel-input";
-import { FormatSwitcher } from "../format-switcher";
-import { EyeDropper } from "../eye-dropper";
+import { StopEditorPopover } from "./stop-editor-popover";
 import {
   FieldInput,
   FieldInputGroup,
@@ -51,30 +39,9 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     ref,
   ) {
   const ctx = useGradientPickerContext();
-  // Resolve the currently-selected stop (the one any open popover edits).
-  // Falls back to the first stop when nothing is selected yet.
-  const selectedStop =
-    ctx.stops.find((x) => x.id === ctx.selectedStopId) ?? ctx.stops[0];
-  // One useColorPicker for the whole list, bound to the selected stop.
-  // Closing+reopening the popover for the same stop is safe — stops are
-  // stored as OklchColor objects (hue preserved across achromatic edges),
-  // so `lastGoodHueRef` is just an intra-drag optimization here.
-  // Format is per-stop: the popover's FormatSwitcher writes to this
-  // stop's slot only, so changing format on one row doesn't ripple to
-  // the others' inline text.
-  const selectedFormat = selectedStop
-    ? ctx.getStopColorFormat(selectedStop.id)
-    : "oklch";
-  const colorState = useColorPicker({
-    value: selectedStop?.color,
-    onValueChange: (c) => {
-      if (selectedStop) ctx.setStopColor(selectedStop.id, c);
-    },
-    format: selectedFormat,
-    onFormatChange: (f) => {
-      if (selectedStop) ctx.setStopColorFormat(selectedStop.id, f);
-    },
-  });
+  // Each row mounts its own <StopEditorPopover> (bound to that row's stop)
+  // so opening any popover edits the right stop directly — no need for a
+  // list-wide ColorPicker context.
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
   // sees in the Area and Bar. Authored positions still live in 0..1 of the
@@ -121,21 +88,19 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
       className={cn("flex flex-col gap-1", className)}
       {...rest}
     >
-      <ColorPickerContext.Provider value={colorState}>
-        {ctx.stops.map((s) => {
-          const selected = s.id === ctx.selectedStopId;
-          return (
-            <StopRow
-              key={s.id}
-              stop={s}
-              selected={selected}
-              toDisplay={toDisplay}
-              fromDisplay={fromDisplay}
-              formatted={formatColor(s.color, ctx.getStopColorFormat(s.id))}
-            />
-          );
-        })}
-      </ColorPickerContext.Provider>
+      {ctx.stops.map((s) => {
+        const selected = s.id === ctx.selectedStopId;
+        return (
+          <StopRow
+            key={s.id}
+            stop={s}
+            selected={selected}
+            toDisplay={toDisplay}
+            fromDisplay={fromDisplay}
+            formatted={formatColor(s.color, ctx.getStopColorFormat(s.id))}
+          />
+        );
+      })}
       {showAddStop && (
         <Button
           type="button"
@@ -197,38 +162,21 @@ function StopRow({
         selected ? "border-foreground" : "border-border",
       )}
     >
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              ctx.selectStop(s.id);
-            }}
-            aria-label="Edit stop color"
-            style={{
-              backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD}`,
-              backgroundSize: "auto, 6px 6px",
-            }}
-            className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </PopoverTrigger>
-        <PopoverContent
-          className="flex w-72 flex-col gap-3 p-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <ColorArea mode="oklch-cl" />
-          <div className="flex flex-col gap-1.5">
-            <Hue />
-            <Alpha />
-          </div>
-          <div className="flex items-center gap-2">
-            <FormatSwitcher className="flex-1" />
-            <EyeDropper className="h-8 w-full flex-1" />
-          </div>
-          <ChannelInput showFormat={false} />
-        </PopoverContent>
-      </Popover>
+      <StopEditorPopover stopId={s.id}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            ctx.selectStop(s.id);
+          }}
+          aria-label="Edit stop color"
+          style={{
+            backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD}`,
+            backgroundSize: "auto, 6px 6px",
+          }}
+          className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
+        />
+      </StopEditorPopover>
       <FieldShell className="h-7 w-fit">
         <FieldInputGroup>
           <span className="sr-only">Stop position</span>

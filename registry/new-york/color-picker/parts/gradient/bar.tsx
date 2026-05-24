@@ -12,12 +12,20 @@ import {
   type LinearGradient,
 } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
+import { StopEditorPopover } from "./stop-editor-popover";
 
 export interface BarProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Track height in px. Defaults to 12 to match `<ColorPicker.Hue>`. */
   height?: number;
   /** Handle (stop) diameter in px. Defaults to 16 to match the Hue thumb. */
   handleSize?: number;
+  /**
+   * Open the stop-color editor popover when a handle is clicked without
+   * being dragged. Drag is still the canonical way to reposition a stop —
+   * the click-vs-drag distinction is movement-based, so flicking the
+   * handle even a pixel keeps the popover closed. Defaults to `false`.
+   */
+  editOnClick?: boolean;
 }
 
 function buildPreviewGradient(
@@ -42,9 +50,12 @@ function buildPreviewGradient(
 }
 
 export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
-  { className, height = 12, handleSize = 16, ...rest },
+  { className, height = 12, handleSize = 16, editOnClick = false, ...rest },
   ref,
 ) {
+  // Which stop's editor popover is open (null = none). Only meaningful
+  // when `editOnClick` is true.
+  const [openStopId, setOpenStopId] = React.useState<string | null>(null);
   const ctx = useGradientPickerContext();
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const trackRef = React.useRef<HTMLDivElement | null>(null);
@@ -104,14 +115,24 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     // Document-level listeners + an `id` captured in closure keep the drag
     // bound to the originally-clicked stop regardless of reordering.
     let pendingRemove = false;
+    // Track pointer movement so pointerUp can tell a tap from a drag —
+    // 3px slack absorbs the jitter of a deliberate click.
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let moved = false;
     const onMove = (ev: PointerEvent) => {
+      if (!moved) {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        if (dx * dx + dy * dy > 9) moved = true;
+      }
       const rect = trackRef.current?.getBoundingClientRect();
       if (!rect) return;
       const dy = ev.clientY - rect.bottom;
       // Mark for removal while dragged below the bar by more than 24px,
       // but only commit on release so the user can drag back up to cancel.
       pendingRemove = dy > 24 && ctx.stops.length > 1;
-      if (!pendingRemove) {
+      if (!pendingRemove && moved) {
         const displayed = displayedPositionFromEvent(ev.clientX);
         ctx.moveStop(id, fromDisplay(displayed));
       }
@@ -125,6 +146,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     const onUp = () => {
       cleanup();
       if (pendingRemove) ctx.removeStop(id);
+      else if (!moved && editOnClick) setOpenStopId(id);
     };
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
@@ -171,9 +193,8 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
         const selected = s.id === ctx.selectedStopId;
         const displayed = Math.max(0, Math.min(1, toDisplay(s.position)));
         const displayedPct = Math.round(displayed * 100);
-        return (
+        const handle = (
           <div
-            key={s.id}
             role="slider"
             aria-label={`Stop at ${displayedPct}%`}
             aria-valuemin={0}
@@ -199,6 +220,17 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
               selected && "outline-2 outline-offset-1 outline-ring",
             )}
           />
+        );
+        if (!editOnClick) return <React.Fragment key={s.id}>{handle}</React.Fragment>;
+        return (
+          <StopEditorPopover
+            key={s.id}
+            stopId={s.id}
+            open={openStopId === s.id}
+            onOpenChange={(o) => setOpenStopId(o ? s.id : null)}
+          >
+            {handle}
+          </StopEditorPopover>
         );
       })}
     </div>

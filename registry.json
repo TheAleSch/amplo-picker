@@ -198,6 +198,11 @@
           "target": "components/ui/fill-picker/parts/gradient/stop-color.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/stop-editor-popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/stop-editor-popover.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/gradient/interp-switcher.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/interp-switcher.tsx"

@@ -24,8 +24,6 @@ import { Alpha } from "../alpha";
 import { ChannelInput } from "../channel-input";
 import { FormatSwitcher } from "../format-switcher";
 import { EyeDropper } from "../eye-dropper";
-import { GamutBadge } from "../gamut-badge";
-import { ContrastReadout } from "../contrast-readout";
 import {
   FieldInput,
   FieldInputGroup,
@@ -171,18 +169,6 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
                 onClick={(e) => e.stopPropagation()}
               >
                 <StopColorEditor key={s.id} stopId={s.id} color={s.color}>
-                  <div className="flex items-stretch gap-2">
-                    <GamutBadge
-                      showLabel={false}
-                      className="w-auto flex-1 justify-center"
-                    />
-                    <ContrastReadout
-                      metrics={["wcag", "apca"]}
-                      showLabel={false}
-                      showValue={false}
-                      className="w-auto flex-1 justify-center"
-                    />
-                  </div>
                   <ColorArea mode="oklch-cl" />
                   <div className="flex flex-col gap-1.5">
                     <Hue />

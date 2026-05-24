@@ -315,6 +315,40 @@ function GradientShapeControls() {
   );
 }
 
+/**
+ * Hero-only variant of GradientShapeControls that omits angle controls —
+ * the visual Area pad above already exposes direction by dragging the
+ * gradient line endpoints, so a separate AnglePad would be redundant.
+ */
+function HeroGradientShapeControls() {
+  const ctx = useGradientPickerContext();
+  if (ctx.gradient.type === "linear") return null;
+  if (ctx.gradient.type === "radial") {
+    return (
+      <div className="flex flex-col gap-2">
+        <GradientPicker.ShapeSwitcher />
+        <GradientPicker.PositionGroup>
+          <GradientPicker.PositionPad />
+          <GradientPicker.PositionInput />
+          {ctx.gradient.shape === "circle" && (
+            <>
+              <span className="text-xs text-muted-foreground">Radii</span>
+              <GradientPicker.RadiusInput className="flex-1" />
+            </>
+          )}
+        </GradientPicker.PositionGroup>
+      </div>
+    );
+  }
+  // conic
+  return (
+    <GradientPicker.PositionGroup>
+      <GradientPicker.PositionPad />
+      <GradientPicker.PositionInput />
+    </GradientPicker.PositionGroup>
+  );
+}
+
 function HeroPicker() {
   const [fill, setFill] = React.useState<Fill>(() => ({
     kind: "color",
@@ -376,12 +410,16 @@ function HeroPicker() {
       </FillPicker.Pane>
 
       <FillPicker.Pane mode="gradient" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <GradientPicker.TypeSwitcher />
-          <GradientPicker.ReverseStops />
+          <div className="flex items-center gap-1">
+            <GradientPicker.RepeatingToggle />
+            <GradientPicker.ReverseStops />
+          </div>
         </div>
         <GradientPicker.Bar editOnClick />
-        <GradientShapeControls />
+        <GradientPicker.Area />
+        <HeroGradientShapeControls />
         <GradientPicker.StopList />
         <GradientPicker.Presets presets={gradientPresets} onAdd={addGradient} />
       </FillPicker.Pane>

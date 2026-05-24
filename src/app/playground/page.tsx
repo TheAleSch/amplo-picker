@@ -87,13 +87,15 @@ type GradientPartKey =
   | "interpSwitcher"
   | "presets"
   | "cssInput"
-  | "reverseStops";
+  | "reverseStops"
+  | "repeatingToggle";
 
 type GradientPartsState = Record<GradientPartKey, boolean>;
 
 const GRADIENT_PARTS_DEFAULT: GradientPartsState = {
   typeSwitcher: true,
   reverseStops: true,
+  repeatingToggle: false,
   bar: true,
   area: true,
   shapeSwitcher: true,
@@ -129,6 +131,7 @@ const GRADIENT_CLUSTERS: GradientCluster[] = [
     items: [
       { key: "typeSwitcher", label: "TypeSwitcher" },
       { key: "reverseStops", label: "ReverseStops" },
+      { key: "repeatingToggle", label: "RepeatingToggle" },
       { key: "shapeSwitcher", label: "ShapeSwitcher" },
     ],
   },
@@ -720,14 +723,21 @@ export default function PlaygroundPage() {
                   value={gradient}
                   onValueChange={setGradient}
                 >
-                  {(gradientParts.typeSwitcher || gradientParts.reverseStops) && (
-                    <div className="flex items-center justify-between">
+                  {(gradientParts.typeSwitcher ||
+                    gradientParts.reverseStops ||
+                    gradientParts.repeatingToggle) && (
+                    <div className="flex items-center justify-between gap-2">
                       {gradientParts.typeSwitcher ? (
                         <GradientPicker.TypeSwitcher />
                       ) : (
                         <span />
                       )}
-                      {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                      <div className="flex items-center gap-1.5">
+                        {gradientParts.repeatingToggle && (
+                          <GradientPicker.RepeatingToggle />
+                        )}
+                        {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                      </div>
                     </div>
                   )}
                   {gradientParts.bar && <GradientPicker.Bar />}
@@ -801,14 +811,21 @@ export default function PlaygroundPage() {
                     <ColorPicker.ChannelInput />
                   </FillPicker.Pane>
                   <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
-                    {(gradientParts.typeSwitcher || gradientParts.reverseStops) && (
-                      <div className="flex items-center justify-between">
+                    {(gradientParts.typeSwitcher ||
+                      gradientParts.reverseStops ||
+                      gradientParts.repeatingToggle) && (
+                      <div className="flex items-center justify-between gap-2">
                         {gradientParts.typeSwitcher ? (
                           <GradientPicker.TypeSwitcher />
                         ) : (
                           <span />
                         )}
-                        {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                        <div className="flex items-center gap-1.5">
+                          {gradientParts.repeatingToggle && (
+                            <GradientPicker.RepeatingToggle />
+                          )}
+                          {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                        </div>
                       </div>
                     )}
                     {gradientParts.bar && <GradientPicker.Bar />}
@@ -1250,13 +1267,19 @@ function buildGradientPartsLines(
   stopColorChildren: string[],
 ): string[] {
   const lines: string[] = [];
-  if (parts.typeSwitcher || parts.reverseStops) {
-    lines.push(`${indent}<div className="flex items-center justify-between">`);
+  if (parts.typeSwitcher || parts.reverseStops || parts.repeatingToggle) {
+    lines.push(`${indent}<div className="flex items-center justify-between gap-2">`);
     if (parts.typeSwitcher)
       lines.push(`${indent}  <GradientPicker.TypeSwitcher />`);
     else lines.push(`${indent}  <span />`);
-    if (parts.reverseStops)
-      lines.push(`${indent}  <GradientPicker.ReverseStops />`);
+    if (parts.repeatingToggle || parts.reverseStops) {
+      lines.push(`${indent}  <div className="flex items-center gap-1.5">`);
+      if (parts.repeatingToggle)
+        lines.push(`${indent}    <GradientPicker.RepeatingToggle />`);
+      if (parts.reverseStops)
+        lines.push(`${indent}    <GradientPicker.ReverseStops />`);
+      lines.push(`${indent}  </div>`);
+    }
     lines.push(`${indent}</div>`);
   }
   if (parts.bar) lines.push(`${indent}<GradientPicker.Bar />`);

@@ -17,6 +17,7 @@ import { Area as GradientArea } from "./parts/gradient/area";
 import { Overlay as GradientOverlay } from "./parts/gradient/overlay";
 import { TypeSwitcher } from "./parts/gradient/type-switcher";
 import { ReverseStops } from "./parts/gradient/reverse-stops";
+import { RepeatingToggle } from "./parts/gradient/repeating-toggle";
 import { AnglePad } from "./parts/gradient/angle-pad";
 import { AngleInput } from "./parts/gradient/angle-input";
 import { PositionPad } from "./parts/gradient/position-pad";
@@ -75,6 +76,7 @@ export const GradientPicker = {
   Overlay: GradientOverlay,
   TypeSwitcher,
   ReverseStops,
+  RepeatingToggle,
   AnglePad,
   AngleInput,
   PositionPad,

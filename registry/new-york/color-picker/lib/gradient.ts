@@ -28,6 +28,12 @@ export interface LinearGradient {
    */
   angle: number;
   /**
+   * When true, `formatGradient` emits `repeating-linear-gradient(...)`. The
+   * stop ramp repeats every (last - first) position span — typically used
+   * for stripes / barberpole patterns. Optional: undefined = false.
+   */
+  repeating?: boolean;
+  /**
    * Optional start endpoint of the gradient line, normalized 0..1 of the
    * gradient box in each axis. When both `start` and `end` are set, the
    * gradient is treated as "positioned" — the line is the segment between
@@ -89,6 +95,8 @@ export interface RadialGradient {
   radiusPx?: number;
   stops: GradientStop[];
   interp: GradientInterp;
+  /** See `LinearGradient.repeating`. Emits `repeating-radial-gradient(...)`. */
+  repeating?: boolean;
 }
 
 export interface ConicGradient {
@@ -99,6 +107,8 @@ export interface ConicGradient {
   center: { x: number; y: number };
   stops: GradientStop[];
   interp: GradientInterp;
+  /** See `LinearGradient.repeating`. Emits `repeating-conic-gradient(...)`. */
+  repeating?: boolean;
 }
 
 export type Gradient = LinearGradient | RadialGradient | ConicGradient;
@@ -271,6 +281,7 @@ export function adjustStopsForEndpoints(
 
 export function formatGradient(g: Gradient): string {
   const interp = `in ${formatInterp(g.interp)}`;
+  const prefix = g.repeating ? "repeating-" : "";
   if (g.type === "linear") {
     if (g.start && g.end) {
       const derivedAngle = angleFromPoints(g.start, g.end);
@@ -278,10 +289,10 @@ export function formatGradient(g: Gradient): string {
       // direction — fall through to the plain angle form.
       if (derivedAngle !== undefined) {
         const adjusted = adjustStopsForEndpoints(g.stops, g.start, g.end);
-        return `linear-gradient(${interp} ${trim(derivedAngle)}deg, ${formatStops(adjusted)})`;
+        return `${prefix}linear-gradient(${interp} ${trim(derivedAngle)}deg, ${formatStops(adjusted)})`;
       }
     }
-    return `linear-gradient(${interp} ${trim(g.angle)}deg, ${formatStops(g.stops)})`;
+    return `${prefix}linear-gradient(${interp} ${trim(g.angle)}deg, ${formatStops(g.stops)})`;
   }
   if (g.type === "radial") {
     const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
@@ -300,18 +311,18 @@ export function formatGradient(g: Gradient): string {
     } else {
       endingShape = `${g.shape} ${g.size}`;
     }
-    return `radial-gradient(${endingShape} ${center} ${interp}, ${formatStops(g.stops)})`;
+    return `${prefix}radial-gradient(${endingShape} ${center} ${interp}, ${formatStops(g.stops)})`;
   }
   // conic
   const center = `at ${trim(g.center.x * 100)}% ${trim(g.center.y * 100)}%`;
-  return `conic-gradient(from ${trim(g.startAngle)}deg ${center} ${interp}, ${formatStops(g.stops)})`;
+  return `${prefix}conic-gradient(from ${trim(g.startAngle)}deg ${center} ${interp}, ${formatStops(g.stops)})`;
 }
 
 // ---------------------------------------------------------------------------
 // parseGradient — inverse of formatGradient
 // ---------------------------------------------------------------------------
 
-const FN_RE = /^(linear|radial|conic)-gradient\((.*)\)$/is;
+const FN_RE = /^(repeating-)?(linear|radial|conic)-gradient\((.*)\)$/is;
 
 /** Split on commas that are not nested inside parentheses. */
 function splitTopLevel(input: string): string[] {
@@ -385,8 +396,9 @@ export function parseGradient(input: string): Gradient | null {
   const m = trimmed.match(FN_RE);
   if (!m) return null;
 
-  const type = m[1].toLowerCase() as GradientType;
-  const parts = splitTopLevel(m[2]);
+  const repeating = !!m[1];
+  const type = m[2].toLowerCase() as GradientType;
+  const parts = splitTopLevel(m[3]);
   if (parts.length === 0) return null;
 
   if (type === "linear") {
@@ -406,7 +418,13 @@ export function parseGradient(input: string): Gradient | null {
 
     const stops = parseStops(stopParts);
     if (!stops) return null;
-    return { type: "linear", angle, interp, stops };
+    return {
+      type: "linear",
+      angle,
+      interp,
+      stops,
+      ...(repeating ? { repeating: true } : {}),
+    };
   }
 
   if (type === "radial") {
@@ -478,6 +496,7 @@ export function parseGradient(input: string): Gradient | null {
       ...(radiusPx !== undefined ? { radiusPx } : {}),
       interp,
       stops,
+      ...(repeating ? { repeating: true } : {}),
     };
   }
 
@@ -502,7 +521,14 @@ export function parseGradient(input: string): Gradient | null {
 
   const stops = parseStops(stopParts);
   if (!stops) return null;
-  return { type: "conic", startAngle, center: { x: cx, y: cy }, interp, stops };
+  return {
+    type: "conic",
+    startAngle,
+    center: { x: cx, y: cy },
+    interp,
+    stops,
+    ...(repeating ? { repeating: true } : {}),
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -183,6 +183,11 @@
           "target": "components/ui/fill-picker/parts/gradient/reverse-stops.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/repeating-toggle.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/repeating-toggle.tsx"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/gradient/stop-list.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/stop-list.tsx"

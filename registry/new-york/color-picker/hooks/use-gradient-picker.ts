@@ -91,6 +91,13 @@ export interface GradientPickerState {
   setStartAngle: (angleDeg: number) => void;
   setCenter: (xy: { x: number; y: number }) => void;
   setInterp: (interp: GradientInterp) => void;
+  /**
+   * Toggle the `repeating` flag on the active gradient. When true,
+   * `formatGradient` emits `repeating-<type>-gradient(...)`. Stops are
+   * unaffected — the stop ramp simply tiles instead of stretching to fill
+   * the box.
+   */
+  setRepeating: (repeating: boolean) => void;
   setRadialShape: (shape: "circle" | "ellipse") => void;
   setRadialSize: (size: RadialSizeKeyword) => void;
   /**
@@ -362,6 +369,27 @@ export function useGradientPicker(
     [apply],
   );
 
+  const setRepeating = React.useCallback(
+    (repeating: boolean) =>
+      apply((prev) => {
+        const cur = prev.gradient;
+        // Strip the flag entirely when toggled off so the gradient stays
+        // structurally identical to one that never had it — keeps equality
+        // checks and serialization minimal.
+        if (!repeating) {
+          if (!cur.repeating) return prev;
+          const { repeating: _drop, ...rest } = cur;
+          return { gradient: rest as Gradient, stops: prev.stops };
+        }
+        if (cur.repeating) return prev;
+        return {
+          gradient: { ...cur, repeating: true } as Gradient,
+          stops: prev.stops,
+        };
+      }),
+    [apply],
+  );
+
   const setRadialShape = React.useCallback(
     (shape: "circle" | "ellipse") =>
       apply((prev) => {
@@ -561,6 +589,7 @@ export function useGradientPicker(
     setStartAngle,
     setCenter,
     setInterp,
+    setRepeating,
     setRadialShape,
     setRadialSize,
     setRadii,

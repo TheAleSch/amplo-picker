@@ -73,7 +73,7 @@ export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
-  function StopList({ className, showAddStop = false, ...rest }, ref) {
+  function StopList({ className, showAddStop = true, ...rest }, ref) {
   const ctx = useGradientPickerContext();
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
@@ -210,33 +210,6 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
               aria-label="Remove stop"
             >
               <Minus className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                // Insert a new stop halfway between this stop and its
-                // next neighbor — or halfway to the end of the bar when
-                // this is the last stop. Sample the existing ramp so the
-                // inserted color blends in.
-                const sorted = [...ctx.stops].sort(
-                  (a, b) => a.position - b.position,
-                );
-                const idx = sorted.findIndex((x) => x.id === s.id);
-                const next = sorted[idx + 1];
-                const position = next
-                  ? (s.position + next.position) / 2
-                  : (s.position + 1) / 2;
-                const id = ctx.addStop(
-                  position,
-                  sampleStopsAt(sorted, position),
-                );
-                ctx.selectStop(id);
-              }}
-              className="inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground"
-              aria-label="Add stop after this one"
-            >
-              <Plus className="size-3.5" />
             </button>
           </div>
         );

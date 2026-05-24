@@ -745,7 +745,7 @@ export default function PlaygroundPage() {
                   {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
 
                   {(gradientParts.positionGroup || gradientParts.angleGroup) && (
-                    <div className="flex w-full items-center gap-2">
+                    <div className="flex w-full items-center gap-2 empty:hidden">
                       {gradientParts.positionGroup && (
                         <GradientPicker.PositionGroup>
                           {gradientParts.positionPad && <GradientPicker.PositionPad />}
@@ -833,7 +833,7 @@ export default function PlaygroundPage() {
                     {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
 
                     {(gradientParts.positionGroup || gradientParts.angleGroup) && (
-                      <div className="flex w-full items-center gap-2">
+                      <div className="flex w-full items-center gap-2 empty:hidden">
                         {gradientParts.positionGroup && (
                           <GradientPicker.PositionGroup>
                             {gradientParts.positionPad && <GradientPicker.PositionPad />}

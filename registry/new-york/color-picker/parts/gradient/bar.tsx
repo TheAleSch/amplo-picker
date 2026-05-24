@@ -132,6 +132,38 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     activeDragCleanupRef.current = cleanup;
   };
 
+  const startHintDrag =
+    (hintStopId: string, prevPos: number, nextPos: number) =>
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      e.preventDefault();
+      // Hints live in *authored* space (0..1 on the CSS gradient line) —
+      // same space the surrounding stops use. Clamp inside the (prev, next)
+      // interval so the diamond can't cross either neighbor; CSS midpoint
+      // hints outside that range are invalid per spec.
+      const onMove = (ev: PointerEvent) => {
+        const displayed = displayedPositionFromEvent(ev.clientX);
+        const authored = fromDisplay(displayed);
+        const eps = 1e-4;
+        const clamped = Math.max(
+          prevPos + eps,
+          Math.min(nextPos - eps, authored),
+        );
+        ctx.setStopHint(hintStopId, clamped);
+      };
+      const cleanup = () => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        document.removeEventListener("pointercancel", onUp);
+        activeDragCleanupRef.current = null;
+      };
+      const onUp = () => cleanup();
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onUp);
+      activeDragCleanupRef.current = cleanup;
+    };
+
   const onStopKeyDown =
     (id: string, position: number) => (e: React.KeyboardEvent<HTMLDivElement>) => {
       const step = e.shiftKey ? 0.05 : 0.01;
@@ -167,6 +199,39 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
           background: `${buildPreviewGradient(ctx.gradient)}, repeating-conic-gradient(#bbb 0 25%, #fff 0 50%) 0 0/8px 8px`,
         }}
       />
+      {ctx.stops.map((s, i) => {
+        if (i === 0) return null;
+        const prev = ctx.stops[i - 1];
+        // Auto midpoint when no hint is set — matches CSS default behavior.
+        const authored = s.hint ?? (prev.position + s.position) / 2;
+        const displayed = Math.max(0, Math.min(1, toDisplay(authored)));
+        const active = s.hint !== undefined;
+        return (
+          <div
+            key={`hint-${s.id}`}
+            role="slider"
+            aria-label={`Midpoint hint between stops ${i} and ${i + 1}`}
+            aria-valuemin={Math.round(toDisplay(prev.position) * 100)}
+            aria-valuemax={Math.round(toDisplay(s.position) * 100)}
+            aria-valuenow={Math.round(displayed * 100)}
+            tabIndex={-1}
+            onPointerDown={startHintDrag(s.id, prev.position, s.position)}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              ctx.setStopHint(s.id, undefined);
+            }}
+            style={{
+              left: `${displayed * 100}%`,
+              width: handleSize * 0.6,
+              height: handleSize * 0.6,
+            }}
+            className={cn(
+              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab rounded-xs border border-white/80 bg-foreground/70 shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-opacity",
+              active ? "opacity-100" : "opacity-40 hover:opacity-100",
+            )}
+          />
+        );
+      })}
       {ctx.stops.map((s) => {
         const selected = s.id === ctx.selectedStopId;
         const displayed = Math.max(0, Math.min(1, toDisplay(s.position)));

@@ -7,6 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import {
@@ -212,15 +213,17 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
         );
       })}
       {showAddStop && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={handleAddStop}
           aria-label="Add stop"
-          className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border p-1 text-xs text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+          className="cursor-pointer"
         >
           <Plus aria-hidden className="size-3.5" />
           Add stop
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -69,22 +69,24 @@ export const FieldInput = React.forwardRef<HTMLInputElement, FieldInputProps>(
         autoCapitalize="off"
         onKeyDown={(e) => {
           if (nudge && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
-            const cur = parseFloat(e.currentTarget.value);
-            if (Number.isFinite(cur)) {
-              e.preventDefault();
-              const delta =
-                (e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? nudge * 10 : nudge);
-              const next = cur + delta;
-              // Use the native value setter so React's synthetic onChange
-              // fires — directly assigning `.value` is swallowed by React's
-              // controlled-input tracker.
-              const setter = Object.getOwnPropertyDescriptor(
-                window.HTMLInputElement.prototype,
-                "value",
-              )?.set;
-              setter?.call(e.currentTarget, String(next));
-              e.currentTarget.dispatchEvent(new Event("input", { bubbles: true }));
-            }
+            e.preventDefault();
+            // Treat empty / unparseable input (e.g. RadiusInput in its
+            // "auto" placeholder state) as 0 so the first arrow press
+            // commits a real numeric value instead of doing nothing.
+            const parsed = parseFloat(e.currentTarget.value);
+            const cur = Number.isFinite(parsed) ? parsed : 0;
+            const delta =
+              (e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? nudge * 10 : nudge);
+            const next = cur + delta;
+            // Use the native value setter so React's synthetic onChange
+            // fires — directly assigning `.value` is swallowed by React's
+            // controlled-input tracker.
+            const setter = Object.getOwnPropertyDescriptor(
+              window.HTMLInputElement.prototype,
+              "value",
+            )?.set;
+            setter?.call(e.currentTarget, String(next));
+            e.currentTarget.dispatchEvent(new Event("input", { bubbles: true }));
           }
           onKeyDown?.(e);
         }}

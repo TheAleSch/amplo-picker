@@ -68,7 +68,8 @@ export const Root = React.forwardRef<HTMLDivElement, RootProps>(function Root(
         data-slot="fill-picker"
         className={cn(
           "w-full max-w-70 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-sm",
-          animateRef.current && "transition-[height] duration-200 ease-out",
+          animateRef.current &&
+            "transition-[height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
           className,
         )}
         style={

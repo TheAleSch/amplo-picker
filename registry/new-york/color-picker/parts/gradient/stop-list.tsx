@@ -18,7 +18,7 @@ import {
 import { formatColor, parseColor } from "../../lib/color";
 import { ColorPickerContext } from "../../context";
 import { useColorPicker } from "../../hooks/use-color-picker";
-import type { ColorFormat, OklchColor } from "../../lib/types";
+import type { ColorFormat } from "../../lib/types";
 import { Area as ColorArea } from "../area";
 import { Hue } from "../hue";
 import { Alpha } from "../alpha";
@@ -34,45 +34,6 @@ import {
 
 const CHECKERBOARD =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
-
-/**
- * Inline binding helper: mounts a `ColorPickerContext` for a specific
- * stop id, identical to `<GradientPicker.StopColor>` but bound to the
- * stop the user just clicked in the row (not necessarily the selected
- * one). Keyed on `stopId` by callers so a fresh hook instance — and a
- * fresh `lastGoodHueRef` — is created per popover open.
- */
-function StopColorEditor({
-  stopId,
-  color,
-  format,
-  onFormatChange,
-  children,
-}: React.PropsWithChildren<{
-  stopId: string;
-  color: OklchColor;
-  format?: ColorFormat;
-  onFormatChange?: (f: ColorFormat) => void;
-}>) {
-  const ctx = useGradientPickerContext();
-  const setStopColorRef = React.useRef(ctx.setStopColor);
-  setStopColorRef.current = ctx.setStopColor;
-  const onValueChange = React.useCallback(
-    (c: OklchColor) => setStopColorRef.current(stopId, c),
-    [stopId],
-  );
-  const state = useColorPicker({
-    value: color,
-    onValueChange,
-    format,
-    onFormatChange,
-  });
-  return (
-    <ColorPickerContext.Provider value={state}>
-      {children}
-    </ColorPickerContext.Provider>
-  );
-}
 
 export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -99,12 +60,28 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     ref,
   ) {
   const ctx = useGradientPickerContext();
-  // Single shared format for every row. The FormatSwitcher inside each
-  // popover writes here too — picking P3 in one popover updates the
-  // inline color text of every row to P3 simultaneously, keeping the
-  // list visually consistent.
+  // Single shared format for every row. The FormatSwitcher inside the
+  // (single, selected-stop-bound) popover writes here too — picking P3
+  // updates the inline color text of every row to P3 simultaneously,
+  // keeping the list visually consistent.
   const [sharedFormat, setSharedFormat] =
     React.useState<ColorFormat>(colorFormat);
+  // Resolve the currently-selected stop (the one any open popover edits).
+  // Falls back to the first stop when nothing is selected yet.
+  const selectedStop =
+    ctx.stops.find((x) => x.id === ctx.selectedStopId) ?? ctx.stops[0];
+  // One useColorPicker for the whole list, bound to the selected stop.
+  // Closing+reopening the popover for the same stop is safe — stops are
+  // stored as OklchColor objects (hue preserved across achromatic edges),
+  // so `lastGoodHueRef` is just an intra-drag optimization here.
+  const colorState = useColorPicker({
+    value: selectedStop?.color,
+    onValueChange: (c) => {
+      if (selectedStop) ctx.setStopColor(selectedStop.id, c);
+    },
+    format: sharedFormat,
+    onFormatChange: setSharedFormat,
+  });
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
   // sees in the Area and Bar. Authored positions still live in 0..1 of the
@@ -151,26 +128,21 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
       className={cn("flex flex-col gap-1", className)}
       {...rest}
     >
-      {ctx.stops.map((s) => {
-        const selected = s.id === ctx.selectedStopId;
-        return (
-          <StopColorEditor
-            key={s.id}
-            stopId={s.id}
-            color={s.color}
-            format={sharedFormat}
-            onFormatChange={setSharedFormat}
-          >
+      <ColorPickerContext.Provider value={colorState}>
+        {ctx.stops.map((s) => {
+          const selected = s.id === ctx.selectedStopId;
+          return (
             <StopRow
+              key={s.id}
               stop={s}
               selected={selected}
               toDisplay={toDisplay}
               fromDisplay={fromDisplay}
               formatted={formatColor(s.color, sharedFormat)}
             />
-          </StopColorEditor>
-        );
-      })}
+          );
+        })}
+      </ColorPickerContext.Provider>
       {showAddStop && (
         <Button
           type="button"

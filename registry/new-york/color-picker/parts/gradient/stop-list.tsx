@@ -88,25 +88,22 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     reverseProjectStopPosition(displayed, start, end);
 
   const handleAddStop = () => {
-    // Insert in the largest gap between adjacent stops so the new entry
-    // splits the most underutilized span. Sample the existing ramp at
-    // that position so the inserted color visually blends in rather than
-    // jumping to a default.
+    // Insert immediately after the selected stop — halfway to its next
+    // neighbor, or halfway to the end of the bar when the selected stop
+    // is the last one. Sample the existing ramp so the inserted color
+    // visually blends in.
     const sorted = [...ctx.stops].sort((a, b) => a.position - b.position);
-    let bestIdx = 0;
-    let bestGap = -1;
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const gap = sorted[i + 1].position - sorted[i].position;
-      if (gap > bestGap) {
-        bestGap = gap;
-        bestIdx = i;
-      }
-    }
-    const position =
-      sorted.length < 2
-        ? Math.min(1, (sorted[0]?.position ?? 0) + 0.5)
-        : (sorted[bestIdx].position + sorted[bestIdx + 1].position) / 2;
-    ctx.addStop(position, sampleStopsAt(sorted, position));
+    const selectedIdx = sorted.findIndex(
+      (x) => x.id === ctx.selectedStopId,
+    );
+    const anchorIdx = selectedIdx === -1 ? sorted.length - 1 : selectedIdx;
+    const anchor = sorted[anchorIdx];
+    const next = sorted[anchorIdx + 1];
+    const position = next
+      ? (anchor.position + next.position) / 2
+      : Math.min(1, (anchor.position + 1) / 2);
+    const id = ctx.addStop(position, sampleStopsAt(sorted, position));
+    ctx.selectStop(id);
   };
   return (
     <div

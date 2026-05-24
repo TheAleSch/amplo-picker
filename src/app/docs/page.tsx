@@ -35,6 +35,7 @@ const TOC = [
   ["gradient-overlay", "Overlay (on your canvas)"],
   ["gradient-radial-size", "Radial size + extent keywords"],
   ["gradient-interp", "Interpolation"],
+  ["gradient-stop-list", "Stop editor (StopList)"],
   ["fill-picker", "Fill picker (tabs)"],
   ["gradient-shape-controls", "Gradient shape controls"],
   ["anatomy", "Anatomy"],
@@ -371,6 +372,68 @@ export default function DocsPage() {
             ref to the underlying <Code>{"<select>"}</Code>; <Code>value</Code>,{" "}
             <Code>onChange</Code>, and <Code>aria-label</Code> are managed
             internally and any passed values for those will be overwritten.
+          </p>
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <H2 id="gradient-stop-list">Stop editor (<Code>StopList</Code>)</H2>
+          <p>
+            <Code>{"<GradientPicker.StopList>"}</Code> is a keyboard-driven
+            listbox of the gradient's stops. Each row has four parts: a{" "}
+            <strong className="text-foreground">swatch</strong> (click → full{" "}
+            <Code>ColorPicker</Code> popover bound to that stop), a numeric
+            <strong className="text-foreground"> % position</strong> input, an
+            inline <strong className="text-foreground">color text field</strong>{" "}
+            that accepts any CSS color string, and a{" "}
+            <strong className="text-foreground">remove</strong> button.
+            A trailing <Code>+ Add stop</Code> button inserts a new stop
+            halfway between the selected stop and its next neighbor (or
+            halfway to the end of the bar when the selection is the last
+            stop), sampling the existing ramp so the inserted color blends in.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Format sync.</strong> The
+            inline color field and the popover's{" "}
+            <Code>{"<ColorPicker.FormatSwitcher>"}</Code> share one per-stop{" "}
+            <Code>ColorPickerContext</Code>. Switching format in the popover
+            updates the inline text on the row instantly — change to{" "}
+            <Code>P3</Code> and the row shows{" "}
+            <Code>color(display-p3 …)</Code>; change to <Code>HEX</Code> and
+            it shows <Code>#…</Code>. Defaults to <Code>oklch</Code> (the
+            canonical, lossless representation across the full P3/Rec.2020
+            gamut stop colors can occupy); set{" "}
+            <Code>{'<GradientPicker.StopList colorFormat="hex" />'}</Code> to
+            pick a different initial format.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Pastable formats.</strong>{" "}
+            The inline field parses anything CSS Color 4 understands —{" "}
+            <Code>#ff8800</Code>, <Code>rgb(255 136 0 / 0.8)</Code>,{" "}
+            <Code>hsl(30 100% 50%)</Code>, <Code>hwb(30 0% 0%)</Code>,{" "}
+            <Code>lab(…)</Code>, <Code>lch(…)</Code>,{" "}
+            <Code>oklab(…)</Code>, <Code>oklch(…)</Code>,{" "}
+            <Code>color(display-p3 1 0.4 0)</Code>,{" "}
+            <Code>color(rec2020 …)</Code>, <Code>color(srgb-linear …)</Code>,{" "}
+            <Code>color(prophoto-rgb …)</Code>, <Code>color(xyz …)</Code>,
+            named colors (<Code>rebeccapurple</Code>,{" "}
+            <Code>transparent</Code>), and more. Enter commits, Escape
+            reverts, blur commits; invalid input reverts to the last good
+            value. Parsed colors are stored as canonical OKLCH so
+            wide-gamut input survives.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Keyboard.</strong> Enter /
+            Space selects the focused row; Delete / Backspace removes it.
+            The numeric position field accepts arrow nudges via the
+            underlying field primitive.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Props.</strong>{" "}
+            <Code>showAddStop</Code> (default <Code>true</Code>) toggles the
+            trailing add-stop button. <Code>colorFormat</Code> (default{" "}
+            <Code>oklch</Code>) is the initial format for the inline color
+            field; the popover's <Code>FormatSwitcher</Code> can change it
+            at runtime.
           </p>
         </section>
 

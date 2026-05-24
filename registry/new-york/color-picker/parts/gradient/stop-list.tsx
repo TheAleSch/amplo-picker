@@ -16,7 +16,7 @@ import {
   sampleStopsAt,
 } from "../../lib/gradient";
 import { formatColor, parseColor } from "../../lib/color";
-import { ColorPickerContext } from "../../context";
+import { ColorPickerContext, useColorPickerContext } from "../../context";
 import { useColorPicker } from "../../hooks/use-color-picker";
 import type { ColorFormat, OklchColor } from "../../lib/types";
 import { Area as ColorArea } from "../area";
@@ -45,8 +45,13 @@ const CHECKERBOARD =
 function StopColorEditor({
   stopId,
   color,
+  defaultFormat,
   children,
-}: React.PropsWithChildren<{ stopId: string; color: OklchColor }>) {
+}: React.PropsWithChildren<{
+  stopId: string;
+  color: OklchColor;
+  defaultFormat?: ColorFormat;
+}>) {
   const ctx = useGradientPickerContext();
   const setStopColorRef = React.useRef(ctx.setStopColor);
   setStopColorRef.current = ctx.setStopColor;
@@ -54,7 +59,7 @@ function StopColorEditor({
     (c: OklchColor) => setStopColorRef.current(stopId, c),
     [stopId],
   );
-  const state = useColorPicker({ value: color, onValueChange });
+  const state = useColorPicker({ value: color, onValueChange, defaultFormat });
   return (
     <ColorPickerContext.Provider value={state}>
       {children}
@@ -129,14 +134,19 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
       {ctx.stops.map((s) => {
         const selected = s.id === ctx.selectedStopId;
         return (
-          <StopRow
+          <StopColorEditor
             key={s.id}
-            stop={s}
-            selected={selected}
-            toDisplay={toDisplay}
-            fromDisplay={fromDisplay}
-            colorFormat={colorFormat}
-          />
+            stopId={s.id}
+            color={s.color}
+            defaultFormat={colorFormat}
+          >
+            <StopRow
+              stop={s}
+              selected={selected}
+              toDisplay={toDisplay}
+              fromDisplay={fromDisplay}
+            />
+          </StopColorEditor>
         );
       })}
       {showAddStop && (
@@ -160,19 +170,18 @@ function StopRow({
   selected,
   toDisplay,
   fromDisplay,
-  colorFormat,
 }: {
   stop: ReturnType<typeof useGradientPickerContext>["stops"][number];
   selected: boolean;
   toDisplay: (n: number) => number;
   fromDisplay: (n: number) => number;
-  colorFormat: ColorFormat;
 }) {
   const ctx = useGradientPickerContext();
-  // Keep a local draft so partial typing doesn't fight the live formatted
-  // value. Resync on external color changes (drag, popover edit, etc.) so
-  // the field reflects reality when the user isn't editing it.
-  const formatted = formatColor(s.color, colorFormat);
+  // Read the formatted color string from the per-stop ColorPickerContext
+  // (mounted by the enclosing StopColorEditor). This means the popover's
+  // FormatSwitcher and the inline text input share the same format —
+  // change the format in the popover and this row reflects it instantly.
+  const { formatted } = useColorPickerContext();
   const [draft, setDraft] = React.useState(formatted);
   const focusedRef = React.useRef(false);
   React.useEffect(() => {
@@ -224,18 +233,16 @@ function StopRow({
           className="flex w-72 flex-col gap-3 p-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <StopColorEditor stopId={s.id} color={s.color}>
-            <ColorArea mode="oklch-cl" />
-            <div className="flex flex-col gap-1.5">
-              <Hue />
-              <Alpha />
-            </div>
-            <div className="flex items-center gap-2">
-              <FormatSwitcher className="flex-1" />
-              <EyeDropper className="h-8 w-full flex-1" />
-            </div>
-            <ChannelInput showFormat={false} />
-          </StopColorEditor>
+          <ColorArea mode="oklch-cl" />
+          <div className="flex flex-col gap-1.5">
+            <Hue />
+            <Alpha />
+          </div>
+          <div className="flex items-center gap-2">
+            <FormatSwitcher className="flex-1" />
+            <EyeDropper className="h-8 w-full flex-1" />
+          </div>
+          <ChannelInput showFormat={false} />
         </PopoverContent>
       </Popover>
       <FieldShell className="h-7 w-fit">

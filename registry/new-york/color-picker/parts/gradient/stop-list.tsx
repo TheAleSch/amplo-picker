@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -209,7 +209,7 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
               className="ml-auto inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
               aria-label="Remove stop"
             >
-              <Trash2 className="size-3.5" />
+              <Minus className="size-3.5" />
             </button>
           </div>
         );

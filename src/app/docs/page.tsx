@@ -393,17 +393,23 @@ export default function DocsPage() {
             stop), sampling the existing ramp so the inserted color blends in.
           </p>
           <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Format sync.</strong> All
-            rows share one format. Opening any stop's popover and switching{" "}
-            <Code>{"<ColorPicker.FormatSwitcher>"}</Code> updates the inline
-            color text on <em>every</em> row simultaneously — change to{" "}
+            <strong className="text-foreground">Format sync.</strong> The
+            display format lives on{" "}
+            <Code>{"<GradientPicker.Root>"}</Code> context and is shared by
+            every stop-color surface — the inline text in each{" "}
+            <Code>StopList</Code> row, the row's own popover{" "}
+            <Code>FormatSwitcher</Code>, and any sibling{" "}
+            <Code>{"<GradientPicker.StopColor>"}</Code> block. Switch
+            format anywhere and all of them update together: pick{" "}
             <Code>P3</Code> and the whole list shows{" "}
-            <Code>color(display-p3 …)</Code>; change to <Code>HEX</Code> and
-            the whole list shows <Code>#…</Code>. Defaults to{" "}
-            <Code>oklch</Code> (the canonical, lossless representation
-            across the full P3/Rec.2020 gamut stop colors can occupy); set{" "}
-            <Code>{'<GradientPicker.StopList colorFormat="hex" />'}</Code> to
-            pick a different initial format.
+            <Code>color(display-p3 …)</Code>; pick <Code>HEX</Code> and the
+            whole list shows <Code>#…</Code>. Defaults to{" "}
+            <Code>oklch</Code> (lossless across the full P3/Rec.2020 gamut
+            stop colors can occupy); override the initial value with{" "}
+            <Code>
+              {'<GradientPicker.Root defaultStopColorFormat="hex">'}
+            </Code>
+            .
           </p>
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Pastable formats.</strong>{" "}
@@ -430,10 +436,9 @@ export default function DocsPage() {
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Props.</strong>{" "}
             <Code>showAddStop</Code> (default <Code>true</Code>) toggles the
-            trailing add-stop button. <Code>colorFormat</Code> (default{" "}
-            <Code>oklch</Code>) is the initial format for the inline color
-            field; the popover's <Code>FormatSwitcher</Code> can change it
-            at runtime.
+            trailing add-stop button. The initial display format is set on
+            the parent: <Code>{"<GradientPicker.Root defaultStopColorFormat>"}</Code>{" "}
+            (default <Code>oklch</Code>).
           </p>
         </section>
 
@@ -461,24 +466,28 @@ export default function DocsPage() {
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Round-trip.</strong>{" "}
             <Code>parseGradient(formatGradient(g))</Code> ≈ <Code>g</Code>{" "}
-            — visually lossless. Notation is normalized (all stops emit
-            in the active format) and <Code>start</Code>/<Code>end</Code>{" "}
-            endpoints on positioned linears are dropped (CSS can't
-            represent an offset line; the angle + projected stop positions
-            preserve the visual offset). Hue, lightness, and stop
-            positions round-trip exactly.
+            — visually lossless. Stop colors are always serialized as{" "}
+            <Code>oklch(…)</Code> regardless of the UI display format
+            (the display format only affects what you <em>read</em> in
+            the StopList; CSS emit stays canonical so wide-gamut chroma
+            survives). <Code>start</Code>/<Code>end</Code> endpoints on
+            positioned linears are dropped (CSS can't represent an
+            offset line; the angle + projected stop positions preserve
+            the visual offset). Hue, lightness, and stop positions
+            round-trip exactly.
           </p>
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Wide gamut.</strong> The
             picker is wide-gamut-first: internal state is unbounded
-            OKLCH, the default emit format is <Code>oklch(…)</Code> (no
-            sRGB cap), interpolation defaults to <Code>in oklch</Code>{" "}
-            (vivid midpoints, not muddy), and the area canvas paints in{" "}
-            <Code>display-p3</Code> on capable displays. To author past
-            display-P3, keep the format on <Code>oklch</Code> or{" "}
-            <Code>oklab</Code> — both are unbounded; switching to{" "}
-            <Code>p3</Code> emit will gamut-map to P3 at format time
-            (state still keeps the wide value).
+            OKLCH, gradient CSS always emits stops as{" "}
+            <Code>oklch(…)</Code> (no sRGB cap, no chroma loss),
+            interpolation defaults to <Code>in oklch</Code> (vivid
+            midpoints, not muddy), and the area canvas paints in{" "}
+            <Code>display-p3</Code> on capable displays. The StopList
+            display format is purely a read-out — flipping it to{" "}
+            <Code>hex</Code> or <Code>p3</Code> changes only what the
+            inline row text shows; CSS output and stored color are
+            untouched.
           </p>
         </section>
 

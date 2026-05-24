@@ -15,7 +15,7 @@ import {
   type RadialSizeKeyword,
   type ConicGradient,
 } from "../lib/gradient";
-import type { OklchColor } from "../lib/types";
+import type { ColorFormat, OklchColor } from "../lib/types";
 
 let __idCounter = 0;
 const nextId = () => `s${++__idCounter}`;
@@ -67,6 +67,15 @@ export interface UseGradientPickerProps {
   value?: Gradient;
   defaultValue?: Gradient;
   onValueChange?: (gradient: Gradient, css: string) => void;
+  /**
+   * Initial format used by every stop-color display surface — the inline
+   * text in `<GradientPicker.StopList>` rows and the `FormatSwitcher`
+   * inside any `<GradientPicker.StopColor>` block. Both surfaces read +
+   * write the same atom on this context, so switching the format in one
+   * place updates every other. Defaults to `oklch` (lossless across the
+   * full P3/Rec.2020 gamut that stop colors can occupy).
+   */
+  defaultStopColorFormat?: ColorFormat;
 }
 
 export interface GradientPickerState {
@@ -133,6 +142,15 @@ export interface GradientPickerState {
   setStopColor: (id: string, color: OklchColor) => void;
   setStopHint: (id: string, hint: number | undefined) => void;
   reverseStops: () => void;
+  /**
+   * Shared display format for every stop-color surface. Both
+   * `<GradientPicker.StopList>` (inline color text per row) and
+   * `<GradientPicker.StopColor>` (its `FormatSwitcher`) read + write this
+   * atom — so picking P3 in the popover instantly updates the inline text
+   * of every row, and vice versa.
+   */
+  stopColorFormat: ColorFormat;
+  setStopColorFormat: (format: ColorFormat) => void;
 }
 
 // ---- Hook ------------------------------------------------------------------
@@ -140,8 +158,11 @@ export interface GradientPickerState {
 export function useGradientPicker(
   props: UseGradientPickerProps = {},
 ): GradientPickerState {
-  const { value, defaultValue, onValueChange } = props;
+  const { value, defaultValue, onValueChange, defaultStopColorFormat } = props;
   const isControlled = value !== undefined;
+  const [stopColorFormat, setStopColorFormat] = React.useState<ColorFormat>(
+    defaultStopColorFormat ?? "oklch",
+  );
 
   const [internal, setInternal] = React.useState<InternalState>(() =>
     attachIds(value ?? defaultValue ?? DEFAULT_LINEAR),
@@ -614,5 +635,7 @@ export function useGradientPicker(
     setStopColor,
     setStopHint,
     reverseStops,
+    stopColorFormat,
+    setStopColorFormat,
   };
 }

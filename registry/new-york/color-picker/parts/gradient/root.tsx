@@ -13,10 +13,23 @@ export interface RootProps
     Omit<React.HTMLAttributes<HTMLDivElement>, "defaultValue" | "onChange"> {}
 
 export const Root = React.forwardRef<HTMLDivElement, RootProps>(function Root(
-  { value, defaultValue, onValueChange, className, children, ...rest },
+  {
+    value,
+    defaultValue,
+    onValueChange,
+    defaultStopColorFormat,
+    className,
+    children,
+    ...rest
+  },
   ref,
 ) {
-  const state = useGradientPicker({ value, defaultValue, onValueChange });
+  const state = useGradientPicker({
+    value,
+    defaultValue,
+    onValueChange,
+    defaultStopColorFormat,
+  });
   return (
     <GradientPickerContext.Provider value={state}>
       <div

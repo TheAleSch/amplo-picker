@@ -18,7 +18,6 @@ import {
 import { formatColor, parseColor } from "../../lib/color";
 import { ColorPickerContext } from "../../context";
 import { useColorPicker } from "../../hooks/use-color-picker";
-import type { ColorFormat } from "../../lib/types";
 import { Area as ColorArea } from "../area";
 import { Hue } from "../hue";
 import { Alpha } from "../alpha";
@@ -44,28 +43,20 @@ export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
    * this is an explicit affordance for layouts where the bar isn't visible.
    */
   showAddStop?: boolean;
-  /**
-   * Format used by the inline color text input on each row. Defaults to
-   * `oklch` — lossless across the full P3/Rec.2020 gamut that stop colors
-   * can occupy. Pasting any CSS color string still parses regardless of
-   * this setting (parser is format-agnostic); this only controls what
-   * the field *displays*.
-   */
-  colorFormat?: ColorFormat;
 }
 
 export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
   function StopList(
-    { className, showAddStop = true, colorFormat = "oklch", ...rest },
+    { className, showAddStop = true, ...rest },
     ref,
   ) {
   const ctx = useGradientPickerContext();
-  // Single shared format for every row. The FormatSwitcher inside the
-  // (single, selected-stop-bound) popover writes here too — picking P3
-  // updates the inline color text of every row to P3 simultaneously,
-  // keeping the list visually consistent.
-  const [sharedFormat, setSharedFormat] =
-    React.useState<ColorFormat>(colorFormat);
+  // The display format lives on the GradientPicker context — shared with
+  // any sibling <GradientPicker.StopColor> so picking a format in either
+  // surface updates the other instantly. Default is set by
+  // `GradientPicker.Root`'s `defaultStopColorFormat` (oklch).
+  const sharedFormat = ctx.stopColorFormat;
+  const setSharedFormat = ctx.setStopColorFormat;
   // Resolve the currently-selected stop (the one any open popover edits).
   // Falls back to the first stop when nothing is selected yet.
   const selectedStop =

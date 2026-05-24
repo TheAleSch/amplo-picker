@@ -56,7 +56,12 @@ const Bound: React.FC<
     [stopId],
   );
 
-  const state = useColorPicker({ value: liveColor, onValueChange });
+  const state = useColorPicker({
+    value: liveColor,
+    onValueChange,
+    format: grad.stopColorFormat,
+    onFormatChange: grad.setStopColorFormat,
+  });
 
   return (
     <ColorPickerContext.Provider value={state}>

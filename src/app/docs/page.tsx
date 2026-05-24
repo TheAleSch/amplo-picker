@@ -209,12 +209,19 @@ export default function DocsPage() {
 
           <Example
             title="Bar-only"
-            description="Just the gradient bar — useful as an inline preview strip or when you want to drive a fully custom stop-editing UI yourself."
+            description="Just the gradient bar. With editOnClick, tapping a handle opens the same color editor popover the StopList uses; drag still repositions the stop (movement-based detection — flicking a handle a pixel starts a drag, not the popover)."
             preview={<GradientBarOnlyDemo />}
             code={GRADIENT_BAR_ONLY_CODE}
           />
 
           <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Bar stops.</strong>{" "}
+            Drag a handle to reposition; drag below the bar (~24px) to
+            remove. Pass <Code>editOnClick</Code> on{" "}
+            <Code>{"<GradientPicker.Bar>"}</Code> to open the
+            stop-color popover on a tap (click-vs-drag is movement-
+            based — flicking a handle a pixel counts as a drag, not a
+            tap).{" "}
             <strong className="text-foreground">Keyboard.</strong>{" "}
             <Code>Bar</Code> stops respond to ← / → (±1%, ±5% with Shift) and
             Delete / Backspace to remove. <Code>AnglePad</Code> /{" "}
@@ -1047,7 +1054,7 @@ function GradientBarOnlyDemo() {
   return (
     <div className="w-full max-w-xs">
       <GradientPicker.Root value={g} onValueChange={setG}>
-        <GradientPicker.Bar />
+        <GradientPicker.Bar editOnClick />
       </GradientPicker.Root>
     </div>
   );
@@ -1406,7 +1413,7 @@ export function GradientBarOnlyDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
   return (
     <GradientPicker.Root value={g} onValueChange={setG}>
-      <GradientPicker.Bar />
+      <GradientPicker.Bar editOnClick />
     </GradientPicker.Root>
   );
 }`;

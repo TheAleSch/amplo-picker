@@ -1,44 +1,40 @@
 "use client";
 
 import * as React from "react";
+import { SelectItem } from "@/components/ui/select";
 import { useColorPickerContext } from "../context";
 import type { ColorFormat } from "../lib/types";
 import { FieldSelect } from "./field";
 
-export interface FormatSwitcherProps
-  extends Omit<
-    React.SelectHTMLAttributes<HTMLSelectElement>,
-    "value" | "onChange" | "children"
-  > {
+export interface FormatSwitcherProps {
   /** Override the formats from <ColorPicker.Root formats={...} />. */
   formats?: ColorFormat[];
+  className?: string;
 }
 
 export const FormatSwitcher = React.forwardRef<
-  HTMLSelectElement,
+  HTMLButtonElement,
   FormatSwitcherProps
->(function FormatSwitcher({ formats: formatsProp, className, ...rest }, ref) {
+>(function FormatSwitcher({ formats: formatsProp, className }, ref) {
   const { format, setFormat, formats: ctxFormats } = useColorPickerContext();
   const formats = formatsProp ?? ctxFormats;
 
   return (
     <FieldSelect
       ref={ref}
-      data-slot="color-picker-format-switcher-select"
       aria-label="Color format"
       value={format}
-      onChange={(e) => setFormat(e.target.value as ColorFormat)}
-      className="w-full"
+      onValueChange={(v) => setFormat(v as ColorFormat)}
+      className="w-full uppercase"
       wrapperProps={{
         "data-slot": "color-picker-format-switcher",
         className,
       }}
-      {...rest}
     >
       {formats.map((f) => (
-        <option key={f} value={f}>
+        <SelectItem key={f} value={f} className="uppercase">
           {f}
-        </option>
+        </SelectItem>
       ))}
     </FieldSelect>
   );

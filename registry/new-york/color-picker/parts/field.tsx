@@ -2,6 +2,12 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /**
  * Bordered, h-8 shell every multi-field input inside the picker shares.
@@ -34,9 +40,9 @@ export function FieldDivider() {
 
 /**
  * Borderless input that lives inside a `FieldShell`. Defaults match the
- * channel-input numeric field: full width of its slot, centered tabular
- * digits, transparent background. Pass `className` to override per use
- * (e.g. left-align for hex / CSS strings).
+ * channel-input numeric field: full width of its slot, right-aligned
+ * tabular digits, transparent background. Pass `className` to override
+ * per use (e.g. left-align for hex / CSS strings).
  */
 export const FieldInput = React.forwardRef<
   HTMLInputElement,
@@ -98,39 +104,71 @@ export const FieldSuffix = React.forwardRef<
   );
 });
 
-export interface FieldSelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface FieldSelectProps {
   /**
-   * `standalone` (default) — bordered chevron-select matching FormatSwitcher
-   * / TypeSwitcher / InterpSwitcher / RadialSizeSelect.
+   * `standalone` (default) — bordered chevron-select matching every
+   * picker dropdown (`FormatSwitcher`, `TypeSwitcher`, `InterpSwitcher`,
+   * `RadialSizeSelect`).
    *
-   * `inline` — borderless variant that lives inside a `FieldShell` (used by
-   * ChannelInput's format toggle on the left).
+   * `inline` — borderless variant that lives inside a `FieldShell` (used
+   * by `ChannelInput`'s format toggle on the left).
    */
   variant?: "standalone" | "inline";
-  /** Props forwarded to the chevron wrapper `<div>`. Use for `data-slot`,
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  /** Trigger button class — extends the variant's defaults. */
+  className?: string;
+  /** Props forwarded to the outer wrapper `<div>`. Use for `data-slot`,
    *  width overrides, etc. */
   wrapperProps?: React.HTMLAttributes<HTMLDivElement> & {
     [key: `data-${string}`]: string | undefined;
   };
+  /**
+   * Class applied to the popover `<SelectContent>`. Defaults to a
+   * `font-mono text-xs tracking-wide` block so item rows match the
+   * trigger font.
+   */
+  contentClassName?: string;
+  "aria-label"?: string;
+  /** Pass `<SelectItem>`s as children. */
+  children?: React.ReactNode;
 }
 
 /**
- * Native `<select>` with the new-york shadcn look. Single source of truth
- * for every dropdown in the picker — keeps the chevron, focus ring, and
- * border identical across format / gradient-type / interpolation /
- * radial-size switchers.
+ * Single source of truth for every dropdown in the picker. Built on
+ * shadcn `<Select>` (Radix) so it composes cleanly with the rest of the
+ * consumer's design system — focus rings, popover surface, item hover
+ * states, and keyboard navigation are all the standard shadcn behaviors.
+ *
+ * Two variants:
+ *   - `standalone` matches the bordered `h-8` field look of the other
+ *     picker inputs (used by `FormatSwitcher`, `TypeSwitcher`).
+ *   - `inline` lives inside a `FieldShell` (used by `ChannelInput`'s
+ *     leading format toggle) — strips border/shadow/ring so the parent
+ *     shell owns the chrome.
+ *
+ * The forwarded ref points at the `SelectTrigger` button so consumers
+ * can imperatively focus it.
  */
 export const FieldSelect = React.forwardRef<
-  HTMLSelectElement,
+  HTMLButtonElement,
   FieldSelectProps
 >(function FieldSelect(
   {
+    variant = "standalone",
+    value,
+    defaultValue,
+    onValueChange,
+    disabled,
+    placeholder,
     className,
     wrapperProps,
-    variant = "standalone",
+    contentClassName,
     children,
-    ...rest
+    "aria-label": ariaLabel,
   },
   ref,
 ) {
@@ -140,42 +178,38 @@ export const FieldSelect = React.forwardRef<
     <div
       className={cn(
         inline
-          ? "relative inline-flex shrink-0 items-center"
+          ? "relative inline-flex h-full shrink-0 items-center"
           : "relative inline-flex items-center",
         wrapperClassName,
       )}
       {...wrapperRest}
     >
-      <select
-        ref={ref}
-        className={cn(
-          "appearance-none bg-transparent outline-none cursor-pointer",
-          inline
-            ? "h-full pl-2 pr-5 font-mono text-xs uppercase tracking-wide"
-            : "h-8 rounded-md border border-input pl-2.5 pr-7 font-mono text-xs uppercase tracking-wide shadow-xs focus-visible:ring-1 focus-visible:ring-ring",
-          className,
-        )}
-        {...rest}
+      <Select
+        value={value}
+        defaultValue={defaultValue}
+        onValueChange={onValueChange}
+        disabled={disabled}
       >
-        {children}
-      </select>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 12 12"
-        className={cn(
-          "pointer-events-none absolute size-3 text-muted-foreground",
-          inline ? "right-1.5" : "right-2",
-        )}
-      >
-        <path
-          d="M3 4.5l3 3 3-3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+        <SelectTrigger
+          ref={ref}
+          size="sm"
+          aria-label={ariaLabel}
+          className={cn(
+            "font-mono text-xs tracking-wide",
+            inline
+              ? "h-full rounded-none border-0 bg-transparent px-2 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent dark:hover:bg-transparent"
+              : "w-full",
+            className,
+          )}
+        >
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent
+          className={cn("font-mono text-xs tracking-wide", contentClassName)}
+        >
+          {children}
+        </SelectContent>
+      </Select>
     </div>
   );
 });

@@ -10,6 +10,7 @@ import {
 } from "../lib/channels";
 import type { ColorFormat } from "../lib/types";
 import { cn } from "@/lib/utils";
+import { SelectItem } from "@/components/ui/select";
 import {
   FieldDivider,
   FieldInput,
@@ -74,16 +75,19 @@ export const ChannelInput = React.forwardRef<
       {showFormat && (
         <>
           <FieldSelect
-            data-slot="color-picker-channel-input-format"
             aria-label="Color format"
             variant="inline"
             value={format}
-            onChange={(e) => setFormat(e.target.value as ColorFormat)}
+            onValueChange={(v) => setFormat(v as ColorFormat)}
+            className="uppercase"
+            wrapperProps={{
+              "data-slot": "color-picker-channel-input-format",
+            }}
           >
             {formats.map((f) => (
-              <option key={f} value={f}>
+              <SelectItem key={f} value={f} className="uppercase">
                 {f}
-              </option>
+              </SelectItem>
             ))}
           </FieldSelect>
           <FieldDivider />

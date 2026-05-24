@@ -1075,7 +1075,7 @@ function FillPickerTabsDemo() {
         </FillPicker.Tab>
       </FillPicker.Tabs>
 
-      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
+      <FillPicker.Pane mode="color" className="flex flex-col gap-2">
         <div className="flex items-stretch gap-2">
           <ColorPicker.GamutBadge
             showLabel={false}
@@ -1447,7 +1447,7 @@ export function FillPickerTabsDemo() {
         <FillPicker.Tab mode="gradient" className="flex-1">Gradient</FillPicker.Tab>
       </FillPicker.Tabs>
 
-      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
+      <FillPicker.Pane mode="color" className="flex flex-col gap-2">
         <div className="flex items-stretch gap-2">
           <ColorPicker.GamutBadge
             showLabel={false}

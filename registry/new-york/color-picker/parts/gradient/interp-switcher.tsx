@@ -93,14 +93,14 @@ export const InterpSwitcher = React.forwardRef<
           aria-label="Interpolation space"
           size="sm"
           className={cn(
-            "w-full font-mono text-xs uppercase tracking-wide",
+            "w-full font-mono text-xs tracking-wide",
             triggerClassName,
             className,
           )}
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="font-mono text-xs uppercase tracking-wide">
+        <SelectContent className="font-mono text-xs tracking-wide">
           {OPTIONS.map((opt) => (
             <RowWithInfo
               key={opt.value}

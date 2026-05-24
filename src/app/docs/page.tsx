@@ -996,6 +996,7 @@ function GradientCompactDemo() {
         <GradientPicker.TypeSwitcher />
         <GradientPicker.StopColor>
           <ColorPicker.Hue />
+          <ColorPicker.Lightness />
           <ColorPicker.ChannelInput />
         </GradientPicker.StopColor>
       </GradientPicker.Root>
@@ -1335,6 +1336,7 @@ export function GradientCompactDemo() {
       <GradientPicker.TypeSwitcher />
       <GradientPicker.StopColor>
         <ColorPicker.Hue />
+        <ColorPicker.Lightness />
         <ColorPicker.ChannelInput />
       </GradientPicker.StopColor>
     </GradientPicker.Root>

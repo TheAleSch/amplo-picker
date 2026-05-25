@@ -115,7 +115,7 @@ export default function DocsPage() {
           <p className="text-muted-foreground">
             OKLCH-native, Display-P3-aware color picker. Composable,
             accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app
-            with one CLI command.
+            with a single shadcn CLI command — pick the entry point that fits.
           </p>
           <CopyForAi className="mt-2" />
         </header>
@@ -139,12 +139,12 @@ export default function DocsPage() {
           <InstallTabs
             url="https://amplo.ale.design/r/gradient-picker.json"
             title="Gradient picker (includes color)"
-            description="Adds linear / radial / conic gradient editing: Bar, Area, AnglePad, PositionPad, ShapeSwitcher, StopList, InterpSwitcher, Presets, CssInput. Pulls color-picker automatically."
+            description="Adds linear / radial / conic gradient editing: TypeSwitcher, ShapeSwitcher, Area, Bar, Overlay, AnglePad/Input/Group, PositionPad/Input/Group, RadiusInput, EllipseRadiiInput, RadialSizeSelect, StopList, StopColor, InterpSwitcher, RepeatingToggle, ReverseStops, Presets, CssInput. Pulls color-picker automatically."
           />
           <InstallTabs
             url="https://amplo.ale.design/r/fill-picker.json"
             title="Fill switcher (everything)"
-            description="Adds the color/gradient mode switcher on top: FillPicker.Root, Tabs, Pane. Pulls color-picker + gradient-picker automatically."
+            description="Adds the color/gradient mode switcher on top: FillPicker.Root, Tabs, Tab, Pane. Pulls color-picker + gradient-picker automatically."
           />
         </section>
 

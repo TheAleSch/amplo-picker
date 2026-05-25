@@ -7,19 +7,32 @@
  */
 
 export const SITE_URL = "https://amplo.ale.design";
-export const REGISTRY_URL = `${SITE_URL}/r/color-picker.json`;
+export const COLOR_PICKER_URL = `${SITE_URL}/r/color-picker.json`;
+export const GRADIENT_PICKER_URL = `${SITE_URL}/r/gradient-picker.json`;
+/** Default "give me everything" URL — also re-exported as REGISTRY_URL for backwards compat. */
+export const FILL_PICKER_URL = `${SITE_URL}/r/fill-picker.json`;
+export const REGISTRY_URL = FILL_PICKER_URL;
 
 /** Short llms.txt index per https://llmstxt.org. */
-export const LLMS_TXT = `# Amplo Color Picker
+export const LLMS_TXT = `# Amplo Fill Picker
 
-> OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one CLI command.
+> OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
 The picker stores all state as OKLCH (perceptually uniform) and converts to hex / rgb / hsl / hsb / oklch / oklab / display-p3 on demand. The component API follows the Radix compound pattern (\`<ColorPicker.Root>\` + parts) — there is no kitchen-sink default component; consumers compose the layout they want.
 
 ## Install
 
+Three entry points; the deeper picks pull the lighter ones via shadcn \`registryDependencies\`, so files never duplicate. Everything lands in \`components/ui/fill-picker/\`.
+
 \`\`\`sh
-pnpm dlx shadcn@latest add ${REGISTRY_URL}
+# Solid color only
+pnpm dlx shadcn@latest add ${COLOR_PICKER_URL}
+
+# Gradient editor (pulls color-picker)
+pnpm dlx shadcn@latest add ${GRADIENT_PICKER_URL}
+
+# Color + gradient + the switcher (pulls both above)
+pnpm dlx shadcn@latest add ${FILL_PICKER_URL}
 \`\`\`
 
 ## Docs
@@ -35,22 +48,30 @@ pnpm dlx shadcn@latest add ${REGISTRY_URL}
 `;
 
 /** Full markdown reference. Mirrors /docs page structure. */
-export const DOCS_MARKDOWN = `# Amplo Color Picker
+export const DOCS_MARKDOWN = `# Amplo Fill Picker
 
-OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one CLI command.
+OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
 > **For AI agents:** This file is the canonical reference. Every API surface the user can compose is documented below. The component is shadcn-style — there is no default \`<ColorPicker />\`; consumers compose \`<ColorPicker.Root>\` with the parts they need.
 
 ## Installation
 
+Three entry points. The deeper picks pull the lighter ones via shadcn \`registryDependencies\`, so files never duplicate. Everything lands in \`components/ui/fill-picker/\`.
+
+| Need | URL |
+|------|-----|
+| Solid color only | \`${COLOR_PICKER_URL}\` (21 own files) |
+| Add gradient editing | \`${GRADIENT_PICKER_URL}\` (27 own files + color-picker) |
+| Color + gradient + a switcher | \`${FILL_PICKER_URL}\` (6 own files + both above) |
+
 \`\`\`sh
-pnpm dlx shadcn@latest add ${REGISTRY_URL}
-# or: npx shadcn@latest add ${REGISTRY_URL}
-# or: bunx shadcn@latest add ${REGISTRY_URL}
-# or: yarn dlx shadcn@latest add ${REGISTRY_URL}
+pnpm dlx shadcn@latest add ${FILL_PICKER_URL}
+# or: npx shadcn@latest add ${FILL_PICKER_URL}
+# or: bunx shadcn@latest add ${FILL_PICKER_URL}
+# or: yarn dlx shadcn@latest add ${FILL_PICKER_URL}
 \`\`\`
 
-The shadcn CLI drops the picker into \`components/ui/color-picker/\` and installs \`culori\` + \`lucide-react\` as runtime dependencies. Requires Tailwind v4 and React 19.
+The shadcn CLI drops everything into \`components/ui/fill-picker/\` and installs \`culori\` + \`lucide-react\` as runtime dependencies. Requires Tailwind v4 and React 19.
 
 ## Usage
 
@@ -350,14 +371,14 @@ MIT.
 `;
 
 /** Curated prompt for the "Copy for AI" button. Designed to paste into Claude/Cursor/ChatGPT. */
-export const AI_PROMPT = `I'm integrating Amplo Color Picker — an OKLCH-native, Display-P3-aware color picker for shadcn — into my Next.js + Tailwind v4 app.
+export const AI_PROMPT = `I'm integrating Amplo Fill Picker — an OKLCH-native, Display-P3-aware color picker for shadcn — into my Next.js + Tailwind v4 app.
 
 Read the full reference here before answering: ${SITE_URL}/llms-full.txt
 
 Key constraints:
 - The component is shadcn-style with a Radix compound API. There is no default \`<ColorPicker />\`; consumers compose \`<ColorPicker.Root>\` with the parts they need (\`Area\`, \`Hue\`, \`Lightness\`, \`Alpha\`, \`ChannelInput\`, \`FormatSwitcher\`, \`Swatches\`, \`GamutBadge\`, \`ContrastReadout\`, \`EyeDropper\`, \`Preview\`, \`CssInput\`).
 - Canonical state is \`OklchColor { l, c, h, alpha }\` — pass an object as \`value\` for lossless control. \`onValueChange(color, formatted, formats)\` always provides every format pre-serialized.
-- Install with: \`pnpm dlx shadcn@latest add ${REGISTRY_URL}\` (drops files into \`components/ui/color-picker/\`).
+- Install with: \`pnpm dlx shadcn@latest add ${FILL_PICKER_URL}\` for the full bundle (color + gradient + switcher), or \`${COLOR_PICKER_URL}\` if you only need solid color. Files land in \`components/ui/fill-picker/\`.
 
 My task:
 [describe what you want to build]

@@ -1,14 +1,19 @@
 # Amplo Fill Picker
 
-OKLCH-native, Display-P3-aware fill picker for [shadcn/ui](https://ui.shadcn.com). Color today; gradients, images, and video on the way. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one CLI command.
+OKLCH-native, Display-P3-aware fill picker for [shadcn/ui](https://ui.shadcn.com). Color today, gradients now, images and video on the way. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
 ```sh
-# Base UI variant (recommended — the main version)
-pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker-base.json
-
-# Radix / shadcn classic variant
+# Solid color only (21 files)
 pnpm dlx shadcn@latest add https://amplo.ale.design/r/color-picker.json
+
+# Add gradient editing (pulls color-picker)
+pnpm dlx shadcn@latest add https://amplo.ale.design/r/gradient-picker.json
+
+# Color + gradient + a switcher (pulls both above) — the "give me everything" default
+pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker.json
 ```
+
+All three install into the same `components/ui/fill-picker/` tree, so picking a deeper entry point later is idempotent — shadcn dedupes by `target`.
 
 Two variants, one engine: the **Base UI** variant rebuilds the interactive parts (Hue/Lightness/Alpha sliders, FormatSwitcher, ChannelInput, Swatches) on [Base UI](https://base-ui.com) primitives and is the default going forward; the classic variant keeps the original Radix-backed shadcn parts. Both share the same OKLCH engine, compound API, and presentational parts, so fixes propagate to both. The docs default to Base UI at [`/docs`](https://amplo.ale.design/docs); the Radix variant lives at [`/docs/radix`](https://amplo.ale.design/docs/radix), one click away via the toggle.
 
@@ -207,7 +212,7 @@ This repo is set up as a third-party shadcn registry. To publish your own fork:
 1. Edit `registry.json` — change `name`, `homepage`, item names. The picker declares `["utils", "tooltip"]` as `registryDependencies`, so installing it pulls shadcn's `tooltip` (and its radix dep) automatically.
 2. Run `pnpm registry:build` to emit `public/r/*.json`.
 3. Deploy the Next.js app (Vercel works out of the box).
-4. Users install with `pnpm dlx shadcn@latest add https://<your-host>/r/color-picker.json`.
+4. Users install with `pnpm dlx shadcn@latest add https://<your-host>/r/<item>.json` (one of `color-picker`, `gradient-picker`, `fill-picker` — they chain via `registryDependencies`).
 
 The registry build is incremental and ships only what's listed in the manifest — keep `registry.json` as the source of truth. Outputs in `public/r/*.json` are gitignored — they're produced as a build artifact for deployment.
 

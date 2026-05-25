@@ -4,10 +4,11 @@
   "homepage": "https://amplo.ale.design",
   "items": [
     {
-      "name": "fill-picker",
+      "name": "color-picker",
       "type": "registry:ui",
-      "title": "Amplo Fill Picker",
-      "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
+      "title": "Amplo Color Picker",
+      "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
+      "version": "1.1.0",
       "categories": ["color", "input", "design", "accessibility"],
       "dependencies": ["culori", "lucide-react"],
       "registryDependencies": ["utils", "tooltip", "button", "input", "popover", "select", "toggle"],
@@ -116,26 +117,32 @@
           "path": "registry/new-york/color-picker/color-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/color-picker.tsx"
-        },
+        }
+      ]
+    },
+    {
+      "name": "gradient-picker",
+      "type": "registry:ui",
+      "title": "Amplo Gradient Picker",
+      "description": "Composable gradient picker (linear / radial / conic) built on the Amplo color picker. CSS Color 4 interpolation, per-stop format state, keyboard-accessible angle/position pads.",
+      "version": "1.1.0",
+      "categories": ["color", "input", "design", "accessibility"],
+      "dependencies": ["culori", "lucide-react"],
+      "registryDependencies": [
+        "utils",
+        "tooltip",
+        "button",
+        "input",
+        "popover",
+        "select",
+        "toggle",
+        "https://amplo.ale.design/r/color-picker.json"
+      ],
+      "files": [
         {
           "path": "registry/new-york/color-picker/lib/gradient.ts",
           "type": "registry:lib",
           "target": "components/ui/fill-picker/lib/gradient.ts"
-        },
-        {
-          "path": "registry/new-york/color-picker/hooks/use-gradient-picker.ts",
-          "type": "registry:hook",
-          "target": "components/ui/fill-picker/hooks/use-gradient-picker.ts"
-        },
-        {
-          "path": "registry/new-york/color-picker/hooks/use-fill-picker.ts",
-          "type": "registry:hook",
-          "target": "components/ui/fill-picker/hooks/use-fill-picker.ts"
-        },
-        {
-          "path": "registry/new-york/color-picker/contexts/fill.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/contexts/fill.ts"
         },
         {
           "path": "registry/new-york/color-picker/contexts/gradient.ts",
@@ -143,19 +150,9 @@
           "target": "components/ui/fill-picker/contexts/gradient.ts"
         },
         {
-          "path": "registry/new-york/color-picker/parts/fill/root.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/fill/root.tsx"
-        },
-        {
-          "path": "registry/new-york/color-picker/parts/fill/tabs.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/fill/tabs.tsx"
-        },
-        {
-          "path": "registry/new-york/color-picker/parts/fill/pane.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/fill/pane.tsx"
+          "path": "registry/new-york/color-picker/hooks/use-gradient-picker.ts",
+          "type": "registry:hook",
+          "target": "components/ui/fill-picker/hooks/use-gradient-picker.ts"
         },
         {
           "path": "registry/new-york/color-picker/parts/gradient/root.tsx",
@@ -271,6 +268,58 @@
           "path": "registry/new-york/color-picker/parts/gradient/radial-size-select.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/radial-size-select.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/gradient-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/gradient-picker.tsx"
+        }
+      ]
+    },
+    {
+      "name": "fill-picker",
+      "type": "registry:ui",
+      "title": "Amplo Fill Picker",
+      "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
+      "version": "1.1.0",
+      "categories": ["color", "input", "design", "accessibility"],
+      "dependencies": ["culori", "lucide-react"],
+      "registryDependencies": [
+        "utils",
+        "tooltip",
+        "button",
+        "input",
+        "popover",
+        "select",
+        "toggle",
+        "https://amplo.ale.design/r/color-picker.json",
+        "https://amplo.ale.design/r/gradient-picker.json"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/color-picker/contexts/fill.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/contexts/fill.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/hooks/use-fill-picker.ts",
+          "type": "registry:hook",
+          "target": "components/ui/fill-picker/hooks/use-fill-picker.ts"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/root.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/root.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/tabs.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/fill/pane.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/fill/pane.tsx"
         },
         {
           "path": "registry/new-york/color-picker/fill-picker.tsx",

@@ -124,10 +124,27 @@ export default function DocsPage() {
 
         <section className="flex flex-col gap-4">
           <H2 id="installation">Installation</H2>
+          <p>
+            Three install entry points — pick the smallest one that covers
+            what you need. Each is a single shadcn CLI command; the deeper
+            picks pull the lighter ones as registry dependencies, so you
+            never duplicate files. Everything lands in{" "}
+            <Code>components/ui/fill-picker/</Code>.
+          </p>
+          <InstallTabs
+            url="https://amplo.ale.design/r/color-picker.json"
+            title="Color picker only"
+            description="Solid color: Area, Hue, Lightness, Chroma, Alpha, CssInput, FormatSwitcher, ChannelInput, Swatches, GamutBadge, ContrastReadout, Preview, EyeDropper."
+          />
+          <InstallTabs
+            url="https://amplo.ale.design/r/gradient-picker.json"
+            title="Gradient picker (includes color)"
+            description="Adds linear / radial / conic gradient editing: Bar, Area, AnglePad, PositionPad, ShapeSwitcher, StopList, InterpSwitcher, Presets, CssInput. Pulls color-picker automatically."
+          />
           <InstallTabs
             url="https://amplo.ale.design/r/fill-picker.json"
-            title="CLI"
-            description="One command. The shadcn CLI drops the picker into components/ui/fill-picker/ and installs culori + lucide-react."
+            title="Fill switcher (everything)"
+            description="Adds the color/gradient mode switcher on top: FillPicker.Root, Tabs, Pane. Pulls color-picker + gradient-picker automatically."
           />
         </section>
 

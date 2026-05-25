@@ -23,6 +23,7 @@ interface RegistryItem {
   type: string;
   title?: string;
   description?: string;
+  version?: string;
   categories?: string[];
   dependencies?: string[];
   registryDependencies?: string[];
@@ -47,6 +48,7 @@ function main() {
       type: item.type,
       title: item.title,
       description: item.description,
+      version: item.version,
       categories: item.categories,
       dependencies: item.dependencies ?? [],
       registryDependencies: item.registryDependencies ?? [],
@@ -82,6 +84,7 @@ function main() {
           type: i.type,
           title: i.title,
           description: i.description,
+          version: i.version,
           categories: i.categories,
           dependencies: i.dependencies ?? [],
           registryDependencies: i.registryDependencies ?? [],

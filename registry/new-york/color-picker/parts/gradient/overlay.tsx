@@ -360,11 +360,14 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       // strictly non-negative (CSS forbids negative gradient radii).
       const dxPx = Math.abs(p.x - ax);
       const dyPx = Math.abs(p.y - ay);
-      // Honor the declared shape, Shift inverts:
-      //   shape=circle + no shift  → circle (true pixel circle, radiusPx)
-      //   shape=circle + shift     → ellipse (radii)
-      //   shape=ellipse + no shift → ellipse (radii)
-      //   shape=ellipse + shift    → circle (radiusPx)
+      // Honor the declared shape, Shift inverts (and flips shape in the
+      // model — `setRadiusPx` / `setRadii` enforce `shape: "circle"` /
+      // `"ellipse"` respectively, so the data, the CSS output, and the
+      // ShapeSwitcher all stay in sync after a Shift-drag).
+      //   shape=circle + no shift  → stays circle, writes radiusPx
+      //   shape=circle + shift     → flips to ellipse, writes radii
+      //   shape=ellipse + no shift → stays ellipse, writes radii
+      //   shape=ellipse + shift    → flips to circle, writes radiusPx
       const renderAsCircle = (gradient.shape === "circle") !== shiftKey;
       if (renderAsCircle) {
         // True pixel circle: pick the larger pointer distance as the

@@ -236,6 +236,62 @@ describe("useGradientPicker", () => {
       expect(g.shape).toBe("circle");
       expect(g.radiusPx).toBeUndefined();
     });
+
+    // Regression: Shift-drag / Shift-keyboard on the radial-edge overlay
+    // handle flips which setter the overlay calls (setRadiusPx vs setRadii),
+    // but the shape field used to stay put — leaving e.g. {shape:"circle",
+    // radii:{...}} where formatGradient emits an ellipse and the
+    // RadiusInput (circle-only) shows stale data. The setters now enforce
+    // their implied shape and stash the displaced value for round-trip.
+    it("setRadii from shape=circle flips shape to ellipse and stashes radiusPx", () => {
+      const { result } = renderHook(() =>
+        useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+      );
+      act(() => {
+        result.current.setRadialShape("circle");
+        result.current.setRadiusPx(140);
+      });
+      // Simulate a Shift-drag on the overlay from a circle state.
+      act(() => {
+        result.current.setRadii({ x: 0.4, y: 0.7 });
+      });
+      let g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("ellipse");
+      expect(g.radii).toEqual({ x: 0.4, y: 0.7 });
+      expect(g.radiusPx).toBeUndefined();
+      // Flipping back via the ShapeSwitcher must restore the user's
+      // pre-Shift-drag circle radius (it was stashed during setRadii).
+      act(() => {
+        result.current.setRadialShape("circle");
+      });
+      g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("circle");
+      expect(g.radiusPx).toBe(140);
+    });
+
+    it("setRadiusPx from shape=ellipse flips shape to circle and stashes radii", () => {
+      const { result } = renderHook(() =>
+        useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+      );
+      act(() => {
+        result.current.setRadialShape("ellipse");
+        result.current.setRadii({ x: 0.6, y: 0.2 });
+      });
+      // Simulate a Shift-drag on the overlay from an ellipse state.
+      act(() => {
+        result.current.setRadiusPx(90);
+      });
+      let g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("circle");
+      expect(g.radiusPx).toBe(90);
+      expect(g.radii).toBeUndefined();
+      act(() => {
+        result.current.setRadialShape("ellipse");
+      });
+      g = asRadial(result.current.gradient);
+      expect(g.shape).toBe("ellipse");
+      expect(g.radii).toEqual({ x: 0.6, y: 0.2 });
+    });
   });
 
   it("onValueChange emits a clean Gradient (no internal ids)", () => {

@@ -484,17 +484,26 @@ export function useGradientPicker(
       apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
         const base = prev.gradient as RadialGradient;
-        // Setting `radii` is the ellipse path — clear `radiusPx` in the same
-        // commit so the two never coexist (only one can win at emit time,
-        // and keeping a stale value around would be confusing for callers
-        // that read state directly).
+        // Setting `radii` is the ellipse path. Three jobs:
+        //   1. Clear `radiusPx` so the two override fields never coexist.
+        //   2. Enforce `shape: "ellipse"` — `formatGradient` emits
+        //      `ellipse <rx> <ry>` regardless of `shape` when `radii` is
+        //      present, so anything else would desync the model from CSS
+        //      (and from the ShapeSwitcher / radius input UI).
+        //   3. If the previous shape was circle, stash its `radiusPx` so the
+        //      user can flip back via ShapeSwitcher without losing it (the
+        //      stash matches `setRadialShape`'s own preservation behavior).
+        if (base.shape === "circle" && base.radiusPx !== undefined) {
+          radiusPxStashRef.current = base.radiusPx;
+        }
         const { radii: _dropRadii, radiusPx: _dropPx, ...rest } = base;
         const next: RadialGradient = radii
           ? {
               ...rest,
+              shape: "ellipse",
               radii: { x: Math.max(0, radii.x), y: Math.max(0, radii.y) },
             }
-          : (rest as RadialGradient);
+          : ({ ...rest, shape: "ellipse" } as RadialGradient);
         return { gradient: next, stops: prev.stops };
       }),
     [apply],
@@ -508,14 +517,18 @@ export function useGradientPicker(
       apply((prev) => {
         if (prev.gradient.type !== "radial") return prev;
         const base = prev.gradient as RadialGradient;
-        // Setting `radiusPx` is the circle path — clear `radii` so the
-        // ellipse override never lingers, and so emit logic doesn't have to
-        // tiebreak.
+        // Setting `radiusPx` is the circle path. Mirror `setRadii`:
+        // clear `radii`, enforce `shape: "circle"` (so the model can't
+        // disagree with CSS / the radius input), and stash any previous
+        // ellipse radii so ShapeSwitcher → ellipse restores them.
+        if (base.shape === "ellipse" && base.radii) {
+          radiiStashRef.current = base.radii;
+        }
         const { radii: _dropRadii, radiusPx: _dropPx, ...rest } = base;
         const next: RadialGradient =
           px !== undefined
-            ? { ...rest, radiusPx: Math.max(0, px) }
-            : (rest as RadialGradient);
+            ? { ...rest, shape: "circle", radiusPx: Math.max(0, px) }
+            : ({ ...rest, shape: "circle" } as RadialGradient);
         return { gradient: next, stops: prev.stops };
       }),
     [apply],

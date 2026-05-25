@@ -18,7 +18,7 @@ export const LLMS_TXT = `# Amplo Fill Picker
 
 > OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
-The picker stores all state as OKLCH (perceptually uniform) and converts to hex / rgb / hsl / hsb / oklch / oklab / display-p3 on demand. The component API follows the Radix compound pattern (\`<ColorPicker.Root>\` + parts) — there is no kitchen-sink default component; consumers compose the layout they want.
+The picker stores all state as OKLCH (perceptually uniform) and converts to hex / rgb / hsl / hsb / oklch / oklab / display-p3 on demand. The component API follows the Radix compound pattern across three namespaces: \`ColorPicker\` (solid color), \`GradientPicker\` (linear / radial / conic gradients with CSS Color 4 interpolation), and \`FillPicker\` (a switcher that toggles between the two). There is no kitchen-sink default component; consumers compose the layout they want.
 
 ## Install
 
@@ -79,7 +79,7 @@ OKLCH is the lossless source of truth. Pass an \`OklchColor\` object as \`value\
 
 \`\`\`tsx
 import * as React from "react";
-import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
+import { ColorPicker, parseColor } from "@/components/ui/fill-picker/color-picker";
 
 export function Example() {
   // Store the canonical OklchColor; derive any string output from \`formats\`.
@@ -108,7 +108,7 @@ export function Example() {
 "use client";
 
 import * as React from "react";
-import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
+import { ColorPicker, parseColor } from "@/components/ui/fill-picker/color-picker";
 
 export function ColorPickerDemo() {
   const [color, setColor] = React.useState(() => parseColor("oklch(0.7 0.18 30)")!);
@@ -345,8 +345,142 @@ import {
   contrast,      // (fg, bg) => { wcag, wcagLevel, apca }
   apcaContrast,  // (fg, bg) => Lc number
   isValidColor,  // (string) => boolean
-} from "@/components/ui/color-picker/color-picker";
+} from "@/components/ui/fill-picker/color-picker";
 \`\`\`
+
+## Gradient picker
+
+\`GradientPicker\` is a separate compound namespace that builds on top of the color picker. Install \`gradient-picker.json\` (pulls the color picker automatically).
+
+\`\`\`tsx
+import { GradientPicker, DEFAULT_LINEAR, type Gradient } from "@/components/ui/fill-picker/gradient-picker";
+
+export function GradientDemo() {
+  const [gradient, setGradient] = React.useState<Gradient>(DEFAULT_LINEAR);
+  return (
+    <GradientPicker.Root value={gradient} onValueChange={setGradient}>
+      <GradientPicker.TypeSwitcher />          {/* linear / radial / conic */}
+      <GradientPicker.Area />                  {/* live gradient + drag handles */}
+      <GradientPicker.Bar editOnClick />       {/* horizontal stop strip */}
+      <GradientPicker.InterpSwitcher />        {/* color space for interpolation */}
+      <GradientPicker.StopList />              {/* per-stop editor popovers */}
+      <GradientPicker.Presets />               {/* built-in starter ramps */}
+    </GradientPicker.Root>
+  );
+}
+\`\`\`
+
+### Output: state shape
+
+The canonical state is a discriminated \`Gradient\` union. Every change emits a value that round-trips losslessly through \`formatGradient\` / \`parseGradient\`. Stops always serialize as \`oklch(…)\` regardless of the per-stop display format chosen in the UI, so output is wide-gamut by default.
+
+\`\`\`tsx
+type GradientStop = {
+  position: number;            // 0..1 along the bar
+  color: OklchColor;
+  hint?: number;               // 0..1 midpoint (data layer present; UI deferred)
+};
+type LinearGradient = {
+  type: "linear";
+  angle: number;               // CSS degrees (0 = up)
+  start?: { x: number; y: number };  // 0..1, optional positioned linear
+  end?:   { x: number; y: number };
+  repeating?: boolean;
+  interp: GradientInterp;
+  stops: GradientStop[];
+};
+type RadialGradient = {
+  type: "radial";
+  shape: "circle" | "ellipse";
+  size?: "closest-side" | "closest-corner" | "farthest-side" | "farthest-corner";
+  center: { x: number; y: number };  // 0..1
+  radii?: { x: number; y: number };  // 0..1, takes precedence over size (ellipse path)
+  radiusPx?: number;                 // absolute px, circle path
+  repeating?: boolean;
+  interp: GradientInterp;
+  stops: GradientStop[];
+};
+type ConicGradient = {
+  type: "conic";
+  startAngle: number;          // CSS degrees
+  center: { x: number; y: number };
+  repeating?: boolean;
+  interp: GradientInterp;
+  stops: GradientStop[];
+};
+type Gradient = LinearGradient | RadialGradient | ConicGradient;
+\`\`\`
+
+\`\`\`tsx
+import { formatGradient, parseGradient } from "@/components/ui/fill-picker/gradient-picker";
+
+const css = formatGradient(gradient);   // "linear-gradient(0deg in oklch, oklch(...) 0%, oklch(...) 100%)"
+const back = parseGradient(css);        // Gradient | null
+\`\`\`
+
+### Interpolation
+
+\`GradientInterp = "oklch" | "oklab" | "srgb" | "hsl" | "hsl-longer"\`. Emitted as the CSS Color 4 \`in <space>\` clause. \`oklch\` (default) gives perceptually-even ramps; \`hsl-longer\` takes the long way around the hue wheel.
+
+### Shape controls (radial)
+
+When \`gradient.type === "radial"\`, three controls are available:
+
+- \`<GradientPicker.ShapeSwitcher />\` — circle ↔ ellipse (segmented toggle, role=group + aria-pressed)
+- \`<GradientPicker.RadiusInput />\` — single radius in px (circle path)
+- \`<GradientPicker.EllipseRadiiInput />\` — x/y radii in percent (ellipse path)
+- \`<GradientPicker.RadialSizeSelect />\` — keyword form (\`closest-side\` … \`farthest-corner\`)
+
+Setters enforce shape: \`setRadiusPx(...)\` implies \`shape: "circle"\`, \`setRadii(...)\` implies \`shape: "ellipse"\`. Toggling back via \`ShapeSwitcher\` restores the previous override (each shape's last value is stashed on flip).
+
+### Key parts
+
+| Part | Role |
+|------|------|
+| \`Root\` | Controlled/uncontrolled wrapper, owns state. |
+| \`TypeSwitcher\` | Linear / Radial / Conic. |
+| \`Area\` | Live gradient render + handle overlay. |
+| \`Overlay\` | Just the handle layer (overlay on your own canvas). |
+| \`Bar\` | Horizontal stop strip with drag-to-reposition. Pass \`editOnClick\` to open the stop editor on tap. |
+| \`StopList\` | Per-stop rows (swatch popover, % input, color paste, remove). |
+| \`StopColor\` | Single stop editor (use outside StopList). |
+| \`InterpSwitcher\` | Color-space for interpolation. |
+| \`ReverseStops\` / \`RepeatingToggle\` | Quick actions. |
+| \`AnglePad\` / \`AngleInput\` / \`AngleGroup\` | Linear angle controls. |
+| \`PositionPad\` / \`PositionInput\` / \`PositionGroup\` | Radial / conic center controls. |
+| \`ShapeSwitcher\` / \`RadiusInput\` / \`EllipseRadiiInput\` / \`RadialSizeSelect\` | Radial shape controls. |
+| \`Presets\` | Grid of starter ramps. Pass \`presets={[...]}\` to override. |
+| \`CssInput\` | Single text input that parses any CSS \`<gradient>\` value. |
+
+## Fill picker (color + gradient switcher)
+
+\`FillPicker\` adds a Solid/Gradient mode switcher on top. Install \`fill-picker.json\` (pulls both color-picker and gradient-picker).
+
+\`\`\`tsx
+import { FillPicker, GradientPicker, ColorPicker, type Fill } from "@/components/ui/fill-picker/fill-picker";
+
+export function FillDemo() {
+  const [fill, setFill] = React.useState<Fill>({ type: "color", color: { l: 0.7, c: 0.18, h: 30, alpha: 1 } });
+  return (
+    <FillPicker.Root value={fill} onValueChange={setFill}>
+      <FillPicker.Tabs>
+        <FillPicker.Tab value="color">Color</FillPicker.Tab>
+        <FillPicker.Tab value="gradient">Gradient</FillPicker.Tab>
+      </FillPicker.Tabs>
+      <FillPicker.Pane value="color">
+        <ColorPicker.Area />
+        <ColorPicker.Hue />
+      </FillPicker.Pane>
+      <FillPicker.Pane value="gradient">
+        <GradientPicker.Bar editOnClick />
+        <GradientPicker.StopList />
+      </FillPicker.Pane>
+    </FillPicker.Root>
+  );
+}
+\`\`\`
+
+\`Fill = ColorFill | GradientFill\`. \`formatFill(fill)\` returns the CSS value for either branch (\`oklch(…)\` or \`linear-gradient(…)\`). \`FillPicker.Root\` animates its height across pane swaps via a ResizeObserver-driven inline px height.
 
 ## Color spaces
 
@@ -359,7 +493,7 @@ When you author a P3-or-wider color and the user's display can't render it, the 
 
 ## Accessibility
 
-- **Keyboard.** Every interactive part is reachable via Tab. Sliders follow the WAI-ARIA APG slider pattern (arrow keys ±1, Shift ±10, Home/End, PageUp/Down). The 2D Area uses \`role="application"\` with \`aria-roledescription\` and \`aria-valuetext\` describing the current point.
+- **Keyboard.** Every interactive part is reachable via Tab. Sliders follow the WAI-ARIA APG slider pattern (arrow keys ±1, Shift ±10, Home/End, PageUp/Down). The 2D Area and gradient pads use \`role="application"\` with \`aria-roledescription\` and a value-bearing \`aria-label\`. Segmented toggles (e.g. \`<GradientPicker.ShapeSwitcher>\`) use \`role="group"\` + \`aria-pressed\` per button.
 - **Pointer + touch.** Pointer capture so drags don't escape; \`touch-none\` to suppress browser scroll while interacting.
 - **Focus.** Visible focus ring on all controls via \`focus-visible:ring\`.
 - **Color independence.** Gamut and contrast information is conveyed via text + ARIA, not color alone.
@@ -376,7 +510,11 @@ export const AI_PROMPT = `I'm integrating Amplo Fill Picker — an OKLCH-native,
 Read the full reference here before answering: ${SITE_URL}/llms-full.txt
 
 Key constraints:
-- The component is shadcn-style with a Radix compound API. There is no default \`<ColorPicker />\`; consumers compose \`<ColorPicker.Root>\` with the parts they need (\`Area\`, \`Hue\`, \`Lightness\`, \`Alpha\`, \`ChannelInput\`, \`FormatSwitcher\`, \`Swatches\`, \`GamutBadge\`, \`ContrastReadout\`, \`EyeDropper\`, \`Preview\`, \`CssInput\`).
+- The component is shadcn-style with a Radix compound API across three namespaces:
+  - \`ColorPicker\` — solid-color parts (\`Area\`, \`Hue\`, \`Lightness\`, \`Chroma\`, \`Alpha\`, \`ChannelInput\`, \`FormatSwitcher\`, \`Swatches\`, \`GamutBadge\`, \`ContrastReadout\`, \`EyeDropper\`, \`Preview\`, \`CssInput\`).
+  - \`GradientPicker\` — gradient parts (\`TypeSwitcher\`, \`Area\`, \`Bar\`, \`Overlay\`, \`StopList\`, \`StopColor\`, \`InterpSwitcher\`, \`AnglePad/Input/Group\`, \`PositionPad/Input/Group\`, \`ShapeSwitcher\`, \`RadiusInput\`, \`EllipseRadiiInput\`, \`RadialSizeSelect\`, \`RepeatingToggle\`, \`ReverseStops\`, \`Presets\`, \`CssInput\`).
+  - \`FillPicker\` — color/gradient mode switcher (\`Root\`, \`Tabs\`, \`Tab\`, \`Pane\`).
+- There is no default \`<ColorPicker />\` / \`<GradientPicker />\` / \`<FillPicker />\` component; consumers compose each \`Root\` with the parts they need.
 - Canonical state is \`OklchColor { l, c, h, alpha }\` — pass an object as \`value\` for lossless control. \`onValueChange(color, formatted, formats)\` always provides every format pre-serialized.
 - Install with: \`pnpm dlx shadcn@latest add ${FILL_PICKER_URL}\` for the full bundle (color + gradient + switcher), or \`${COLOR_PICKER_URL}\` if you only need solid color. Files land in \`components/ui/fill-picker/\`.
 

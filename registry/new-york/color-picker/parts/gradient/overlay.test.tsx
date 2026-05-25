@@ -125,7 +125,7 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
       0,
     );
     // Now drag the center handle on the Area.
-    const center = screen.getByLabelText("Gradient center");
+    const center = screen.getByLabelText(/^Gradient center/);
     act(() => {
       fireEvent.pointerDown(center, {
         clientX: 200,
@@ -169,7 +169,7 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
       />,
     );
     expect((latest as RadialGradient).radiusPx).toBeUndefined();
-    const center = screen.getByLabelText("Gradient center");
+    const center = screen.getByLabelText(/^Gradient center/);
     act(() => {
       fireEvent.pointerDown(center, {
         clientX: 200,
@@ -224,7 +224,7 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
     });
     const before = latest as RadialGradient;
     expect(before.radii).toEqual({ x: 0.5, y: 0.3 });
-    const center = screen.getByLabelText("Gradient center");
+    const center = screen.getByLabelText(/^Gradient center/);
     act(() => {
       fireEvent.pointerDown(center, {
         clientX: 200,

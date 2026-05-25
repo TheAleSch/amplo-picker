@@ -781,13 +781,12 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
           ) : (
             <>
               <Handle
-                label="Gradient center"
+                label={`Gradient center, x ${Math.round(gradient.center.x * 100)}%, y ${Math.round(gradient.center.y * 100)}%`}
                 position={handles.a}
                 onPointerDown={beginDrag("center")}
                 onKeyDown={onKeyDownCenter}
                 role="application"
                 aria-roledescription="2D pad for gradient center"
-                aria-valuetext={`x ${Math.round(gradient.center.x * 100)}%, y ${Math.round(gradient.center.y * 100)}%`}
               />
               {handles.b && gradient.type === "conic" && (
                 <Handle

@@ -17,14 +17,20 @@ export const ShapeSwitcher = React.forwardRef<
   if (ctx.gradient.type !== "radial") return null;
   const current = ctx.gradient.shape;
 
+  // role="group" + aria-pressed buttons rather than role="tablist" / "tab":
+  // the WAI-ARIA tab pattern requires arrow-key navigation and tabpanels,
+  // neither of which apply here. This is a segmented toggle, and shadcn's
+  // own Toggle uses aria-pressed for the same reason. Each button is
+  // independently Tab-reachable; activation is via Space/Enter (native
+  // <button> behavior).
   return (
     <div
       ref={ref}
-      role="tablist"
+      role="group"
       aria-label="Radial gradient shape"
       data-slot="gradient-shape-switcher"
       className={cn(
-        "inline-flex w-full rounded-md bg-muted p-[3px] gap-[2px]",
+        "inline-flex w-full rounded-md bg-muted p-0.75 gap-0.5",
         className,
       )}
       {...rest}
@@ -35,8 +41,7 @@ export const ShapeSwitcher = React.forwardRef<
           <button
             key={value}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => ctx.setRadialShape(value)}
             className={cn(
               "flex-1 rounded-sm px-3 py-1 text-xs font-medium outline-none transition-colors",

@@ -9,7 +9,7 @@ describe("<GradientPicker.ShapeSwitcher>", () => {
         <GradientPicker.ShapeSwitcher />
       </GradientPicker.Root>,
     );
-    expect(screen.queryByRole("tab", { name: "Circle" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Circle" })).toBeNull();
   });
 
   it("renders two tabs and switches shape", () => {
@@ -22,8 +22,8 @@ describe("<GradientPicker.ShapeSwitcher>", () => {
         <GradientPicker.ShapeSwitcher />
       </GradientPicker.Root>,
     );
-    const ellipseTab = screen.getByRole("tab", { name: "Ellipse" });
-    fireEvent.click(ellipseTab);
+    const ellipseBtn = screen.getByRole("button", { name: "Ellipse" });
+    fireEvent.click(ellipseBtn);
     expect(onValueChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ shape: "ellipse" }),
       expect.any(String),

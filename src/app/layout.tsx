@@ -59,7 +59,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Blocking script: runs before paint to apply .dark from localStorage
-            or system preference, preventing a light→dark flash on reload. */}
+            or system preference, preventing a light→dark flash on reload.
+            This is the canonical anti-flash pattern — the script MUST run
+            before React hydrates, so async/defer would defeat the purpose. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/theme-init.js" />
       </head>
       <body

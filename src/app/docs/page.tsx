@@ -1162,7 +1162,7 @@ function FillPickerTabsDemo() {
 const HERO_CODE = `"use client";
 
 import * as React from "react";
-import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
+import { ColorPicker, parseColor } from "@/components/ui/fill-picker/color-picker";
 
 export function ColorPickerDemo() {
   const [color, setColor] = React.useState(() => parseColor("oklch(0.7 0.18 30)")!);
@@ -1197,7 +1197,7 @@ export function ColorPickerDemo() {
 }`;
 
 const USAGE_CODE = `import * as React from "react";
-import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
+import { ColorPicker, parseColor } from "@/components/ui/fill-picker/color-picker";
 
 export function Example() {
   // Store the canonical OklchColor; derive any string output from \`formats\`.
@@ -1318,7 +1318,7 @@ const POPOVER_CODE = `import { Popover, PopoverContent, PopoverTrigger } from "@
 const SAVED_SWATCHES_CODE = `"use client";
 
 import * as React from "react";
-import { ColorPicker, parseColor } from "@/components/ui/color-picker/color-picker";
+import { ColorPicker, parseColor } from "@/components/ui/fill-picker/color-picker";
 
 const STARTERS = ["#ffffff", "#000000", "oklch(0.7 0.18 30)"];
 
@@ -1360,8 +1360,8 @@ import {
   ColorPicker,
   GradientPicker,
   DEFAULT_LINEAR,
-} from "@/components/ui/color-picker/fill-picker";
-import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+} from "@/components/ui/fill-picker/fill-picker";
+import type { Gradient } from "@/components/ui/fill-picker/fill-picker";
 
 export function GradientCompactDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
@@ -1385,8 +1385,8 @@ import * as React from "react";
 import {
   GradientPicker,
   DEFAULT_LINEAR,
-} from "@/components/ui/color-picker/fill-picker";
-import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+} from "@/components/ui/fill-picker/fill-picker";
+import type { Gradient } from "@/components/ui/fill-picker/fill-picker";
 
 export function GradientFullDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
@@ -1414,8 +1414,8 @@ import {
   GradientPicker,
   DEFAULT_LINEAR,
   formatGradient,
-} from "@/components/ui/color-picker/fill-picker";
-import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+} from "@/components/ui/fill-picker/fill-picker";
+import type { Gradient } from "@/components/ui/fill-picker/fill-picker";
 
 export function GradientOverlayDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
@@ -1444,8 +1444,8 @@ import * as React from "react";
 import {
   GradientPicker,
   DEFAULT_LINEAR,
-} from "@/components/ui/color-picker/fill-picker";
-import type { Gradient } from "@/components/ui/color-picker/fill-picker";
+} from "@/components/ui/fill-picker/fill-picker";
+import type { Gradient } from "@/components/ui/fill-picker/fill-picker";
 
 export function GradientBarOnlyDemo() {
   const [g, setG] = React.useState<Gradient>(DEFAULT_LINEAR);
@@ -1464,8 +1464,8 @@ import {
   GradientPicker,
   FillPicker,
   parseColor,
-} from "@/components/ui/color-picker/fill-picker";
-import type { Fill } from "@/components/ui/color-picker/fill-picker";
+} from "@/components/ui/fill-picker/fill-picker";
+import type { Fill } from "@/components/ui/fill-picker/fill-picker";
 
 export function FillPickerTabsDemo() {
   const [fill, setFill] = React.useState<Fill>(() => ({
@@ -1657,7 +1657,7 @@ const UTILS_CODE = `import {
   contrast,      // (fg, bg) => { wcag, wcagLevel, apca }
   apcaContrast,  // (fg, bg) => Lc number
   isValidColor,  // (string) => boolean
-} from "@/components/ui/color-picker/color-picker";`;
+} from "@/components/ui/fill-picker/color-picker";`;
 
 /* ─────────────────────────── API tables ─────────────────────────── */
 

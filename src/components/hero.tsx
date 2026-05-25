@@ -344,26 +344,12 @@ function HeroGradientShapeControls() {
 }
 
 function HeroPicker() {
+  // Hero defaults to the Solid tab — that's the most familiar surface
+  // for first-time visitors. Gradient mode is one click away; toggling
+  // to it falls back to FillPicker's own gradient default.
   const [fill, setFill] = React.useState<Fill>(() => ({
-    kind: "gradient",
-    gradient: {
-      type: "radial",
-      shape: "circle",
-      center: { x: 0.5, y: 0.5 },
-      size: "farthest-corner",
-      // ~30% of the 280px hero picker — gives the dashed inner-circle
-      // gauge that lets the repeating ramp tile a few times.
-      radiusPx: 84,
-      repeating: true,
-      interp: "oklch",
-      stops: [
-        { color: parseColor("oklch(0.7 0.18 0)")!, position: 0 },
-        { color: parseColor("oklch(0.7 0.18 80)")!, position: 0.25 },
-        { color: parseColor("oklch(0.7 0.18 160)")!, position: 0.5 },
-        { color: parseColor("oklch(0.7 0.18 240)")!, position: 0.75 },
-        { color: parseColor("oklch(0.7 0.18 360)")!, position: 1 },
-      ],
-    },
+    kind: "color",
+    color: parseColor("oklch(0.7 0.18 30)")!,
   }));
   const [savedSwatches, setSavedSwatches] = React.useState<string[]>([]);
   const swatches = React.useMemo(

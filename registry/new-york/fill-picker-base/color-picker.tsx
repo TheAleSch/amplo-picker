@@ -6,17 +6,17 @@
 // Only the parts that benefit from Base UI primitives are rewritten:
 //   - Hue, Lightness, Alpha → Slider
 //   - FormatSwitcher        → Select
+//   - ChannelInput          → NumberField (per channel)
+//   - Swatches              → RadioGroup + Radio
 //
-// Everything else (Root/context, Area canvas, ChannelInput's paste-any-string
-// flow, Swatches, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput)
-// is identical to the original; importing from the same source means engine
-// fixes propagate to both variants for free.
+// Everything else (Root/context, Area canvas, GamutBadge, ContrastReadout,
+// Preview, EyeDropper, CssInput) is identical to the original; importing
+// from the same source means engine fixes propagate to both variants for
+// free.
 
 import { Root } from "@/registry/new-york/color-picker/parts/root";
 import { Area } from "@/registry/new-york/color-picker/parts/area";
 import { CssInput } from "@/registry/new-york/color-picker/parts/css-input";
-import { ChannelInput } from "@/registry/new-york/color-picker/parts/channel-input";
-import { Swatches } from "@/registry/new-york/color-picker/parts/swatches";
 import { GamutBadge } from "@/registry/new-york/color-picker/parts/gamut-badge";
 import { ContrastReadout } from "@/registry/new-york/color-picker/parts/contrast-readout";
 import { Preview } from "@/registry/new-york/color-picker/parts/preview";
@@ -26,6 +26,8 @@ import { Hue } from "./parts/hue";
 import { Lightness } from "./parts/lightness";
 import { Alpha } from "./parts/alpha";
 import { FormatSwitcher } from "./parts/format-switcher";
+import { ChannelInput } from "./parts/channel-input";
+import { Swatches } from "./parts/swatches";
 
 export type {
   ColorFormat,

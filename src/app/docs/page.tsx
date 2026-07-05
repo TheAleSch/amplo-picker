@@ -13,6 +13,7 @@ import {
 import { CodeBlock } from "@/components/code-block";
 import { PreviewTabs } from "@/components/preview-tabs";
 import { InstallTabs } from "@/components/install-tabs";
+import { VariantTabs } from "@/components/variant-tabs";
 import { CopyForAi } from "@/components/copy-for-ai";
 
 const TOC = [
@@ -62,15 +63,32 @@ export default function DocsPage() {
 
         <section className="flex flex-col gap-4">
           <H2 id="installation">Installation</H2>
-          <InstallTabs
-            url="https://amplo.ale.design/r/fill-picker-base.json"
-            title="Base UI (recommended)"
-            description="The main variant, built on Base UI primitives (Slider, Select, NumberField, RadioGroup). Pulls the shared engine in as a registry dependency."
-          />
-          <InstallTabs
-            url="https://amplo.ale.design/r/color-picker.json"
-            title="Radix / shadcn classic"
-            description="The original variant on Radix-backed shadcn parts. Same compound API, same engine — pick this if the rest of your project is Radix-based."
+          <VariantTabs
+            defaultValue="base-ui"
+            tabs={[
+              {
+                value: "base-ui",
+                label: "Base UI",
+                content: (
+                  <InstallTabs
+                    url="https://amplo.ale.design/r/fill-picker-base.json"
+                    title="Base UI (recommended)"
+                    description="The main variant, built on Base UI primitives (Slider, Select, NumberField, RadioGroup). Pulls the shared engine in as a registry dependency."
+                  />
+                ),
+              },
+              {
+                value: "radix",
+                label: "Radix",
+                content: (
+                  <InstallTabs
+                    url="https://amplo.ale.design/r/color-picker.json"
+                    title="Radix / shadcn classic"
+                    description="The original variant on Radix-backed shadcn parts. Same compound API, same engine — pick this if the rest of your project is Radix-based."
+                  />
+                ),
+              },
+            ]}
           />
           <p className="text-sm text-muted-foreground">
             Both variants share one OKLCH engine, so behavior and fixes stay in

@@ -10,9 +10,15 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
   },
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@/registry": path.resolve(__dirname, "./registry"),
-    },
+    alias: [
+      // More specific alias first: Vite tries object/array alias entries in
+      // order and uses the first "startsWith" match, so "@/registry/*" must
+      // be checked before the broader "@" -> src catch-all, or imports like
+      // "@/registry/new-york/color-picker/parts/root" incorrectly resolve
+      // under src/registry/... (which doesn't exist) instead of the actual
+      // registry/ directory at the repo root.
+      { find: "@/registry", replacement: path.resolve(__dirname, "./registry") },
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+    ],
   },
 });

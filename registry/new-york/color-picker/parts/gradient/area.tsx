@@ -4,7 +4,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import { formatGradient } from "../../lib/gradient";
-import { CHECKERBOARD, Overlay, type OverlayProps } from "./overlay";
+import { CHECKERBOARD_LG } from "../../lib/constants";
+import { Overlay, type OverlayProps } from "./overlay";
 
 export interface AreaProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Fixed height in px. Defaults to 120. Width always fills the container. */
@@ -46,7 +47,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       <div
         aria-hidden
         className="absolute inset-0"
-        style={{ backgroundImage: CHECKERBOARD }}
+        style={{ backgroundImage: CHECKERBOARD_LG }}
       />
       <div
         aria-hidden

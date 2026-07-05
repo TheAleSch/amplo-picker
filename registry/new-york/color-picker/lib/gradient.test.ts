@@ -237,6 +237,33 @@ describe("parseGradient", () => {
     expect(parsed!.stops[0].position).toBe(0);
     expect(parsed!.stops[1].position).toBe(1);
   });
+
+  it("attaches a midpoint hint to the following stop and round-trips it", () => {
+    // formatStops emits stop i's hint between stop i-1 and stop i, so parse
+    // must attach a bare `50%` to the NEXT stop — not the previous one.
+    const css =
+      "linear-gradient(in oklch 90deg, #ffffff 0%, 50%, #000000 100%)";
+    const parsed = parseGradient(css);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.stops[0].hint).toBeUndefined();
+    expect(parsed!.stops[1].hint).toBeCloseTo(0.5, 6);
+    // Round trip: the hint must survive format → parse → format.
+    const reformatted = formatGradient(parsed!);
+    expect(reformatted).toContain(" 50%,");
+    expect(parseGradient(reformatted)).toEqual(parsed);
+  });
+
+  it("rejects leading, trailing, and doubled hints", () => {
+    expect(
+      parseGradient("linear-gradient(90deg, 50%, #fff 0%, #000 100%)"),
+    ).toBeNull();
+    expect(
+      parseGradient("linear-gradient(90deg, #fff 0%, #000 100%, 50%)"),
+    ).toBeNull();
+    expect(
+      parseGradient("linear-gradient(90deg, #fff 0%, 30%, 60%, #000 100%)"),
+    ).toBeNull();
+  });
 });
 
 describe("Fill helpers", () => {

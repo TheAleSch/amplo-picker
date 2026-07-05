@@ -6,12 +6,9 @@ import { useColorPickerContext } from "../context";
 import { formatColor, parseColor } from "../lib/color";
 import type { OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
+import { CHECKERBOARD_SM } from "../lib/constants";
 
 // Inline SVG checkerboard so transparent / partially-opaque presets read as
-// translucent rather than solid against the popover bg.
-const CHECKERBOARD =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
-
 export interface SwatchesProps extends React.HTMLAttributes<HTMLDivElement> {
   presets?: string[];
   /**
@@ -82,15 +79,18 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
             aria-label={p}
             onClick={() => setColor(p)}
             className={cn(
-              "relative size-5 cursor-pointer overflow-hidden rounded-sm border border-border outline-none transition-transform",
-              "focus-visible:ring-2 focus-visible:ring-ring hover:scale-110",
+              // before/after pseudo-padding: keep the 20px visual chip but give the
+              // button a 28px hit area (WCAG 2.5.8 target size).
+              "relative size-5 cursor-pointer rounded-sm border border-border outline-none motion-safe:transition-transform",
+              "before:absolute before:-inset-1 before:content-['']",
+              "focus-visible:ring-2 focus-visible:ring-ring motion-safe:hover:scale-110",
               active && "ring-2 ring-ring",
             )}
-            style={{ backgroundImage: CHECKERBOARD, backgroundSize: "8px 8px" }}
+            style={{ backgroundImage: CHECKERBOARD_SM, backgroundSize: "8px 8px" }}
           >
             <span
               aria-hidden
-              className="absolute inset-0"
+              className="absolute inset-0 rounded-[inherit]"
               style={{ background: p }}
             />
           </button>
@@ -102,7 +102,7 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           aria-label="Add current color to swatches"
           onClick={() => onAdd(color, formatColor(color, "hex"))}
           className={cn(
-            "inline-flex size-5 cursor-pointer items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none transition-colors",
+            "inline-flex size-5 cursor-pointer items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none motion-safe:transition-colors",
             "hover:border-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
           )}
         >

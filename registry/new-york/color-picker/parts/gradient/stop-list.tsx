@@ -12,15 +12,13 @@ import {
 } from "../../lib/gradient";
 import { formatColor, parseColor } from "../../lib/color";
 import { StopEditorPopover } from "./stop-editor-popover";
+import { CHECKERBOARD_SM } from "../../lib/constants";
 import {
   FieldInput,
   FieldInputGroup,
   FieldShell,
   FieldSuffix,
 } from "../field";
-
-const CHECKERBOARD =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
 
 export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -173,7 +171,7 @@ function StopRow({
           }}
           aria-label="Edit stop color"
           style={{
-            backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD}`,
+            backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD_SM}`,
             backgroundSize: "auto, 6px 6px",
           }}
           className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"

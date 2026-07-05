@@ -365,12 +365,16 @@ function extractInterp(s: string): { interp: GradientInterp; rest: string } {
 
 function parseStops(parts: string[]): GradientStop[] | null {
   const stops: GradientStop[] = [];
+  // A hint belongs to the stop that FOLLOWS it (formatStops emits stop i's
+  // hint between stop i-1 and stop i), so stash it until the next color stop.
+  let pendingHint: number | undefined;
   for (const p of parts) {
     // Bare percentage hint: `30%`
     const hintMatch = p.match(/^(-?\d+(?:\.\d+)?)%$/);
     if (hintMatch) {
       if (stops.length === 0) return null; // hint can't lead
-      stops[stops.length - 1].hint = parseFloat(hintMatch[1]) / 100;
+      if (pendingHint !== undefined) return null; // two hints in a row
+      pendingHint = parseFloat(hintMatch[1]) / 100;
       continue;
     }
     // Color + optional position: `oklch(…) 50%` or just `oklch(…)`
@@ -386,8 +390,11 @@ function parseStops(parts: string[]): GradientStop[] | null {
     stops.push({
       color,
       position: position ?? (stops.length === 0 ? 0 : 1),
+      ...(pendingHint !== undefined ? { hint: pendingHint } : {}),
     });
+    pendingHint = undefined;
   }
+  if (pendingHint !== undefined) return null; // hint can't trail
   return stops.length >= 1 ? stops : null;
 }
 

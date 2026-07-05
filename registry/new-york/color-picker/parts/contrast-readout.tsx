@@ -11,9 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-
-const CHECKERBOARD =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
+import { CHECKERBOARD_SM } from "../lib/constants";
 
 export type ContrastMetric = "wcag" | "apca";
 
@@ -121,7 +119,7 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
                 aria-label={`Contrast (${active.toUpperCase()}). Click to switch to ${nextMetric.toUpperCase()}.`}
                 className={cn(
                   baseClass,
-                  "cursor-pointer text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "cursor-pointer text-left motion-safe:transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   className,
                 )}
                 {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
@@ -336,7 +334,7 @@ function Chip({ color }: { color: string }) {
   return (
     <span
       className="block size-4"
-      style={{ backgroundImage: CHECKERBOARD, backgroundSize: "8px 8px" }}
+      style={{ backgroundImage: CHECKERBOARD_SM, backgroundSize: "8px 8px" }}
     >
       <span className="block size-full" style={{ background: color }} />
     </span>

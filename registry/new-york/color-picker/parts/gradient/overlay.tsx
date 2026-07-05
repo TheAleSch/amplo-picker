@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import { type RadialSizeKeyword } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
+import { CHECKERBOARD_LG } from "../../lib/constants";
 
 export interface OverlayProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -22,10 +23,6 @@ interface XY {
 const HANDLE_PX = 14;
 
 // Re-exported so `<GradientPicker.Area>` can paint its own checkerboard
-// behind the gradient without duplicating the SVG payload.
-export const CHECKERBOARD =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><rect width='6' height='6' fill='%23ccc'/><rect x='6' y='6' width='6' height='6' fill='%23ccc'/></svg>\")";
-
 /**
  * Convert a CSS gradient angle (0deg = up, increases clockwise) to a unit
  * direction vector in screen coordinates (y goes down).
@@ -482,7 +479,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
   const stopSwatchStyle = (color: typeof ctx.stops[number]["color"]) => {
     const css = formatColor(color, "oklch");
     return {
-      backgroundImage: `linear-gradient(${css}, ${css}), ${CHECKERBOARD}`,
+      backgroundImage: `linear-gradient(${css}, ${css}), ${CHECKERBOARD_LG}`,
       backgroundSize: "auto, 6px 6px",
     } as const;
   };
@@ -879,8 +876,8 @@ function Handle({ label, position, className, style, ...rest }: HandleProps) {
         // receiving clicks even when their parent overlay is set to
         // `pointer-events-none` (the default for `<GradientPicker.Overlay>`).
         "pointer-events-auto border-2 border-white bg-background shadow-[0_0_0_1px_rgba(0,0,0,0.55),0_2px_6px_rgba(0,0,0,0.35)]",
-        "outline-none transition-transform",
-        "hover:scale-110 active:cursor-grabbing active:scale-95",
+        "outline-none motion-safe:transition-transform",
+        "motion-safe:hover:scale-110 active:cursor-grabbing motion-safe:active:scale-95",
         "focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}

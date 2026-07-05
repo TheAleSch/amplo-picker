@@ -108,6 +108,52 @@
           "target": "components/ui/color-picker/color-picker.tsx"
         }
       ]
+    },
+    {
+      "name": "fill-picker-base",
+      "type": "registry:ui",
+      "title": "Amplo Color Picker (Base UI)",
+      "description": "Base UI variant of the Amplo Color Picker — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, and Swatches on RadioGroup. Reuses the color-picker item's OKLCH engine and unstyled parts (Area, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput).",
+      "categories": ["color", "input", "design", "accessibility"],
+      "dependencies": ["@base-ui/react", "culori", "lucide-react"],
+      "registryDependencies": ["color-picker", "utils", "tooltip", "button", "input", "popover"],
+      "files": [
+        {
+          "path": "registry/new-york/fill-picker-base/parts/hue.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/hue.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/lightness.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/lightness.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/alpha.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/alpha.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/format-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/format-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/channel-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/channel-input.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/swatches.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/swatches.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/color-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/color-picker.tsx"
+        }
+      ]
     }
   ]
 }

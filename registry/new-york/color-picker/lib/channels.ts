@@ -176,7 +176,9 @@ export function setColorChannel(
         case "l":
           return { ...color, l: clamp(value / 100, 0, 1) };
         case "c":
-          return { ...color, c: clamp(value, 0, 0.5) };
+          // OKLCH chroma is unbounded above; gamut limits are applied at
+          // display time via toGamut, never at channel-edit time.
+          return { ...color, c: Math.max(value, 0) };
         case "h":
           return { ...color, h: wrap(value, 360) };
         default:

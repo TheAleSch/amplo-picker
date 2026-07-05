@@ -51,7 +51,11 @@ function main() {
       dependencies: item.dependencies ?? [],
       registryDependencies: item.registryDependencies ?? [],
       files: item.files.map((f) => {
-        const content = fs.readFileSync(path.join(ROOT, f.path), "utf8");
+        const resolved = path.resolve(ROOT, f.path);
+        if (resolved !== ROOT && !resolved.startsWith(ROOT + path.sep)) {
+          throw new Error(`registry.json path escapes repo root: ${f.path}`);
+        }
+        const content = fs.readFileSync(resolved, "utf8");
         return {
           path: f.path,
           type: f.type,

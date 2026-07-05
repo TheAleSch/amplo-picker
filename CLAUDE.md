@@ -20,8 +20,9 @@ Package manager is **pnpm**.
 
 This is a **shadcn-style component registry** wrapped in a Next.js demo site. There are two source roots that should not be confused:
 
-- `src/` — the demo/docs Next.js app (App Router). `src/app/page.tsx` is the landing demo, `src/app/docs/page.tsx` the docs page, `src/lib/utils.ts` holds `cn`. This code is **not** shipped to consumers.
-- `registry/new-york/color-picker/` — the **actual component source** that consumers install. Everything in here is bundled by `pnpm registry:build` into a single JSON artifact and pulled via `npx shadcn@latest add https://<host>/r/color-picker.json`. The `new-york` segment is the shadcn style identifier.
+- `src/` — the demo/docs Next.js app (App Router). `src/app/page.tsx` is the landing demo, `src/app/docs/page.tsx` the docs page, `src/app/docs/base/page.tsx` the Base UI variant demo, `src/lib/utils.ts` holds `cn`. This code is **not** shipped to consumers.
+- `registry/new-york/color-picker/` — the **original (Radix/shadcn-classic) component source** that consumers install. Everything in here is bundled by `pnpm registry:build` into a single JSON artifact and pulled via `npx shadcn@latest add https://<host>/r/color-picker.json`. The `new-york` segment is the shadcn style identifier.
+- `registry/new-york/fill-picker-base/` — the **Base UI variant** (the main version going forward). It rebuilds only the parts that benefit from Base UI primitives (Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, Swatches on RadioGroup) and **imports the engine and all other parts from `color-picker/` via path aliases — never copy `lib/`, `hooks/`, or `context` into this tree**. Ships as the `fill-picker-base` registry item, which lists `color-picker` as a registryDependency so the shared engine resolves via the CLI.
 
 Path aliases (mirrored in `tsconfig.json` and `vitest.config.ts`):
 - `@/*` → `src/*`

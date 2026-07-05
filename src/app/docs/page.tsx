@@ -63,10 +63,23 @@ export default function DocsPage() {
         <section className="flex flex-col gap-4">
           <H2 id="installation">Installation</H2>
           <InstallTabs
-            url="https://amplo.ale.design/r/color-picker.json"
-            title="CLI"
-            description="One command. The shadcn CLI drops the picker into components/ui/color-picker/ and installs culori + lucide-react."
+            url="https://amplo.ale.design/r/fill-picker-base.json"
+            title="Base UI (recommended)"
+            description="The main variant, built on Base UI primitives (Slider, Select, NumberField, RadioGroup). Pulls the shared engine in as a registry dependency."
           />
+          <InstallTabs
+            url="https://amplo.ale.design/r/color-picker.json"
+            title="Radix / shadcn classic"
+            description="The original variant on Radix-backed shadcn parts. Same compound API, same engine — pick this if the rest of your project is Radix-based."
+          />
+          <p className="text-sm text-muted-foreground">
+            Both variants share one OKLCH engine, so behavior and fixes stay in
+            lockstep. The Base UI variant has its own demo page at{" "}
+            <a href="/docs/base" className="underline">
+              /docs/base
+            </a>
+            .
+          </p>
         </section>
 
         <section className="flex flex-col gap-4">

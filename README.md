@@ -11,9 +11,14 @@ pnpm dlx shadcn@latest add https://amplo.ale.design/r/gradient-picker.json
 
 # Color + gradient + a switcher (pulls both above) — the "give me everything" default
 pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker.json
+
+# Base UI variant of the color picker (pulls the shared engine)
+pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker-base.json
 ```
 
-All three install into the same `components/ui/fill-picker/` tree, so picking a deeper entry point later is idempotent — shadcn dedupes by `target`.
+The first three install into the same `components/ui/fill-picker/` tree, so picking a deeper entry point later is idempotent — shadcn dedupes by `target`.
+
+**Variants:** the **Base UI** variant rebuilds the color picker's interactive parts (Hue/Lightness/Alpha sliders, FormatSwitcher, ChannelInput, Swatches) on [Base UI](https://base-ui.com) primitives and is the main variant going forward; the classic variant keeps the original Radix-backed shadcn parts. Both share the same OKLCH engine, compound API, and presentational parts, so fixes propagate to both. Gradient parts are currently Radix-only. Base UI demo: [/docs/base](https://amplo.ale.design/docs/base).
 
 Two variants, one engine: the **Base UI** variant rebuilds the interactive parts (Hue/Lightness/Alpha sliders, FormatSwitcher, ChannelInput, Swatches) on [Base UI](https://base-ui.com) primitives and is the default going forward; the classic variant keeps the original Radix-backed shadcn parts. Both share the same OKLCH engine, compound API, and presentational parts, so fixes propagate to both. The docs default to Base UI at [`/docs`](https://amplo.ale.design/docs); the Radix variant lives at [`/docs/radix`](https://amplo.ale.design/docs/radix), one click away via the toggle.
 

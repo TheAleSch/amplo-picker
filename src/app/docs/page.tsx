@@ -146,6 +146,19 @@ export default function DocsPage() {
             title="Fill switcher (everything)"
             description="Adds the color/gradient mode switcher on top: FillPicker.Root, Tabs, Tab, Pane. Pulls color-picker + gradient-picker automatically."
           />
+          <InstallTabs
+            url="https://amplo.ale.design/r/fill-picker-base.json"
+            title="Base UI variant (color picker)"
+            description="The color picker rebuilt on Base UI primitives (Slider, Select, NumberField, RadioGroup) — the main variant going forward. Pulls the shared color-picker engine automatically. Gradient parts are Radix-only for now."
+          />
+          <p className="text-sm text-muted-foreground">
+            Both variants share one OKLCH engine, so behavior and fixes stay
+            in lockstep. The Base UI variant has its own demo at{" "}
+            <a href="/docs/base" className="underline">
+              /docs/base
+            </a>
+            .
+          </p>
         </section>
 
         <section className="flex flex-col gap-4">

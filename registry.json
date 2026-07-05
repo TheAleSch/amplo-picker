@@ -9,9 +9,25 @@
       "title": "Amplo Color Picker",
       "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
       "version": "1.1.0",
-      "categories": ["color", "input", "design", "accessibility"],
-      "dependencies": ["culori", "lucide-react"],
-      "registryDependencies": ["utils", "tooltip", "button", "input", "popover", "select", "toggle"],
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "culori",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "utils",
+        "tooltip",
+        "button",
+        "input",
+        "popover",
+        "select",
+        "toggle"
+      ],
       "files": [
         {
           "path": "registry/new-york/color-picker/lib/types.ts",
@@ -126,8 +142,16 @@
       "title": "Amplo Gradient Picker",
       "description": "Composable gradient picker (linear / radial / conic) built on the Amplo color picker. CSS Color 4 interpolation, per-stop format state, keyboard-accessible angle/position pads.",
       "version": "1.1.0",
-      "categories": ["color", "input", "design", "accessibility"],
-      "dependencies": ["culori", "lucide-react"],
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "culori",
+        "lucide-react"
+      ],
       "registryDependencies": [
         "utils",
         "tooltip",
@@ -282,8 +306,16 @@
       "title": "Amplo Fill Picker",
       "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
       "version": "1.1.0",
-      "categories": ["color", "input", "design", "accessibility"],
-      "dependencies": ["culori", "lucide-react"],
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "culori",
+        "lucide-react"
+      ],
       "registryDependencies": [
         "utils",
         "tooltip",
@@ -325,6 +357,68 @@
           "path": "registry/new-york/color-picker/fill-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/fill-picker.tsx"
+        }
+      ]
+    },
+    {
+      "name": "fill-picker-base",
+      "type": "registry:ui",
+      "title": "Amplo Color Picker (Base UI)",
+      "description": "Base UI variant of the Amplo Color Picker — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, and Swatches on RadioGroup. Reuses the color-picker item's OKLCH engine and unstyled parts (Area, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput).",
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "@base-ui/react",
+        "culori",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "color-picker",
+        "utils",
+        "tooltip",
+        "button",
+        "input",
+        "popover"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/fill-picker-base/parts/hue.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/hue.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/lightness.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/lightness.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/alpha.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/alpha.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/format-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/format-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/channel-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/channel-input.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/swatches.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/swatches.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/color-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/color-picker.tsx"
         }
       ]
     }

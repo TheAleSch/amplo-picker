@@ -8,7 +8,7 @@ import { Hue } from "./hue";
 // `aria-valuenow` and respond to ArrowLeft/ArrowRight, since Base UI's
 // Slider owns keyboard handling internally instead of our own onKeyDown.
 describe("fill-picker-base Hue", () => {
-  it("exposes aria-valuenow and responds to ArrowLeft/ArrowRight", () => {
+  it("exposes an accessible name, aria-valuenow, and responds to ArrowLeft/ArrowRight", () => {
     render(
       <Root defaultValue="oklch(0.7 0.18 120)">
         <Hue />

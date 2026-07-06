@@ -72,3 +72,7 @@ export const ColorPickerBase = {
   Preview,
   EyeDropper,
 };
+
+// Alias so consuming code reads the same as the Radix variant — only the
+// import path differs (`.../fill-picker-base/color-picker`).
+export const ColorPicker = ColorPickerBase;

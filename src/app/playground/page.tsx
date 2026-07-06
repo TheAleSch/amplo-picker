@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
+import { ColorPickerBase } from "@/registry/new-york/fill-picker-base/color-picker";
 import { parseColor, formatColor } from "@/registry/new-york/color-picker/lib/color";
 import type {
   ColorFormat,
@@ -235,6 +236,7 @@ const PARTS: Array<{ key: PartKey; label: string }> = [
 ];
 
 export default function PlaygroundPage() {
+  const [uiVariant, setUiVariant] = React.useState<"base" | "radix">("base");
   const [color, setColor] = React.useState<OklchColor>(
     () => parseColor("#2a2a2a")!,
   );
@@ -301,6 +303,7 @@ export default function PlaygroundPage() {
   const code = React.useMemo(
     () =>
       buildSnippet({
+        variant: uiVariant,
         areaMode,
         formats,
         defaultFormat,
@@ -318,6 +321,7 @@ export default function PlaygroundPage() {
         parts,
       }),
     [
+      uiVariant,
       areaMode,
       formats,
       defaultFormat,
@@ -335,6 +339,12 @@ export default function PlaygroundPage() {
       parts,
     ],
   );
+
+  // Both variants expose the identical namespace; the Base UI object is
+  // structurally compatible with the Radix one (verified), so the cast is safe.
+  const CP = (uiVariant === "base"
+    ? (ColorPickerBase as unknown as typeof ColorPicker)
+    : ColorPicker) as typeof ColorPicker;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12">
@@ -359,6 +369,33 @@ export default function PlaygroundPage() {
           parts you want. Toggle, tweak, copy the generated JSX. State lives
           in this page only — refreshing resets the canvas.
         </p>
+        <div
+          role="tablist"
+          aria-label="Component variant"
+          className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
+        >
+          {(["base", "radix"] as const).map((v) => {
+            const isActive = uiVariant === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setUiVariant(v)}
+                className={cn(
+                  "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {v === "base" ? "Base UI" : "Radix UI"}
+              </button>
+            );
+          })}
+        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
@@ -431,7 +468,7 @@ export default function PlaygroundPage() {
                     }
               }
             >
-              <ColorPicker.Root
+              <CP.Root
                 value={color}
                 onValueChange={(c) => setColor(c)}
                 backgroundColor={bg}
@@ -443,13 +480,13 @@ export default function PlaygroundPage() {
                   (parts.contrastReadout && contrastMetrics.length > 0)) && (
                   <div className="flex items-stretch gap-2">
                     {parts.gamutBadge && (
-                      <ColorPicker.GamutBadge
+                      <CP.GamutBadge
                         showLabel={gamutShowLabel}
                         className="w-auto flex-1 justify-center"
                       />
                     )}
                     {parts.contrastReadout && contrastMetrics.length > 0 && (
-                      <ColorPicker.ContrastReadout
+                      <CP.ContrastReadout
                         metrics={contrastMetrics}
                         showLabel={contrastShowLabel}
                         showValue={contrastShowValue}
@@ -460,29 +497,29 @@ export default function PlaygroundPage() {
                   </div>
                 )}
                 {parts.area && (
-                  <ColorPicker.Area
+                  <CP.Area
                     mode={areaMode}
                     showWarningLines={showWarningLines}
                     softProof={softProof}
                     style={areaHeight ? { height: areaHeight } : undefined}
                   />
                 )}
-                {parts.preview && <ColorPicker.Preview />}
+                {parts.preview && <CP.Preview />}
                 {(parts.hue || parts.lightness || parts.alpha) && (
                   eyedropperBesideSliders && parts.eyeDropper ? (
                     <div className="flex items-center gap-2">
-                      <ColorPicker.EyeDropper />
+                      <CP.EyeDropper />
                       <div className="flex flex-1 flex-col gap-1.5">
-                        {parts.hue && <ColorPicker.Hue />}
-                        {parts.lightness && <ColorPicker.Lightness />}
-                        {parts.alpha && <ColorPicker.Alpha />}
+                        {parts.hue && <CP.Hue />}
+                        {parts.lightness && <CP.Lightness />}
+                        {parts.alpha && <CP.Alpha />}
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-1.5">
-                      {parts.hue && <ColorPicker.Hue />}
-                      {parts.lightness && <ColorPicker.Lightness />}
-                      {parts.alpha && <ColorPicker.Alpha />}
+                      {parts.hue && <CP.Hue />}
+                      {parts.lightness && <CP.Lightness />}
+                      {parts.alpha && <CP.Alpha />}
                     </div>
                   )
                 )}
@@ -491,31 +528,31 @@ export default function PlaygroundPage() {
                     (parts.eyeDropper && !eyedropperBesideSliders)) && (
                     <div className="flex items-center gap-2">
                       {parts.formatSwitcher && (
-                        <ColorPicker.FormatSwitcher className="flex-1" />
+                        <CP.FormatSwitcher className="flex-1" />
                       )}
                       {parts.eyeDropper && !eyedropperBesideSliders && (
-                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                        <CP.EyeDropper className="h-8 w-full flex-1" />
                       )}
                     </div>
                   )}
                 {parts.channelInput && (
-                  <ColorPicker.ChannelInput showFormat={showChannelFormat} />
+                  <CP.ChannelInput showFormat={showChannelFormat} />
                 )}
                 {formatRowAfterChannel &&
                   (parts.formatSwitcher ||
                     (parts.eyeDropper && !eyedropperBesideSliders)) && (
                     <div className="flex items-center gap-2">
                       {parts.formatSwitcher && (
-                        <ColorPicker.FormatSwitcher className="flex-1" />
+                        <CP.FormatSwitcher className="flex-1" />
                       )}
                       {parts.eyeDropper && !eyedropperBesideSliders && (
-                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                        <CP.EyeDropper className="h-8 w-full flex-1" />
                       )}
                     </div>
                   )}
-                {parts.input && <ColorPicker.CssInput />}
+                {parts.input && <CP.CssInput />}
                 {parts.swatches && (
-                  <ColorPicker.Swatches
+                  <CP.Swatches
                     presets={["#fff", "#000", "oklch(0.7 0.18 30)", ...savedSwatches]}
                     onAdd={(_c, hex) =>
                       setSavedSwatches((prev) =>
@@ -524,7 +561,7 @@ export default function PlaygroundPage() {
                     }
                   />
                 )}
-              </ColorPicker.Root>
+              </CP.Root>
             </div>
           </div>
 
@@ -704,6 +741,7 @@ function partsEqual(a: PartsState, b: PartsState): boolean {
 }
 
 function buildSnippet({
+  variant,
   areaMode,
   formats,
   defaultFormat,
@@ -720,6 +758,7 @@ function buildSnippet({
   bg,
   parts,
 }: {
+  variant: "base" | "radix";
   areaMode: AreaMode;
   formats: ColorFormat[];
   defaultFormat: ColorFormat;
@@ -736,7 +775,13 @@ function buildSnippet({
   bg: string;
   parts: Record<PartKey, boolean>;
 }) {
+  const importPath =
+    variant === "base"
+      ? "@/components/ui/fill-picker-base/color-picker"
+      : "@/components/ui/color-picker/color-picker";
   const lines: string[] = [];
+  lines.push(`import { ColorPicker } from "${importPath}";`);
+  lines.push("");
   lines.push(`<ColorPicker.Root`);
   lines.push(`  value={color}`);
   lines.push(`  onValueChange={setColor}`);

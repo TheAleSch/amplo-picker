@@ -369,7 +369,7 @@
       "name": "fill-picker-base",
       "type": "registry:ui",
       "title": "Amplo Color Picker (Base UI)",
-      "description": "Base UI variant of the Amplo Color Picker — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, and Swatches on RadioGroup. Reuses the color-picker item's OKLCH engine and unstyled parts (Area, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput).",
+      "description": "Base UI variant of the Amplo Color Picker — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, and Swatches on RadioGroup. Also ships the Base UI gradient/fill picker: TypeSwitcher/InterpSwitcher/RadialSizeSelect on Select, ReverseStops/StopList's add-stop button as plain semantic buttons. Reuses the color-picker and gradient-picker items' OKLCH engine and unstyled/pointer-driven parts (Area, Bar, Overlay, pads, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput).",
       "categories": [
         "color",
         "input",
@@ -383,6 +383,7 @@
       ],
       "registryDependencies": [
         "color-picker",
+        "gradient-picker",
         "utils",
         "tooltip",
         "button",
@@ -424,6 +425,46 @@
           "path": "registry/new-york/fill-picker-base/color-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker-base/color-picker.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/field.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/type-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/type-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/interp-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/interp-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/radial-size-select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/radial-size-select.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/reverse-stops.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/reverse-stops.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/stop-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/stop-list.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/gradient.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/gradient.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/fill.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/fill.tsx"
         }
       ]
     }

@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 // (each variant is its own page), not in-page tabs — hence `aria-current`
 // rather than tab roles.
 const VARIANTS = [
-  { key: "base", label: "Base UI", href: "/docs/base" },
-  { key: "radix", label: "Radix UI", href: "/docs" },
+  { key: "base", label: "Base UI", href: "/docs" },
+  { key: "radix", label: "Radix UI", href: "/docs/radix" },
 ] as const;
 
 export function VariantToggle({ active }: { active: "base" | "radix" }) {

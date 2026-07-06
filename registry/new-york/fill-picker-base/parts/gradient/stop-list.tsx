@@ -1,0 +1,238 @@
+"use client";
+
+import * as React from "react";
+import { Plus, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
+import {
+  projectStopPosition,
+  reverseProjectStopPosition,
+  sampleStopsAt,
+} from "@/registry/new-york/color-picker/lib/gradient";
+import { formatColor, parseColor } from "@/registry/new-york/color-picker/lib/color";
+// Reused as-is: the stop-color-edit popover is Radix (`@/components/ui/popover`)
+// under the hood. It isn't rebuilt for the Base UI variant because
+// `<GradientPickerBase.Bar editOnClick>` reuses the *original*
+// `<GradientPicker.Bar>` unmodified (it has no Base UI-specific concerns of
+// its own beyond this same popover), so a Base UI-only stop editor would
+// leave Bar and StopList showing two different popover implementations.
+// Human-review note: the "Base UI gradient variant" therefore still pulls
+// in one Radix dependency (Popover) transitively through Bar + StopList.
+import { StopEditorPopover } from "@/registry/new-york/color-picker/parts/gradient/stop-editor-popover";
+import { CHECKERBOARD_SM } from "@/registry/new-york/color-picker/lib/constants";
+import {
+  FieldInput,
+  FieldInputGroup,
+  FieldShell,
+  FieldSuffix,
+} from "./field";
+
+export interface StopListProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Render a trailing "+ Add stop" row that inserts a new stop in the
+   * largest gap between adjacent stops, sampling the gradient's existing
+   * ramp at that position so the new color blends in. Defaults to `true`.
+   * Set `false` to hide it when `<GradientPickerBase.Bar>` (the canonical
+   * add-stop UI) is visible and the trailing row would be redundant.
+   */
+  showAddStop?: boolean;
+}
+
+export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
+  function StopList({ className, showAddStop = true, ...rest }, ref) {
+    const ctx = useGradientPickerContext();
+    // Each row mounts its own <StopEditorPopover> (bound to that row's stop)
+    // so opening any popover edits the right stop directly — no need for a
+    // list-wide ColorPicker context.
+    const linear = ctx.gradient.type === "linear" ? ctx.gradient : null;
+    const start = linear?.start;
+    const end = linear?.end;
+    const toDisplay = (authored: number) =>
+      projectStopPosition(authored, start, end);
+    const fromDisplay = (displayed: number) =>
+      reverseProjectStopPosition(displayed, start, end);
+
+    const handleAddStop = () => {
+      const sorted = [...ctx.stops].sort((a, b) => a.position - b.position);
+      const selectedIdx = sorted.findIndex((x) => x.id === ctx.selectedStopId);
+      const anchorIdx = selectedIdx === -1 ? sorted.length - 1 : selectedIdx;
+      const anchor = sorted[anchorIdx];
+      const next = sorted[anchorIdx + 1];
+      const prev = sorted[anchorIdx - 1];
+      const position = next
+        ? (anchor.position + next.position) / 2
+        : prev
+          ? (prev.position + anchor.position) / 2
+          : Math.min(1, (anchor.position + 1) / 2);
+      const id = ctx.addStop(position, sampleStopsAt(sorted, position));
+      ctx.selectStop(id);
+    };
+    return (
+      <div
+        ref={ref}
+        data-slot="gradient-stop-list"
+        role="listbox"
+        aria-label="Gradient stops"
+        className={cn("flex flex-col gap-1", className)}
+        {...rest}
+      >
+        {ctx.stops.map((s) => {
+          const selected = s.id === ctx.selectedStopId;
+          return (
+            <StopRow
+              key={s.id}
+              stop={s}
+              selected={selected}
+              toDisplay={toDisplay}
+              fromDisplay={fromDisplay}
+              formatted={formatColor(s.color, ctx.getStopColorFormat(s.id))}
+            />
+          );
+        })}
+        {showAddStop && (
+          <button
+            type="button"
+            onClick={handleAddStop}
+            aria-label="Add stop"
+            className={cn(
+              "inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border bg-background px-4 font-mono text-xs tracking-wide whitespace-nowrap shadow-xs transition-all outline-none",
+              "hover:bg-accent hover:text-accent-foreground",
+              "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              "disabled:pointer-events-none disabled:opacity-50",
+              "dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+            )}
+          >
+            <Plus aria-hidden className="size-3.5" />
+            Add stop
+          </button>
+        )}
+      </div>
+    );
+  },
+);
+
+function StopRow({
+  stop: s,
+  selected,
+  toDisplay,
+  fromDisplay,
+  formatted,
+}: {
+  stop: ReturnType<typeof useGradientPickerContext>["stops"][number];
+  selected: boolean;
+  toDisplay: (n: number) => number;
+  fromDisplay: (n: number) => number;
+  formatted: string;
+}) {
+  const ctx = useGradientPickerContext();
+  const [open, setOpen] = React.useState(false);
+  const [draft, setDraft] = React.useState(formatted);
+  const focusedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!focusedRef.current) setDraft(formatted);
+  }, [formatted]);
+  const commitDraft = (raw: string) => {
+    const parsed = parseColor(raw.trim());
+    if (parsed) ctx.setStopColor(s.id, parsed);
+    else setDraft(formatted);
+  };
+  return (
+    <div
+      role="option"
+      aria-selected={selected}
+      tabIndex={selected ? 0 : -1}
+      data-selected={selected}
+      onClick={() => ctx.selectStop(s.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          ctx.selectStop(s.id);
+        } else if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          ctx.removeStop(s.id);
+        }
+      }}
+      className={cn(
+        "flex cursor-pointer items-center gap-2 rounded-md border p-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        selected ? "border-foreground" : "border-border",
+      )}
+    >
+      <StopEditorPopover stopId={s.id} open={open} onOpenChange={setOpen}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            ctx.selectStop(s.id);
+            setOpen((o) => !o);
+          }}
+          aria-label="Edit stop color"
+          style={{
+            backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD_SM}`,
+            backgroundSize: "auto, 6px 6px",
+          }}
+          className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
+        />
+      </StopEditorPopover>
+      <FieldShell className="h-7 w-fit">
+        <FieldInputGroup>
+          <span className="sr-only">Stop position</span>
+          <FieldInput
+            inputMode="numeric"
+            nudge={1}
+            value={Math.round(toDisplay(s.position) * 100)}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (Number.isFinite(v)) ctx.moveStop(s.id, fromDisplay(v / 100));
+            }}
+            aria-label="Stop position"
+            className="w-10"
+          />
+          <FieldSuffix>%</FieldSuffix>
+        </FieldInputGroup>
+      </FieldShell>
+      <FieldShell className="h-7 min-w-0 flex-1">
+        <FieldInputGroup>
+          <span className="sr-only">Stop color (paste hex / css)</span>
+          <FieldInput
+            value={draft}
+            spellCheck={false}
+            onFocus={() => {
+              focusedRef.current = true;
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={(e) => {
+              focusedRef.current = false;
+              commitDraft(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitDraft((e.target as HTMLInputElement).value);
+                (e.target as HTMLInputElement).blur();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                setDraft(formatted);
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            aria-label="Stop color value"
+            className="text-left"
+          />
+        </FieldInputGroup>
+      </FieldShell>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          ctx.removeStop(s.id);
+        }}
+        disabled={ctx.stops.length <= 1}
+        className="inline-flex size-7 items-center justify-center rounded-md border border-input text-muted-foreground shadow-xs hover:text-foreground disabled:opacity-30"
+        aria-label="Remove stop"
+      >
+        <Minus className="size-3.5" />
+      </button>
+    </div>
+  );
+}

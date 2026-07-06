@@ -155,14 +155,14 @@
       ],
       "dependencies": [
         "culori",
-        "lucide-react"
+        "lucide-react",
+        "@base-ui/react"
       ],
       "registryDependencies": [
         "utils",
         "tooltip",
         "button",
         "input",
-        "popover",
         "select",
         "toggle",
         "https://amplo.ale.design/r/color-picker.json"
@@ -227,6 +227,11 @@
           "path": "registry/new-york/color-picker/parts/gradient/stop-color.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/stop-color.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/gradient/stop-popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/stop-popover.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/gradient/stop-editor-popover.tsx",

@@ -1,11 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { StopPopover } from "./stop-popover";
 import { ColorPickerContext } from "../../context";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import { useColorPicker } from "../../hooks/use-color-picker";
@@ -27,8 +23,8 @@ export interface StopEditorPopoverProps {
    */
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Anchor element (rendered via Radix `asChild`). Provides positioning only. */
-  children: React.ReactNode;
+  /** Anchor element. Positioned against; provides positioning only. */
+  children: React.ReactElement;
 }
 
 /**
@@ -55,25 +51,25 @@ export function StopEditorPopover({
     onFormatChange: (f) => grad.setStopColorFormat(stopId, f),
   });
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverAnchor asChild>{children}</PopoverAnchor>
-      <PopoverContent
-        className="flex w-72 flex-col gap-3 p-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ColorPickerContext.Provider value={state}>
-          <ColorArea mode="oklch-cl" />
-          <div className="flex flex-col gap-1.5">
-            <Hue />
-            <Alpha />
-          </div>
-          <div className="flex items-center gap-2">
-            <FormatSwitcher className="flex-1" />
-            <EyeDropper className="h-8 w-full flex-1" />
-          </div>
-          <ChannelInput showFormat={false} />
-        </ColorPickerContext.Provider>
-      </PopoverContent>
-    </Popover>
+    <StopPopover
+      open={open}
+      onOpenChange={onOpenChange}
+      anchor={children}
+      className="flex w-72 flex-col gap-3"
+      onContentClick={(e) => e.stopPropagation()}
+    >
+      <ColorPickerContext.Provider value={state}>
+        <ColorArea mode="oklch-cl" />
+        <div className="flex flex-col gap-1.5">
+          <Hue />
+          <Alpha />
+        </div>
+        <div className="flex items-center gap-2">
+          <FormatSwitcher className="flex-1" />
+          <EyeDropper className="h-8 w-full flex-1" />
+        </div>
+        <ChannelInput showFormat={false} />
+      </ColorPickerContext.Provider>
+    </StopPopover>
   );
 }

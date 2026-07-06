@@ -10,14 +10,13 @@ import {
   sampleStopsAt,
 } from "@/registry/new-york/color-picker/lib/gradient";
 import { formatColor, parseColor } from "@/registry/new-york/color-picker/lib/color";
-// Reused as-is: the stop-color-edit popover is Radix (`@/components/ui/popover`)
-// under the hood. It isn't rebuilt for the Base UI variant because
-// `<GradientPickerBase.Bar editOnClick>` reuses the *original*
-// `<GradientPicker.Bar>` unmodified (it has no Base UI-specific concerns of
-// its own beyond this same popover), so a Base UI-only stop editor would
-// leave Bar and StopList showing two different popover implementations.
-// Human-review note: the "Base UI gradient variant" therefore still pulls
-// in one Radix dependency (Popover) transitively through Bar + StopList.
+// Shared stop-color-edit popover, reused as-is. It imports the shadcn
+// `@/components/ui/popover` primitive — which resolves to whichever popover
+// the consumer's shadcn project is configured with (Base UI or Radix). This
+// follows shadcn's model: components stay variant-agnostic and the primitive
+// swaps underneath, so we deliberately do NOT fork it per variant. (In this
+// repo's demo the primitive happens to be Radix; a Base-UI shadcn project
+// gets a Base UI popover for free.)
 import { StopEditorPopover } from "@/registry/new-york/color-picker/parts/gradient/stop-editor-popover";
 import { CHECKERBOARD_SM } from "@/registry/new-york/color-picker/lib/constants";
 import {

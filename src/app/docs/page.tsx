@@ -148,8 +148,8 @@ export default function DocsPage() {
           />
           <InstallTabs
             url="https://amplo.ale.design/r/fill-picker-base.json"
-            title="Base UI variant (color picker)"
-            description="The color picker rebuilt on Base UI primitives (Slider, Select, NumberField, RadioGroup) — the main variant going forward. Pulls the shared color-picker engine automatically. Gradient parts are Radix-only for now."
+            title="Base UI variant (color + gradient)"
+            description="The color and gradient pickers rebuilt on Base UI primitives (Slider, Select, NumberField, RadioGroup) — the main variant going forward. Pulls the shared color-picker + gradient-picker engines automatically."
           />
           <p className="text-sm text-muted-foreground">
             Both variants share one OKLCH engine, so behavior and fixes stay

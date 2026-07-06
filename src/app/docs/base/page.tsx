@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ColorPickerBase } from "@/registry/new-york/fill-picker-base/color-picker";
 import { InstallTabs } from "@/components/install-tabs";
+import { VariantToggle } from "@/components/variant-toggle";
 
 export default function BaseUIDocsPage() {
   const [value, setValue] = React.useState("oklch(0.7 0.18 250)");
@@ -22,9 +23,9 @@ export default function BaseUIDocsPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-8 px-6 py-12">
-      <header className="space-y-2">
-        <Link href="/docs" className="text-sm text-muted-foreground hover:underline">
-          ← back to docs
+      <header className="space-y-3">
+        <Link href="/" className="text-sm text-muted-foreground hover:underline">
+          ← Home
         </Link>
         <h1 className="text-3xl font-semibold">Base UI variant</h1>
         <p className="text-muted-foreground">
@@ -42,6 +43,7 @@ export default function BaseUIDocsPage() {
           Preview, GamutBadge, ContrastReadout, EyeDropper, and CssInput are
           unchanged — they reuse the original engine and parts directly.
         </p>
+        <VariantToggle active="base" />
       </header>
 
       <section className="flex flex-col gap-4">

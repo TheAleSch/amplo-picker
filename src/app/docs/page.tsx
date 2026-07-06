@@ -13,7 +13,7 @@ import {
 import { CodeBlock } from "@/components/code-block";
 import { PreviewTabs } from "@/components/preview-tabs";
 import { InstallTabs } from "@/components/install-tabs";
-import { VariantTabs } from "@/components/variant-tabs";
+import { VariantToggle } from "@/components/variant-toggle";
 import { CopyForAi } from "@/components/copy-for-ai";
 
 const TOC = [
@@ -56,6 +56,7 @@ export default function DocsPage() {
             accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app
             with one CLI command.
           </p>
+          <VariantToggle active="radix" />
           <CopyForAi className="mt-2" />
         </header>
 
@@ -63,40 +64,18 @@ export default function DocsPage() {
 
         <section className="flex flex-col gap-4">
           <H2 id="installation">Installation</H2>
-          <VariantTabs
-            defaultValue="base-ui"
-            tabs={[
-              {
-                value: "base-ui",
-                label: "Base UI",
-                content: (
-                  <InstallTabs
-                    url="https://amplo.ale.design/r/fill-picker-base.json"
-                    title="Base UI (recommended)"
-                    description="The main variant, built on Base UI primitives (Slider, Select, NumberField, RadioGroup). Pulls the shared engine in as a registry dependency."
-                  />
-                ),
-              },
-              {
-                value: "radix",
-                label: "Radix",
-                content: (
-                  <InstallTabs
-                    url="https://amplo.ale.design/r/color-picker.json"
-                    title="Radix / shadcn classic"
-                    description="The original variant on Radix-backed shadcn parts. Same compound API, same engine — pick this if the rest of your project is Radix-based."
-                  />
-                ),
-              },
-            ]}
+          <InstallTabs
+            url="https://amplo.ale.design/r/color-picker.json"
+            title="Radix / shadcn classic"
+            description="The original variant on Radix-backed shadcn parts. Drops the picker into components/ui/color-picker/ and installs culori + lucide-react."
           />
           <p className="text-sm text-muted-foreground">
-            Both variants share one OKLCH engine, so behavior and fixes stay in
-            lockstep. The Base UI variant has its own demo page at{" "}
+            Prefer Base UI primitives? Switch to the{" "}
             <a href="/docs/base" className="underline">
-              /docs/base
-            </a>
-            .
+              Base UI variant
+            </a>{" "}
+            — same compound API and OKLCH engine, so behavior and fixes stay in
+            lockstep.
           </p>
         </section>
 

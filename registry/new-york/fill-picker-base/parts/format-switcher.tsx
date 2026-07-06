@@ -7,12 +7,13 @@ import { useColorPickerContext } from "@/registry/new-york/color-picker/context"
 import type { ColorFormat } from "@/registry/new-york/color-picker/lib/types";
 import { cn } from "@/lib/utils";
 
-export interface FormatSwitcherProps {
+export interface FormatSwitcherProps
+  extends Omit<React.ComponentPropsWithoutRef<"button">, "onChange" | "value"> {
   formats?: ColorFormat[];
-  className?: string;
 }
 
-export function FormatSwitcher({ formats: formatsProp, className }: FormatSwitcherProps) {
+export const FormatSwitcher = React.forwardRef<HTMLButtonElement, FormatSwitcherProps>(
+  function FormatSwitcher({ formats: formatsProp, className, ...rest }, ref) {
   const { format, setFormat, formats: ctxFormats } = useColorPickerContext();
   const formats = formatsProp ?? ctxFormats;
 
@@ -22,6 +23,7 @@ export function FormatSwitcher({ formats: formatsProp, className }: FormatSwitch
       onValueChange={(v) => setFormat(v as ColorFormat)}
     >
       <Select.Trigger
+        ref={ref}
         data-slot="color-picker-format-switcher"
         aria-label="Color format"
         className={cn(
@@ -29,6 +31,7 @@ export function FormatSwitcher({ formats: formatsProp, className }: FormatSwitch
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
+        {...rest}
       >
         <Select.Value />
         <Select.Icon>
@@ -64,4 +67,4 @@ export function FormatSwitcher({ formats: formatsProp, className }: FormatSwitch
       </Select.Portal>
     </Select.Root>
   );
-}
+});

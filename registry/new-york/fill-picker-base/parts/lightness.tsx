@@ -6,12 +6,16 @@ import { useColorPickerContext } from "@/registry/new-york/color-picker/context"
 import { formatColor } from "@/registry/new-york/color-picker/lib/color";
 import { cn } from "@/lib/utils";
 
-export interface LightnessProps {
+// See Hue: omit `defaultValue` (Slider.Root owns it as a number).
+export interface LightnessProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "defaultValue"> {
   orientation?: "horizontal" | "vertical";
-  className?: string;
 }
 
-export function Lightness({ orientation = "horizontal", className }: LightnessProps) {
+export const Lightness = React.forwardRef<HTMLDivElement, LightnessProps>(function Lightness(
+  { orientation = "horizontal", className, ...rest },
+  ref,
+) {
   const { color, setComponent } = useColorPickerContext();
   const isVertical = orientation === "vertical";
 
@@ -36,29 +40,33 @@ export function Lightness({ orientation = "horizontal", className }: LightnessPr
       step={1}
       largeStep={10}
       orientation={orientation}
-      aria-label="Lightness"
       className={cn(
         "relative touch-none select-none",
         isVertical ? "h-32 w-3" : "h-3 w-full",
         className,
       )}
+      {...rest}
     >
       <Slider.Control
         className="relative h-full w-full rounded-full outline-none"
         style={{
+          // Vertical uses `to top` so the min (l=0) renders at the bottom to
+          // match Base UI's bottom-anchored vertical thumb.
           background: isVertical
-            ? `linear-gradient(to bottom, ${stops})`
+            ? `linear-gradient(to top, ${stops})`
             : `linear-gradient(to right, ${stops})`,
         }}
       >
         <Slider.Thumb
+          aria-label="Lightness"
+          getAriaValueText={(_, value) => `${Math.round(value)}%`}
           className={cn(
             "absolute size-4 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]",
-            "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover",
+            "outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-popover",
           )}
           style={{ background: formatColor({ ...color, alpha: 1 }, "oklch") }}
         />
       </Slider.Control>
     </Slider.Root>
   );
-}
+});

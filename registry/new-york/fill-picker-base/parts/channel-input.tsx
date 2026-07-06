@@ -229,7 +229,6 @@ function ChannelField({
       }}
       className="relative inline-flex h-full min-w-0 flex-1 items-center"
     >
-      <span className="sr-only">{channel.label}</span>
       <NumberField.Input
         data-slot="color-picker-channel-input-field"
         aria-label={channel.label}

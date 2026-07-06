@@ -104,6 +104,7 @@ const DEFAULT_HALO: HaloParams = {
 
 export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+  const [variant, setVariant] = React.useState<"base" | "radix">("base");
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
   const { center, width } = useMeasuredMark(sectionRef, markRef);
@@ -168,13 +169,44 @@ export function Hero() {
 
           {/* Right column: picker */}
           <div className="flex w-full justify-center">
-            <HeroPicker />
+            <HeroPicker variant={variant} />
           </div>
         </div>
 
         <div className="mt-8 flex w-full flex-col items-center gap-3 lg:mt-12">
+          <div
+            role="tablist"
+            aria-label="Component variant"
+            className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
+          >
+            {(["base", "radix"] as const).map((v) => {
+              const isActive = variant === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setVariant(v)}
+                  className={cn(
+                    "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-ring",
+                    isActive
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {v === "base" ? "Base UI" : "Radix UI"}
+                </button>
+              );
+            })}
+          </div>
           <InstallTabs
-            url="https://amplo.ale.design/r/color-picker.json"
+            url={
+              variant === "base"
+                ? "https://amplo.ale.design/r/fill-picker-base.json"
+                : "https://amplo.ale.design/r/color-picker.json"
+            }
             className="w-full max-w-md"
           />
           <CopyForAi className="w-full max-w-md justify-center" />
@@ -268,8 +300,7 @@ function TunerSlider({
   );
 }
 
-function HeroPicker() {
-  const [variant, setVariant] = React.useState<"base" | "radix">("base");
+function HeroPicker({ variant }: { variant: "base" | "radix" }) {
   const [color, setColor] = React.useState<OklchColor>(
     () => parseColor("oklch(0.7 0.18 30)")!,
   );
@@ -289,62 +320,32 @@ function HeroPicker() {
     : ColorPicker) as typeof ColorPicker;
 
   return (
-    <div className="flex w-full max-w-70 flex-col items-center gap-3">
-      <div
-        role="tablist"
-        aria-label="Component variant"
-        className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
-      >
-        {(["base", "radix"] as const).map((v) => {
-          const isActive = variant === v;
-          return (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setVariant(v)}
-              className={cn(
-                "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
-                "focus-visible:ring-2 focus-visible:ring-ring",
-                isActive
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {v === "base" ? "Base UI" : "Radix UI"}
-            </button>
-          );
-        })}
+    <CP.Root
+      value={color}
+      onValueChange={setColor}
+      className="w-full max-w-70 gap-3"
+    >
+      <div className="flex items-stretch gap-2">
+        <CP.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+        <CP.ContrastReadout
+          metrics={["wcag", "apca"]}
+          showLabel={false}
+          showValue={false}
+          className="w-auto flex-1 justify-center"
+        />
       </div>
-
-      <CP.Root
-        value={color}
-        onValueChange={setColor}
-        className="w-full gap-3"
-      >
-        <div className="flex items-stretch gap-2">
-          <CP.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
-          <CP.ContrastReadout
-            metrics={["wcag", "apca"]}
-            showLabel={false}
-            showValue={false}
-            className="w-auto flex-1 justify-center"
-          />
-        </div>
-        <CP.Area mode="oklch-cl" />
-        <div className="flex flex-col gap-1.5">
-          <CP.Hue />
-          <CP.Alpha />
-        </div>
-        <div className="flex items-center gap-2">
-          <CP.FormatSwitcher className="flex-1" />
-          <CP.EyeDropper className="h-8 w-full flex-1" />
-        </div>
-        <CP.ChannelInput showFormat={false} />
-        <CP.Swatches presets={swatches} onAdd={addSwatch} />
-      </CP.Root>
-    </div>
+      <CP.Area mode="oklch-cl" />
+      <div className="flex flex-col gap-1.5">
+        <CP.Hue />
+        <CP.Alpha />
+      </div>
+      <div className="flex items-center gap-2">
+        <CP.FormatSwitcher className="flex-1" />
+        <CP.EyeDropper className="h-8 w-full flex-1" />
+      </div>
+      <CP.ChannelInput showFormat={false} />
+      <CP.Swatches presets={swatches} onAdd={addSwatch} />
+    </CP.Root>
   );
 }
 

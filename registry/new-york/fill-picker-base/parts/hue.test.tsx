@@ -9,17 +9,17 @@ import { Hue } from "./hue";
 // `aria-valuenow` and respond to ArrowLeft/ArrowRight, since Base UI's
 // Slider owns keyboard handling internally instead of our own onKeyDown.
 describe("fill-picker-base Hue", () => {
-  it("exposes aria-valuenow and responds to ArrowLeft/ArrowRight", () => {
+  it("exposes an accessible name, aria-valuenow, and responds to ArrowLeft/ArrowRight", () => {
     render(
       <Root defaultValue="oklch(0.7 0.18 120)">
         <Hue />
       </Root>,
     );
 
-    // Base UI's Slider.Root places `aria-label` on the outer group element,
-    // not the accessible-name-bearing input, so the input itself has no
-    // resolvable accessible name here — query by role instead of name.
-    const slider = screen.getByRole("slider");
+    // Base UI routes aria-label to the nested role="slider" input via
+    // Slider.Thumb (NOT Slider.Root, which only labels the outer group), so
+    // the accessible name must resolve by role+name.
+    const slider = screen.getByRole("slider", { name: "Hue" });
     expect(slider).toHaveAttribute("aria-valuenow", "120");
 
     act(() => {

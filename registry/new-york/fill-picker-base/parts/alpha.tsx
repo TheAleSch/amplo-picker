@@ -30,7 +30,6 @@ export function Alpha({ orientation = "horizontal", className }: AlphaProps) {
       step={1}
       largeStep={10}
       orientation={orientation}
-      aria-label="Opacity"
       className={cn(
         "relative touch-none select-none",
         isVertical ? "h-32 w-3" : "h-3 w-full",
@@ -53,6 +52,9 @@ export function Alpha({ orientation = "horizontal", className }: AlphaProps) {
           />
         </div>
         <Slider.Thumb
+          // Base UI puts the accessible name on the nested `role="slider"`
+          // <input>, not on Slider.Root — so aria-label lives here.
+          aria-label="Opacity"
           className={cn(
             "absolute size-4 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]",
             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover",

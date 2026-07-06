@@ -11,6 +11,10 @@ const TYPES: { value: GradientType; label: string }[] = [
   { value: "conic", label: "Conic" },
 ];
 
+const TYPE_ITEMS = Object.fromEntries(
+  TYPES.map((t) => [t.value, t.label]),
+) as Record<GradientType, string>;
+
 /**
  * Base UI port of `<GradientPicker.TypeSwitcher>`. Bound to `gradient.type`.
  * Built on `<FieldSelect>` (Base UI `Select` under the hood) so it shares
@@ -31,6 +35,7 @@ export const TypeSwitcher = React.forwardRef<
       aria-label="Gradient type"
       value={ctx.gradient.type}
       onValueChange={(v) => ctx.setType(v as GradientType)}
+      items={TYPE_ITEMS}
       wrapperProps={{
         "data-slot": "gradient-type-switcher",
         className,

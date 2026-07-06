@@ -52,6 +52,10 @@ const OPTIONS: {
   },
 ];
 
+const INTERP_ITEMS = Object.fromEntries(
+  OPTIONS.map((o) => [o.value, o.label]),
+) as Record<GradientInterp, string>;
+
 export interface InterpSwitcherProps {
   className?: string;
   /** Applied to the select trigger. */
@@ -77,6 +81,7 @@ export const InterpSwitcher = React.forwardRef<
         aria-label="Interpolation space"
         value={ctx.gradient.interp}
         onValueChange={(v) => ctx.setInterp(v as GradientInterp)}
+        items={INTERP_ITEMS}
         wrapperProps={{ "data-slot": "gradient-interp-switcher", className: "w-full" }}
         className={cn("w-full", triggerClassName, className)}
       >

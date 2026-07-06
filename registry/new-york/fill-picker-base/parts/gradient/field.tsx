@@ -49,7 +49,14 @@ export interface FieldSelectProps {
    */
   contentClassName?: string;
   "aria-label"?: string;
-  /** Pass `<SelectItem>`s as children. */
+  /**
+   * Value → label map for the trigger's collapsed display. Base UI's
+   * `<Select.Value>` shows the raw value unless the root is told about
+   * item labels via `items` — pass this whenever an option's display
+   * label differs from its value (e.g. `"linear"` → `"Linear"`).
+   */
+  items?: Record<string, React.ReactNode>;
+  /** Pass `<FieldSelectItem>`s as children. */
   children?: React.ReactNode;
 }
 
@@ -81,6 +88,7 @@ export const FieldSelect = React.forwardRef<
     wrapperProps,
     contentClassName,
     children,
+    items,
     "aria-label": ariaLabel,
   },
   ref,
@@ -98,6 +106,7 @@ export const FieldSelect = React.forwardRef<
       {...wrapperRest}
     >
       <Select.Root
+        items={items}
         value={value}
         defaultValue={defaultValue}
         onValueChange={(v) => {

@@ -79,8 +79,11 @@ Audit mode: single panel round, findings verified, no fixes applied, so no re-pa
 ## Verification
 `pnpm test` 103/103 and `pnpm typecheck` clean on main (baseline, unchanged — no edits made). Confirmed findings were each reproduced by direct source reading with the concrete break documented above; refutations cite the guarding code.
 
+## Addendum (post-audit, same day)
+While the panel ran, `treasure-melody` was merged into `origin/main` (`ecc0fd6`) upstream. After rebasing this report onto it: main now carries all six hardening fixes (verified: `has-[:focus-visible]` present in 4 parts; 103/103 tests green). **I-2 therefore reduces to its branch half**: `feat/gradient-picker` still lacks the hardening and must be rebased onto current main before merge, and its new `parts/gradient/*` thumbs should adopt the same conventions.
+
 ## Suggested order of work (not performed — audit mode)
-1. Merge `treasure-melody` → main, rebase `feat/gradient-picker` onto it (I-2).
+1. Rebase `feat/gradient-picker` onto current main so it inherits the treasure-melody hardening (I-2, see addendum).
 2. Fix hue preservation in `channels.ts` + regression test (I-1).
 3. Area live-region + Swatches roving tabindex (I-3, I-4).
 4. Minors M-1..M-5 opportunistically, ideally on the gradient branch before merge.

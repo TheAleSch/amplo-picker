@@ -217,8 +217,8 @@ export function Hero() {
           <InstallTabs
             url={
               variant === "base"
-                ? "https://amplo.ale.design/r/fill-picker-base.json"
-                : "https://amplo.ale.design/r/fill-picker.json"
+                ? "https://amplo.ale.design/r/fill-picker.json"
+                : "https://amplo.ale.design/r/fill-picker-radix.json"
             }
             className="w-full max-w-md"
           />

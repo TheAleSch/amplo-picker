@@ -3,7 +3,7 @@
  * Reads registry.json (the source manifest), bundles the contents of each
  * referenced file, and emits a per-component JSON file under public/r/.
  * Those URLs are what the shadcn CLI consumes:
- *   npx shadcn@latest add https://<host>/r/color-picker.json
+ *   npx shadcn@latest add https://<host>/r/fill-picker.json
  */
 
 import * as fs from "node:fs";
@@ -68,6 +68,15 @@ function main() {
     };
     const outPath = path.join(OUT_DIR, `${item.name}.json`);
     fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + "\n");
+
+    // Legacy alias: `fill-picker-base` was the Base UI bundle's name before
+    // the registry went Base-UI-first (plain names = Base UI). Keep the old
+    // URL working for anyone who copied it.
+    if (item.name === "fill-picker") {
+      const aliasPath = path.join(OUT_DIR, "fill-picker-base.json");
+      fs.writeFileSync(aliasPath, JSON.stringify(out, null, 2) + "\n");
+      console.log(`✓ wrote public/r/fill-picker-base.json (legacy alias of fill-picker)`);
+    }
     console.log(`✓ wrote ${path.relative(ROOT, outPath)} (${out.files.length} files)`);
   }
 

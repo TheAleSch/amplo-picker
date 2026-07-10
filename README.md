@@ -3,7 +3,8 @@
 OKLCH-native, Display-P3-aware fill picker for [shadcn/ui](https://ui.shadcn.com). Color today, gradients now, images and video on the way. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
 ```sh
-# Solid color only (21 files)
+# Base UI (default — plain names, matching shadcn's Base-UI-first registry):
+# Solid color only
 pnpm dlx shadcn@latest add https://amplo.ale.design/r/color-picker.json
 
 # Add gradient editing (pulls color-picker)
@@ -12,11 +13,13 @@ pnpm dlx shadcn@latest add https://amplo.ale.design/r/gradient-picker.json
 # Color + gradient + a switcher (pulls both above) — the "give me everything" default
 pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker.json
 
-# Base UI variant of the color picker (pulls the shared engine)
-pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker-base.json
+# Radix / shadcn-classic variants:
+pnpm dlx shadcn@latest add https://amplo.ale.design/r/color-picker-radix.json
+pnpm dlx shadcn@latest add https://amplo.ale.design/r/gradient-picker-radix.json
+pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker-radix.json
 ```
 
-The first three install into the same `components/ui/fill-picker/` tree, so picking a deeper entry point later is idempotent — shadcn dedupes by `target`.
+Deeper entry points pull the lighter ones as registry dependencies and everything dedupes by `target`, so picking a deeper entry point later is idempotent. Base UI parts land in `components/ui/fill-picker-base/`; the shared engine and Radix parts in `components/ui/fill-picker/`.
 
 Two variants, one engine: the **Base UI** variant rebuilds the interactive parts (Hue/Lightness/Alpha sliders, FormatSwitcher, ChannelInput, Swatches, and the gradient TypeSwitcher/InterpSwitcher/StopList and friends) on [Base UI](https://base-ui.com) primitives and is the main variant going forward; the classic variant keeps the original Radix-backed shadcn parts. Both share the same OKLCH engine, compound API, and presentational parts, so fixes propagate to both. The docs default to Base UI at [`/docs`](https://amplo.ale.design/docs); the Radix variant lives at [`/docs/radix`](https://amplo.ale.design/docs/radix), one click away via the toggle.
 

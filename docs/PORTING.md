@@ -65,7 +65,8 @@ Already portable as-is, no rewrite needed:
     (`routes/index.tsx` etc).
   - `globals.css` + Tailwind v4 carry over.
   - The shadcn registry CLI works against any React project; `npx shadcn add
-    https://amplo.ale.design/r/color-picker.json` should drop the picker into a
+    https://amplo.ale.design/r/color-picker.json` (Base UI; use
+    `color-picker-radix.json` for the classic variant) should drop the picker into a
     TanStack Start project unchanged. **Verify `components/ui/` target path
     matches the consumer's `components.json`** before claiming this works.
 - No work needed on the registry itself for TanStack.

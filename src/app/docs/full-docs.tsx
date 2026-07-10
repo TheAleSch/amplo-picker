@@ -183,11 +183,13 @@ export function FullDocs({ variant }: { variant: Variant }) {
           <H2 id="installation">Installation</H2>
           {variant === "base" ? (
             <p>
-              One command installs the Base UI variant — the main variant
-              going forward. Its rebuilt parts land in{" "}
-              <Code>components/ui/fill-picker-base/</Code>; the shared OKLCH
-              engine is pulled in automatically as registry dependencies
-              under <Code>components/ui/fill-picker/</Code>.
+              Plain item names are the Base UI variant — the default,
+              matching shadcn&apos;s Base-UI-first registry. Pick the
+              smallest entry point that covers what you need; deeper picks
+              pull the lighter ones as registry dependencies. Rebuilt parts
+              land in <Code>components/ui/fill-picker-base/</Code>; the
+              shared OKLCH engine arrives automatically under{" "}
+              <Code>components/ui/fill-picker/</Code>.
             </p>
           ) : (
             <p>
@@ -199,28 +201,40 @@ export function FullDocs({ variant }: { variant: Variant }) {
             </p>
           )}
           {variant === "base" && (
-            <InstallTabs
-              url="https://amplo.ale.design/r/fill-picker-base.json"
-              title="Base UI variant (color + gradient)"
-              description="The color and gradient pickers rebuilt on Base UI primitives (Slider, Select, NumberField, RadioGroup). Pulls the shared color-picker + gradient-picker engines automatically."
-            />
-          )}
-          {variant === "radix" && (
             <>
               <InstallTabs
                 url="https://amplo.ale.design/r/color-picker.json"
                 title="Color picker only"
-                description="Solid color: Area, Hue, Lightness, Chroma, Alpha, CssInput, FormatSwitcher, ChannelInput, Swatches, GamutBadge, ContrastReadout, Preview, EyeDropper."
+                description="Solid color on Base UI primitives: Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, Swatches on RadioGroup — plus the shared Area, Chroma, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput."
               />
               <InstallTabs
                 url="https://amplo.ale.design/r/gradient-picker.json"
                 title="Gradient picker (includes color)"
-                description="Adds linear / radial / conic gradient editing: TypeSwitcher, ShapeSwitcher, Area, Bar, Overlay, AnglePad/Input/Group, PositionPad/Input/Group, RadiusInput, EllipseRadiiInput, RadialSizeSelect, StopList, StopColor, InterpSwitcher, RepeatingToggle, ReverseStops, Presets, CssInput. Pulls color-picker automatically."
+                description="Adds linear / radial / conic gradient editing — TypeSwitcher, InterpSwitcher, RadialSizeSelect on Base UI Select, ReverseStops + StopList as semantic buttons — plus the shared Bar, Area, Overlay, pads, Presets, CssInput. Pulls color-picker automatically."
               />
               <InstallTabs
                 url="https://amplo.ale.design/r/fill-picker.json"
                 title="Fill switcher (everything)"
                 description="Adds the color/gradient mode switcher on top: FillPicker.Root, Tabs, Tab, Pane. Pulls color-picker + gradient-picker automatically."
+              />
+            </>
+          )}
+          {variant === "radix" && (
+            <>
+              <InstallTabs
+                url="https://amplo.ale.design/r/color-picker-radix.json"
+                title="Color picker only"
+                description="Solid color: Area, Hue, Lightness, Chroma, Alpha, CssInput, FormatSwitcher, ChannelInput, Swatches, GamutBadge, ContrastReadout, Preview, EyeDropper."
+              />
+              <InstallTabs
+                url="https://amplo.ale.design/r/gradient-picker-radix.json"
+                title="Gradient picker (includes color)"
+                description="Adds linear / radial / conic gradient editing: TypeSwitcher, ShapeSwitcher, Area, Bar, Overlay, AnglePad/Input/Group, PositionPad/Input/Group, RadiusInput, EllipseRadiiInput, RadialSizeSelect, StopList, StopColor, InterpSwitcher, RepeatingToggle, ReverseStops, Presets, CssInput. Pulls color-picker-radix automatically."
+              />
+              <InstallTabs
+                url="https://amplo.ale.design/r/fill-picker-radix.json"
+                title="Fill switcher (everything)"
+                description="Adds the color/gradient mode switcher on top: FillPicker.Root, Tabs, Tab, Pane. Pulls the -radix color + gradient items automatically."
               />
             </>
           )}

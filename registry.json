@@ -7,6 +7,161 @@
       "name": "color-picker",
       "type": "registry:ui",
       "title": "Amplo Color Picker",
+      "description": "OKLCH-native, Display-P3-aware color picker built on Base UI primitives — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, Swatches on RadioGroup. Pulls the shared OKLCH engine and pointer-driven parts (Area, Chroma, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput) as a registry dependency.",
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "@base-ui/react",
+        "culori",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "utils",
+        "tooltip",
+        "button",
+        "input",
+        "popover",
+        "https://amplo.ale.design/r/color-picker-radix.json"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/fill-picker-base/parts/hue.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/hue.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/lightness.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/lightness.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/alpha.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/alpha.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/format-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/format-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/channel-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/channel-input.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/swatches.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/swatches.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/color-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/color-picker.tsx"
+        }
+      ]
+    },
+    {
+      "name": "gradient-picker",
+      "type": "registry:ui",
+      "title": "Amplo Gradient Picker",
+      "description": "Linear / radial / conic gradient editing on Base UI primitives — TypeSwitcher/InterpSwitcher/RadialSizeSelect on Select, ReverseStops and the StopList editor as semantic buttons with a self-contained popover. Pulls the color picker plus the shared gradient engine (Bar, Area, Overlay, pads, Presets, CssInput) as registry dependencies.",
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "@base-ui/react",
+        "culori",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "utils",
+        "tooltip",
+        "button",
+        "input",
+        "select",
+        "toggle",
+        "https://amplo.ale.design/r/color-picker.json",
+        "https://amplo.ale.design/r/gradient-picker-radix.json"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/field.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/type-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/type-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/interp-switcher.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/interp-switcher.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/radial-size-select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/radial-size-select.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/reverse-stops.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/reverse-stops.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/stop-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/stop-list.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/gradient.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/gradient.tsx"
+        }
+      ]
+    },
+    {
+      "name": "fill-picker",
+      "type": "registry:ui",
+      "title": "Amplo Fill Picker",
+      "description": "Color + gradient + the solid/gradient mode switcher (FillPicker.Root/Tabs/Tab/Pane) — the \"give me everything\" entry point, Base UI variant. Pulls the Base UI color and gradient pickers plus the shared fill switcher parts as registry dependencies.",
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "@base-ui/react",
+        "culori",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "utils",
+        "https://amplo.ale.design/r/gradient-picker.json",
+        "https://amplo.ale.design/r/fill-picker-radix.json"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/fill-picker-base/fill.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/fill.tsx"
+        }
+      ]
+    },
+    {
+      "name": "color-picker-radix",
+      "type": "registry:ui",
+      "title": "Amplo Color Picker (Radix)",
       "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
       "version": "1.1.0",
       "categories": [
@@ -142,7 +297,7 @@
       ]
     },
     {
-      "name": "gradient-picker",
+      "name": "gradient-picker-radix",
       "type": "registry:ui",
       "title": "Amplo Gradient Picker",
       "description": "Composable gradient picker (linear / radial / conic) built on the Amplo color picker. CSS Color 4 interpolation, per-stop format state, keyboard-accessible angle/position pads.",
@@ -165,7 +320,7 @@
         "input",
         "select",
         "toggle",
-        "https://amplo.ale.design/r/color-picker.json"
+        "https://amplo.ale.design/r/color-picker-radix.json"
       ],
       "files": [
         {
@@ -311,7 +466,7 @@
       ]
     },
     {
-      "name": "fill-picker",
+      "name": "fill-picker-radix",
       "type": "registry:ui",
       "title": "Amplo Fill Picker",
       "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
@@ -334,8 +489,8 @@
         "popover",
         "select",
         "toggle",
-        "https://amplo.ale.design/r/color-picker.json",
-        "https://amplo.ale.design/r/gradient-picker.json"
+        "https://amplo.ale.design/r/color-picker-radix.json",
+        "https://amplo.ale.design/r/gradient-picker-radix.json"
       ],
       "files": [
         {
@@ -367,109 +522,6 @@
           "path": "registry/new-york/color-picker/fill-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/fill-picker.tsx"
-        }
-      ]
-    },
-    {
-      "name": "fill-picker-base",
-      "type": "registry:ui",
-      "title": "Amplo Color Picker (Base UI)",
-      "description": "Base UI variant of the Amplo Color Picker — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, and Swatches on RadioGroup. Also ships the Base UI gradient/fill picker: TypeSwitcher/InterpSwitcher/RadialSizeSelect on Select, ReverseStops/StopList's add-stop button as plain semantic buttons. Reuses the color-picker and gradient-picker items' OKLCH engine and unstyled/pointer-driven parts (Area, Bar, Overlay, pads, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput).",
-      "categories": [
-        "color",
-        "input",
-        "design",
-        "accessibility"
-      ],
-      "dependencies": [
-        "@base-ui/react",
-        "culori",
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "color-picker",
-        "gradient-picker",
-        "utils",
-        "tooltip",
-        "button",
-        "input",
-        "popover"
-      ],
-      "files": [
-        {
-          "path": "registry/new-york/fill-picker-base/parts/hue.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/hue.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/lightness.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/lightness.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/alpha.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/alpha.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/format-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/format-switcher.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/channel-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/channel-input.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/swatches.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/swatches.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/color-picker.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/color-picker.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/gradient/field.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/field.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/gradient/type-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/type-switcher.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/gradient/interp-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/interp-switcher.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/gradient/radial-size-select.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/radial-size-select.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/gradient/reverse-stops.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/reverse-stops.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/parts/gradient/stop-list.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/stop-list.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/gradient.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/gradient.tsx"
-        },
-        {
-          "path": "registry/new-york/fill-picker-base/fill.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/fill.tsx"
         }
       ]
     }

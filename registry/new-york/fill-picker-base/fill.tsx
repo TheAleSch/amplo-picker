@@ -28,3 +28,6 @@ export const FillPickerBase = {
   Tab: FillTab,
   Pane: FillPane,
 };
+
+// Plain-name alias — see `GradientPicker` / `ColorPicker` in gradient.tsx.
+export const FillPicker = FillPickerBase;

@@ -93,3 +93,8 @@ export const GradientPickerBase = {
   PositionGroup,
   AngleGroup,
 };
+
+// Plain-name aliases so consumers (and docs snippets) can swap variants by
+// changing only the import path — mirrors `ColorPicker` in color-picker.tsx.
+export const GradientPicker = GradientPickerBase;
+export { ColorPicker } from "./color-picker";

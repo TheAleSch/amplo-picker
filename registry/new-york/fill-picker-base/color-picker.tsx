@@ -9,13 +9,14 @@
 //   - ChannelInput          → NumberField (per channel)
 //   - Swatches              → RadioGroup + Radio
 //
-// Everything else (Root/context, Area canvas, GamutBadge, ContrastReadout,
+// Everything else (Root/context, Area canvas, Chroma, GamutBadge, ContrastReadout,
 // Preview, EyeDropper, CssInput) is identical to the original; importing
 // from the same source means engine fixes propagate to both variants for
 // free.
 
 import { Root } from "@/registry/new-york/color-picker/parts/root";
 import { Area } from "@/registry/new-york/color-picker/parts/area";
+import { Chroma } from "@/registry/new-york/color-picker/parts/chroma";
 import { CssInput } from "@/registry/new-york/color-picker/parts/css-input";
 import { GamutBadge } from "@/registry/new-york/color-picker/parts/gamut-badge";
 import { ContrastReadout } from "@/registry/new-york/color-picker/parts/contrast-readout";
@@ -60,6 +61,7 @@ export type { ChannelDescriptor } from "@/registry/new-york/color-picker/lib/cha
 export const ColorPickerBase = {
   Root,
   Area,
+  Chroma,
   Hue,
   Lightness,
   Alpha,

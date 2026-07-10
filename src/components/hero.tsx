@@ -14,9 +14,17 @@ import {
   BUILTIN_GRADIENT_PRESETS,
   type Fill,
 } from "@/registry/new-york/color-picker/fill-picker";
+import {
+  ColorPickerBase,
+  FillPickerBase,
+  GradientPickerBase,
+} from "@/registry/new-york/fill-picker-base/fill";
 import { parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
+import { cn } from "@/lib/utils";
+
+type Variant = "base" | "radix";
 
 // Mark renders inline in the left column. Halo center + width are measured
 // from the actual DOM rect each frame so the godray canvas tracks the mark
@@ -109,6 +117,7 @@ const DEFAULT_HALO: HaloParams = {
 
 export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+  const [variant, setVariant] = React.useState<Variant>("base");
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
   const { center, width } = useMeasuredMark(sectionRef, markRef);
@@ -173,13 +182,44 @@ export function Hero() {
 
           {/* Right column: picker */}
           <div className="flex w-full justify-center">
-            <HeroPicker />
+            <HeroPicker variant={variant} />
           </div>
         </div>
 
         <div className="mt-8 flex w-full flex-col items-center gap-3 lg:mt-12">
+          <div
+            role="tablist"
+            aria-label="Component variant"
+            className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
+          >
+            {(["base", "radix"] as const).map((v) => {
+              const isActive = variant === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setVariant(v)}
+                  className={cn(
+                    "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-ring",
+                    isActive
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {v === "base" ? "Base UI" : "Radix UI"}
+                </button>
+              );
+            })}
+          </div>
           <InstallTabs
-            url="https://amplo.ale.design/r/fill-picker.json"
+            url={
+              variant === "base"
+                ? "https://amplo.ale.design/r/fill-picker-base.json"
+                : "https://amplo.ale.design/r/fill-picker.json"
+            }
             className="w-full max-w-md"
           />
           <CopyForAi className="w-full max-w-md justify-center" />
@@ -317,33 +357,33 @@ function GradientShapeControls() {
  * the visual Area pad above already exposes direction by dragging the
  * gradient line endpoints, so a separate AnglePad would be redundant.
  */
-function HeroGradientShapeControls() {
+function HeroGradientShapeControls({ GP }: { GP: typeof GradientPicker }) {
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type === "linear") return null;
   if (ctx.gradient.type === "radial") {
     return (
       <div className="flex flex-col gap-2">
-        <GradientPicker.ShapeSwitcher />
-        <GradientPicker.PositionGroup>
-          <GradientPicker.PositionPad />
-          <GradientPicker.PositionInput />
+        <GP.ShapeSwitcher />
+        <GP.PositionGroup>
+          <GP.PositionPad />
+          <GP.PositionInput />
           {ctx.gradient.shape === "circle" && (
-            <GradientPicker.RadiusInput className="flex-1" />
+            <GP.RadiusInput className="flex-1" />
           )}
-        </GradientPicker.PositionGroup>
+        </GP.PositionGroup>
       </div>
     );
   }
   // conic
   return (
-    <GradientPicker.PositionGroup>
-      <GradientPicker.PositionPad />
-      <GradientPicker.PositionInput />
-    </GradientPicker.PositionGroup>
+    <GP.PositionGroup>
+      <GP.PositionPad />
+      <GP.PositionInput />
+    </GP.PositionGroup>
   );
 }
 
-function HeroPicker() {
+function HeroPicker({ variant }: { variant: Variant }) {
   // Hero defaults to the Solid tab — that's the most familiar surface
   // for first-time visitors. Gradient mode is one click away; toggling
   // to it falls back to FillPicker's own gradient default.
@@ -368,59 +408,72 @@ function HeroPicker() {
     setSavedGradients((prev) => (prev.includes(css) ? prev : [...prev, css]));
   }, []);
 
+  // Both variants expose the identical namespace; the Base UI objects are
+  // structurally compatible with the Radix ones (same pattern as the
+  // playground's variant switcher), so the casts are safe.
+  const FP = (variant === "base"
+    ? (FillPickerBase as unknown as typeof FillPicker)
+    : FillPicker) as typeof FillPicker;
+  const CP = (variant === "base"
+    ? (ColorPickerBase as unknown as typeof ColorPicker)
+    : ColorPicker) as typeof ColorPicker;
+  const GP = (variant === "base"
+    ? (GradientPickerBase as unknown as typeof GradientPicker)
+    : GradientPicker) as typeof GradientPicker;
+
   return (
-    <FillPicker.Root
+    <FP.Root
       value={fill}
       onValueChange={setFill}
       className="w-full max-w-70 gap-3"
     >
-      <FillPicker.Tabs className="self-stretch">
-        <FillPicker.Tab mode="color" className="flex-1">
+      <FP.Tabs className="self-stretch">
+        <FP.Tab mode="color" className="flex-1">
           Solid
-        </FillPicker.Tab>
-        <FillPicker.Tab mode="gradient" className="flex-1">
+        </FP.Tab>
+        <FP.Tab mode="gradient" className="flex-1">
           Gradient
-        </FillPicker.Tab>
-      </FillPicker.Tabs>
+        </FP.Tab>
+      </FP.Tabs>
 
-      <FillPicker.Pane mode="color" className="flex flex-col gap-3">
+      <FP.Pane mode="color" className="flex flex-col gap-3">
         <div className="flex items-stretch gap-2">
-          <ColorPicker.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
-          <ColorPicker.ContrastReadout
+          <CP.GamutBadge showLabel={false} className="w-auto flex-1 justify-center" />
+          <CP.ContrastReadout
             metrics={["wcag", "apca"]}
             showLabel={false}
             showValue={false}
             className="w-auto flex-1 justify-center"
           />
         </div>
-        <ColorPicker.Area mode="oklch-cl" />
+        <CP.Area mode="oklch-cl" />
         <div className="flex flex-col gap-1.5">
-          <ColorPicker.Hue />
-          <ColorPicker.Alpha />
+          <CP.Hue />
+          <CP.Alpha />
         </div>
         <div className="flex items-center gap-2">
-          <ColorPicker.FormatSwitcher className="flex-1" />
-          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+          <CP.FormatSwitcher className="flex-1" />
+          <CP.EyeDropper className="h-8 w-full flex-1" />
         </div>
-        <ColorPicker.ChannelInput showFormat={false} />
-        <ColorPicker.Swatches presets={swatches} onAdd={addSwatch} />
-      </FillPicker.Pane>
+        <CP.ChannelInput showFormat={false} />
+        <CP.Swatches presets={swatches} onAdd={addSwatch} />
+      </FP.Pane>
 
-      <FillPicker.Pane mode="gradient" className="flex flex-col gap-3">
+      <FP.Pane mode="gradient" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <GradientPicker.TypeSwitcher />
+          <GP.TypeSwitcher />
           <div className="flex items-center gap-1">
-            <GradientPicker.RepeatingToggle />
-            <GradientPicker.ReverseStops />
+            <GP.RepeatingToggle />
+            <GP.ReverseStops />
           </div>
         </div>
-        <GradientPicker.Bar />
-        <GradientPicker.Area />
-        <HeroGradientShapeControls />
-        <GradientPicker.StopList />
-        <GradientPicker.Presets presets={gradientPresets} onAdd={addGradient} />
-      </FillPicker.Pane>
-    </FillPicker.Root>
+        <GP.Bar />
+        <GP.Area />
+        <HeroGradientShapeControls GP={GP} />
+        <GP.StopList />
+        <GP.Presets presets={gradientPresets} onAdd={addGradient} />
+      </FP.Pane>
+    </FP.Root>
   );
 }
 

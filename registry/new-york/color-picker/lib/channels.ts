@@ -72,7 +72,7 @@ export function colorChannels(
         ...oklchObj(toGamut(color, "srgb")),
       });
       return [
-        intChannel("h", "H", round(hsl?.h ?? 0, 0), 0, 360),
+        intChannel("h", "H", round(stableFormatHue(toHsl, color, hsl?.h), 0), 0, 360),
         intChannel("s", "S", round((hsl?.s ?? 0) * 100, 0), 0, 100, "%"),
         intChannel("l", "L", round((hsl?.l ?? 0) * 100, 0), 0, 100, "%"),
         ALPHA_DESCRIPTOR(color.alpha),
@@ -84,7 +84,7 @@ export function colorChannels(
         ...oklchObj(toGamut(color, "srgb")),
       });
       return [
-        intChannel("h", "H", round(hsv?.h ?? 0, 0), 0, 360),
+        intChannel("h", "H", round(stableFormatHue(toHsv, color, hsv?.h), 0), 0, 360),
         intChannel("s", "S", round((hsv?.s ?? 0) * 100, 0), 0, 100, "%"),
         intChannel("b", "B", round((hsv?.v ?? 0) * 100, 0), 0, 100, "%"),
         ALPHA_DESCRIPTOR(color.alpha),
@@ -149,27 +149,27 @@ export function setColorChannel(
         [key]: clamp(value / 255, 0, 1),
         mode: "rgb" as const,
       };
-      return fromCulori(next, color.alpha);
+      return fromCulori(next, color.alpha, color.h);
     }
     case "hsl": {
       const hsl = toHsl({
         mode: "oklch",
         ...oklchObj(toGamut(color, "srgb")),
       }) ?? { h: 0, s: 0, l: 0 };
-      const h = key === "h" ? wrap(value, 360) : (hsl.h ?? 0);
+      const h = key === "h" ? wrap(value, 360) : stableFormatHue(toHsl, color, hsl.h);
       const s = key === "s" ? clamp(value / 100, 0, 1) : hsl.s;
       const l = key === "l" ? clamp(value / 100, 0, 1) : hsl.l;
-      return fromCulori({ mode: "hsl" as const, h, s, l }, color.alpha);
+      return fromCulori({ mode: "hsl" as const, h, s, l }, color.alpha, color.h);
     }
     case "hsb": {
       const hsv = toHsv({
         mode: "oklch",
         ...oklchObj(toGamut(color, "srgb")),
       }) ?? { h: 0, s: 0, v: 0 };
-      const h = key === "h" ? wrap(value, 360) : (hsv.h ?? 0);
+      const h = key === "h" ? wrap(value, 360) : stableFormatHue(toHsv, color, hsv.h);
       const s = key === "s" ? clamp(value / 100, 0, 1) : hsv.s;
       const v = key === "b" ? clamp(value / 100, 0, 1) : hsv.v;
-      return fromCulori({ mode: "hsv" as const, h, s, v }, color.alpha);
+      return fromCulori({ mode: "hsv" as const, h, s, v }, color.alpha, color.h);
     }
     case "oklch": {
       switch (key) {
@@ -194,7 +194,7 @@ export function setColorChannel(
       const l = key === "l" ? clamp(value / 100, 0, 1) : (lab.l ?? 0);
       const a = key === "a" ? clamp(value, -0.5, 0.5) : (lab.a ?? 0);
       const b = key === "b" ? clamp(value, -0.5, 0.5) : (lab.b ?? 0);
-      return fromCulori({ mode: "oklab" as const, l, a, b }, color.alpha);
+      return fromCulori({ mode: "oklab" as const, l, a, b }, color.alpha, color.h);
     }
     case "p3": {
       const p3 = toP3({
@@ -206,20 +206,59 @@ export function setColorChannel(
         [key]: clamp(value, 0, 1),
         mode: "p3" as const,
       };
-      return fromCulori(next, color.alpha);
+      return fromCulori(next, color.alpha, color.h);
     }
   }
 }
 
-function fromCulori(c: Color, alpha: number): OklchColor {
+const ACHROMATIC_EPS = 1e-4;
+
+function isAchromatic(l: number, c: number): boolean {
+  return (
+    c <= ACHROMATIC_EPS || l <= ACHROMATIC_EPS || l >= 1 - ACHROMATIC_EPS
+  );
+}
+
+/**
+ * Convert an edited culori color back to canonical OKLCH, preserving
+ * `fallbackHue` (the pre-edit hue) when the result is achromatic — there
+ * culori's hue is undefined or numerically meaningless, and storing it
+ * would destroy the user's hue (e.g. HSL s → 0 → 50 snapping blue to red).
+ * Chroma is the only axis allowed to be lossy; hue must round-trip.
+ */
+function fromCulori(c: Color, alpha: number, fallbackHue: number): OklchColor {
   const ok = toOklch(c);
-  if (!ok) return { l: 0, c: 0, h: 0, alpha };
+  if (!ok) return { l: 0, c: 0, h: fallbackHue, alpha };
+  const chroma = Math.max(ok.c ?? 0, 0);
+  const l = ok.l ?? 0;
   return {
-    l: ok.l ?? 0,
-    c: ok.c ?? 0,
-    h: ok.h ?? 0,
+    l,
+    c: chroma,
+    h:
+      isAchromatic(l, chroma) || !Number.isFinite(ok.h)
+        ? fallbackHue
+        : (ok.h as number),
     alpha,
   };
+}
+
+/**
+ * Hue of `color` in the target format's own hue scale (HSL/HSV degrees),
+ * stable at the achromatic point: when chroma is ~0 the direct conversion
+ * yields an undefined or garbage hue, so probe a slightly-saturated color
+ * on the same OKLCH hue instead. Keeps the H field and re-saturation edits
+ * anchored to the hue the user last had.
+ */
+function stableFormatHue(
+  convert: (c: Color) => { h?: number } | undefined,
+  color: OklchColor,
+  raw: number | undefined,
+): number {
+  if (!isAchromatic(color.l, color.c) && Number.isFinite(raw)) {
+    return raw as number;
+  }
+  const probe = convert({ mode: "oklch", l: 0.6, c: 0.08, h: color.h });
+  return probe?.h ?? color.h;
 }
 
 function oklchObj(c: OklchColor) {

@@ -11,7 +11,9 @@ export const COLOR_PICKER_URL = `${SITE_URL}/r/color-picker.json`;
 export const GRADIENT_PICKER_URL = `${SITE_URL}/r/gradient-picker.json`;
 /** Default "give me everything" URL — also re-exported as REGISTRY_URL for backwards compat. */
 export const FILL_PICKER_URL = `${SITE_URL}/r/fill-picker.json`;
-export const REGISTRY_URL = FILL_PICKER_URL;
+/** Base UI variant — the main variant going forward and the recommended default. */
+export const FILL_PICKER_BASE_URL = `${SITE_URL}/r/fill-picker-base.json`;
+export const REGISTRY_URL = FILL_PICKER_BASE_URL;
 
 /** Short llms.txt index per https://llmstxt.org. */
 export const LLMS_TXT = `# Amplo Fill Picker
@@ -22,9 +24,13 @@ The picker stores all state as OKLCH (perceptually uniform) and converts to hex 
 
 ## Install
 
-Three entry points; the deeper picks pull the lighter ones via shadcn \`registryDependencies\`, so files never duplicate. Everything lands in \`components/ui/fill-picker/\`.
+Two variants share one OKLCH engine. **Base UI is the main variant going forward** — prefer it unless the project already standardizes on the Radix-classic parts. Radix entry points pull each other via shadcn \`registryDependencies\`, so files never duplicate; the Radix tree lands in \`components/ui/fill-picker/\`, the Base UI parts in \`components/ui/fill-picker-base/\` (engine shared via the same registry dependencies).
 
 \`\`\`sh
+# Base UI variant (recommended): color + gradient + shared engine
+pnpm dlx shadcn@latest add ${FILL_PICKER_BASE_URL}
+
+# Radix / shadcn-classic entry points:
 # Solid color only
 pnpm dlx shadcn@latest add ${COLOR_PICKER_URL}
 
@@ -56,22 +62,23 @@ OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, 
 
 ## Installation
 
-Three entry points. The deeper picks pull the lighter ones via shadcn \`registryDependencies\`, so files never duplicate. Everything lands in \`components/ui/fill-picker/\`.
+Two variants, one engine. **Base UI is the main variant going forward** — its interactive parts (sliders, selects, number fields, radio groups) are rebuilt on Base UI primitives and it pulls the whole shared engine automatically. The Radix / shadcn-classic tree remains fully supported with three graded entry points. Radix files land in \`components/ui/fill-picker/\`; Base UI parts in \`components/ui/fill-picker-base/\`.
 
 | Need | URL |
 |------|-----|
-| Solid color only | \`${COLOR_PICKER_URL}\` (21 own files) |
-| Add gradient editing | \`${GRADIENT_PICKER_URL}\` (27 own files + color-picker) |
-| Color + gradient + a switcher | \`${FILL_PICKER_URL}\` (6 own files + both above) |
+| **Base UI variant (recommended): color + gradient** | \`${FILL_PICKER_BASE_URL}\` (15 own files + shared engine) |
+| Radix: solid color only | \`${COLOR_PICKER_URL}\` (21 own files) |
+| Radix: add gradient editing | \`${GRADIENT_PICKER_URL}\` (27 own files + color-picker) |
+| Radix: color + gradient + a switcher | \`${FILL_PICKER_URL}\` (6 own files + both above) |
 
 \`\`\`sh
-pnpm dlx shadcn@latest add ${FILL_PICKER_URL}
-# or: npx shadcn@latest add ${FILL_PICKER_URL}
-# or: bunx shadcn@latest add ${FILL_PICKER_URL}
-# or: yarn dlx shadcn@latest add ${FILL_PICKER_URL}
+pnpm dlx shadcn@latest add ${FILL_PICKER_BASE_URL}
+# or: npx shadcn@latest add ${FILL_PICKER_BASE_URL}
+# or: bunx shadcn@latest add ${FILL_PICKER_BASE_URL}
+# or: yarn dlx shadcn@latest add ${FILL_PICKER_BASE_URL}
 \`\`\`
 
-The shadcn CLI drops everything into \`components/ui/fill-picker/\` and installs \`culori\` + \`lucide-react\` as runtime dependencies. Requires Tailwind v4 and React 19.
+The shadcn CLI drops the Base UI parts into \`components/ui/fill-picker-base/\` (with the shared engine under \`components/ui/fill-picker/\`) and installs \`@base-ui/react\`, \`culori\` + \`lucide-react\` as runtime dependencies. Requires Tailwind v4 and React 19. Import paths: \`@/components/ui/fill-picker-base/fill\` (Base UI, everything) or \`@/components/ui/fill-picker/fill-picker\` (Radix).
 
 ## Usage
 

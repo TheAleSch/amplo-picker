@@ -421,7 +421,7 @@ export default function PlaygroundPage() {
     "color",
   );
   // Base UI is the default variant for the gradient demo — same posture as
-  // the docs' /docs/base page and the color picker's own variant switcher.
+  // the docs at /docs and the color picker's own variant switcher.
   const [gradientUiVariant, setGradientUiVariant] = React.useState<
     "base" | "radix"
   >("base");

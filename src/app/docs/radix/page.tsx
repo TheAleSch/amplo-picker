@@ -1,7 +1,7 @@
-import { VariantDocs } from "../variant-docs";
+import { FullDocs } from "../full-docs";
 
-// The Radix variant. Base UI is the default at /docs; this route is the
-// "one click away" alternative reachable from the toggle.
+// The Radix / shadcn-classic variant. Base UI is the default at /docs; this
+// route is the "one click away" alternative reachable from the toggle.
 export default function RadixDocsPage() {
-  return <VariantDocs variant="radix" />;
+  return <FullDocs variant="radix" />;
 }

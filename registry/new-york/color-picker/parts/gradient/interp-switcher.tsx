@@ -63,6 +63,15 @@ const OPTIONS: {
   },
 ];
 
+// `<SelectItem>` here is wrapped in `RowWithInfo`, not a direct child of
+// `<SelectContent>`, so `<Select>`'s automatic value→label extraction
+// (which only sees literal `<SelectItem>` elements) can't find these labels.
+// Pass the map explicitly — same pattern the Base UI-first
+// `fill-picker-base/parts/gradient/interp-switcher.tsx` uses.
+const INTERP_ITEMS = Object.fromEntries(
+  OPTIONS.map((o) => [o.value, o.label]),
+) as Record<GradientInterp, string>;
+
 export interface InterpSwitcherProps {
   className?: string;
   /** Applied to the SelectTrigger. */
@@ -84,6 +93,7 @@ export const InterpSwitcher = React.forwardRef<
   return (
     <TooltipProvider delayDuration={150}>
       <Select
+        items={INTERP_ITEMS}
         value={ctx.gradient.interp}
         onValueChange={(v) => ctx.setInterp(v as GradientInterp)}
       >

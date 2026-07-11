@@ -174,7 +174,7 @@ export interface FieldSelectProps {
 
 /**
  * Single source of truth for every dropdown in the picker. Built on
- * shadcn `<Select>` (Radix) so it composes cleanly with the rest of the
+ * shadcn `<Select>` (Base UI) so it composes cleanly with the rest of the
  * consumer's design system — focus rings, popover surface, item hover
  * states, and keyboard navigation are all the standard shadcn behaviors.
  *
@@ -222,7 +222,9 @@ export const FieldSelect = React.forwardRef<
       <Select
         value={value}
         defaultValue={defaultValue}
-        onValueChange={onValueChange}
+        onValueChange={(v) => {
+          if (v != null) onValueChange?.(v as string);
+        }}
         disabled={disabled}
       >
         <SelectTrigger

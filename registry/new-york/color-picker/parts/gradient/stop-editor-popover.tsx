@@ -19,7 +19,7 @@ export interface StopEditorPopoverProps {
    * Controlled open state. Required — open is always external because
    * the anchor element typically has its own pointer handling (drag on
    * Bar handles, click on StopList swatches) that would conflict with
-   * a Radix-managed trigger.
+   * a trigger-managed open state.
    */
   open: boolean;
   onOpenChange: (open: boolean) => void;

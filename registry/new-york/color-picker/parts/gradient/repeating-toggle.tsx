@@ -12,7 +12,7 @@ import { useGradientPickerContext } from "../../contexts/gradient";
  * fill the box — useful for stripes, barberpoles.
  *
  * Built on shadcn `<Toggle variant="outline" size="sm">` so the pressed
- * state is wired by Radix (`data-state="on"`) and the visual treatment
+ * state is wired by Base UI (`data-pressed`) and the visual treatment
  * matches every other toggle the consumer might already have. We tighten
  * the lit-border affordance over the base variant.
  *
@@ -39,7 +39,7 @@ export const RepeatingToggle = React.forwardRef<
       onPressedChange={ctx.setRepeating}
       aria-label={on ? "Disable repeating gradient" : "Enable repeating gradient"}
       className={cn(
-        "cursor-pointer text-muted-foreground data-[state=on]:border-foreground/70 data-[state=on]:bg-foreground/10 data-[state=on]:text-foreground",
+        "cursor-pointer text-muted-foreground data-[pressed]:border-foreground/70 data-[pressed]:bg-foreground/10 data-[pressed]:text-foreground",
         className,
       )}
       {...rest}

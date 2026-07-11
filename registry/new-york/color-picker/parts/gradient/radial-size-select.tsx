@@ -106,7 +106,7 @@ function RowWithInfo({
         <span className="flex-1">{value}</span>
         <Tooltip>
           <TooltipTrigger asChild>
-            {/* Span (not button) so Radix Select still owns the click for
+            {/* Span (not button) so Select still owns the click for
                 row selection — the icon is just a hover affordance. */}
             <span
               role="img"

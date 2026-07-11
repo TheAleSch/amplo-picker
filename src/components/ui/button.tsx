@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Slot } from "radix-ui"
+import { useRender } from "@base-ui/react/use-render"
 
 import { cn } from "@/lib/utils"
 
@@ -43,22 +43,32 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  children,
+  ref,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
+    /**
+     * Radix-era prop kept for source compatibility: renders the single
+     * child element instead of a `<button>`, merging Button's own props
+     * onto it — Base UI's `render` prop under the hood, no `Slot` needed.
+     */
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot.Root : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+  return useRender({
+    ref,
+    render: asChild ? (children as React.ReactElement) : <button type="button" />,
+    props: {
+      "data-slot": "button",
+      "data-variant": variant,
+      "data-size": size,
+      className: cn(buttonVariants({ variant, size, className })),
+      // When asChild, the child element supplies its own children — Button
+      // never had two independent children to merge.
+      ...(asChild ? {} : { children }),
+      ...props,
+    },
+  })
 }
 
 export { Button, buttonVariants }

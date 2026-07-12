@@ -245,6 +245,12 @@ export interface GodRayCanvasProps {
    * Live-switchable — useful for eyeballing what non-P3 displays get.
    */
   colorSpace?: "srgb" | "display-p3";
+  /**
+   * Maximum render rate. rAF fires at display refresh (120+ on ProMotion);
+   * frames arriving early are skipped, so a 120Hz panel renders at most
+   * `fpsCap` shader frames per second. 0 disables the cap.
+   */
+  fpsCap?: number;
   intensity?: number;
   bloom?: number;
   blurStride?: number;
@@ -267,6 +273,7 @@ export function GodRayCanvas({
   bloomDivisor = 4,
   onFrameStats,
   colorSpace = "display-p3",
+  fpsCap = 90,
   intensity = 0.75,
   bloom = 6,
   blurStride = 30,
@@ -286,6 +293,7 @@ export function GodRayCanvas({
   // tear down/recreate any GL resources — the panel can stream values.
   const paramsRef = React.useRef({
     colorSpace,
+    fpsCap,
     intensity,
     bloom,
     blurStride,
@@ -302,6 +310,7 @@ export function GodRayCanvas({
   });
   paramsRef.current = {
     colorSpace,
+    fpsCap,
     intensity,
     bloom,
     blurStride,
@@ -604,7 +613,19 @@ export function GodRayCanvas({
     let statFrames = 0;
     let statT0 = performance.now();
 
-    const tick = () => {
+    // Frame limiter state: rAF fires at display refresh; frames arriving
+    // before 1000/fpsCap ms have passed are skipped. lastRender advances in
+    // whole intervals so the effective rate doesn't drift below the cap.
+    let lastRender = 0;
+
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const cap = paramsRef.current.fpsCap;
+      if (cap > 0) {
+        const interval = 1000 / cap;
+        if (now - lastRender < interval) return;
+        lastRender = now - ((now - lastRender) % interval);
+      }
       const wantStats = !!onFrameStatsRef.current;
       let measuring = false;
       if (wantStats && timerExt && gpuQuery) {
@@ -643,7 +664,6 @@ export function GodRayCanvas({
           statT0 = now;
         }
       }
-      raf = requestAnimationFrame(tick);
     };
     const startLoop = () => {
       if (raf) return;

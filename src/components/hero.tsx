@@ -79,6 +79,7 @@ function useMeasuredMark(
 
 type HaloParams = {
   colorSpace: "srgb" | "display-p3";
+  fpsCap: number;
   bloomDivisor: number;
   bloom: number;
   intensity: number;
@@ -112,14 +113,15 @@ const P3_VIVID_PRESETS = [
 
 const DEFAULT_HALO: HaloParams = {
   colorSpace: "display-p3",
-  bloomDivisor: 4,
-  bloom: 6,
-  intensity: 1,
+  fpsCap: 90,
+  bloomDivisor: 8,
+  bloom: 6.4,
+  intensity: 1.7,
   blurStride: 30,
   blurPasses: 4,
   lodStep: 2.6,
   lodCount: 4,
-  whitepoint: 1.0,
+  whitepoint: 1.1,
   hueSpeed: 1.0,
   haloHueOffset: 0,
   swirlL: 0.66,
@@ -139,10 +141,13 @@ export function Hero() {
   const markRef = React.useRef<HTMLDivElement | null>(null);
   const { center, width } = useMeasuredMark(sectionRef, markRef);
 
+  // h-svh + overflow-hidden pins the hero to exactly one viewport: the page
+  // itself never scrolls. Tall content (the gradient tab on short windows)
+  // scrolls *inside* the content div, beneath the floating toolbar.
   return (
     <section
       ref={sectionRef}
-      className="relative isolate min-h-screen overflow-hidden bg-background text-foreground"
+      className="relative isolate h-svh overflow-hidden bg-background text-foreground"
     >
       <GodRayCanvas
         className="absolute inset-0"
@@ -150,6 +155,7 @@ export function Hero() {
         markWidthFraction={width}
         bloomDivisor={halo.bloomDivisor}
         colorSpace={halo.colorSpace}
+        fpsCap={halo.fpsCap}
         onFrameStats={setFrameStats}
         bloom={halo.bloom}
         intensity={halo.intensity}
@@ -168,7 +174,7 @@ export function Hero() {
 
       <Toolbar />
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 pb-8 pt-20 lg:px-16 lg:pb-16 lg:pt-24">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col overflow-y-auto px-6 pb-8 pt-20 lg:px-16 lg:pb-16 lg:pt-24">
         <div className="flex flex-1 flex-col items-center justify-center gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
           {/* Left column: mark + centered title + subtitle */}
           <div className="flex flex-col items-center gap-6 text-center">
@@ -263,6 +269,7 @@ export function Hero() {
 // Tuner field spec: key, label, min, max, step.
 type NumericHaloKey = Exclude<keyof HaloParams, "colorSpace">;
 const TUNER_FIELDS: Array<[NumericHaloKey, string, number, number, number]> = [
+  ["fpsCap", "fps cap", 30, 240, 5],
   ["bloomDivisor", "bloom res ÷", 1, 8, 1],
   ["bloom", "bloom", 0, 12, 0.1],
   ["intensity", "intensity", 0, 3, 0.05],

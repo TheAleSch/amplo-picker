@@ -243,7 +243,9 @@ function ChannelField({
           // Otherwise fall through to NumberField's own numeric paste
           // handling (it bails out on its own when `defaultPrevented`).
         }}
-        className="w-full min-w-0 bg-transparent px-1.5 text-center outline-none tabular-nums"
+        // text-right to match the classic FieldInput — values sit against
+        // their suffix the same way in both variants.
+        className="w-full min-w-0 bg-transparent px-1.5 text-right outline-none tabular-nums"
       />
       {channel.suffix && (
         <span

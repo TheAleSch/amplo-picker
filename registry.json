@@ -379,6 +379,11 @@
           "target": "components/ui/fill-picker/parts/gradient/stop-list.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gradient/stop-list-shared.ts",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gradient/stop-list-shared.ts"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/gradient/stop-color.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/gradient/stop-color.tsx"

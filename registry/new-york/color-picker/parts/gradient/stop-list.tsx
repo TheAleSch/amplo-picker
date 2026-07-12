@@ -8,8 +8,13 @@ import { useGradientPickerContext } from "../../contexts/gradient";
 import {
   projectStopPosition,
   reverseProjectStopPosition,
-  sampleStopsAt,
 } from "../../lib/gradient";
+import {
+  focusNeighborOption,
+  insertStopAfterSelected,
+  isEventFromRowControl,
+  stopListKeyNav,
+} from "./stop-list-shared";
 import { formatColor, parseColor } from "../../lib/color";
 import { StopEditorPopover } from "./stop-editor-popover";
 import { CHECKERBOARD_SM } from "../../lib/constants";
@@ -53,28 +58,11 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     reverseProjectStopPosition(displayed, start, end);
 
   const handleAddStop = () => {
-    // Insert immediately after the selected stop — halfway to its next
-    // neighbor, or halfway to the end of the bar when the selected stop
-    // is the last one. Sample the existing ramp so the inserted color
-    // visually blends in.
-    const sorted = [...ctx.stops].sort((a, b) => a.position - b.position);
-    const selectedIdx = sorted.findIndex(
-      (x) => x.id === ctx.selectedStopId,
+    const { position, color } = insertStopAfterSelected(
+      ctx.stops,
+      ctx.selectedStopId,
     );
-    const anchorIdx = selectedIdx === -1 ? sorted.length - 1 : selectedIdx;
-    const anchor = sorted[anchorIdx];
-    const next = sorted[anchorIdx + 1];
-    const prev = sorted[anchorIdx - 1];
-    // When the selected stop is the last one, fall back to inserting
-    // *between* it and the previous neighbor — so a quick add doesn't
-    // squeeze a new stop into the gap between the last stop and the
-    // bar's end (often near-zero) and instead lands somewhere visible.
-    const position = next
-      ? (anchor.position + next.position) / 2
-      : prev
-        ? (prev.position + anchor.position) / 2
-        : Math.min(1, (anchor.position + 1) / 2);
-    const id = ctx.addStop(position, sampleStopsAt(sorted, position));
+    const id = ctx.addStop(position, color);
     ctx.selectStop(id);
   };
   return (
@@ -83,6 +71,7 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
       data-slot="gradient-stop-list"
       role="listbox"
       aria-label="Gradient stops"
+      onKeyDown={stopListKeyNav}
       className={cn("flex flex-col gap-1", className)}
       {...rest}
     >
@@ -148,11 +137,17 @@ function StopRow({
       data-selected={selected}
       onClick={() => ctx.selectStop(s.id)}
       onKeyDown={(e) => {
+        // Only when the option row itself is focused — keys typed into the
+        // nested inputs (e.g. Backspace while editing the color text) must
+        // never trigger row shortcuts.
+        if (isEventFromRowControl(e)) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           ctx.selectStop(s.id);
         } else if (e.key === "Delete" || e.key === "Backspace") {
           e.preventDefault();
+          // Focus the neighbor before removal so focus stays in the list.
+          focusNeighborOption(e.currentTarget);
           ctx.removeStop(s.id);
         }
       }}
@@ -230,6 +225,8 @@ function StopRow({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          const row = e.currentTarget.closest<HTMLElement>('[role="option"]');
+          if (row) focusNeighborOption(row);
           ctx.removeStop(s.id);
         }}
         disabled={ctx.stops.length <= 1}

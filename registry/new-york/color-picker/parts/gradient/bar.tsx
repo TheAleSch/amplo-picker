@@ -121,6 +121,15 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     const startY = e.clientY;
     let moved = false;
     const onMove = (ev: PointerEvent) => {
+      // Self-heal a missed release: without pointer capture, letting go of
+      // the button outside the browser window never delivers pointerup, so
+      // the first re-entry move arrives with no buttons pressed. End the
+      // drag instead of letting the stop chase the cursor.
+      if (ev.buttons === 0) {
+        cleanup();
+        if (pendingRemove) ctx.removeStop(id);
+        return;
+      }
       if (!moved) {
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;

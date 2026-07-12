@@ -89,3 +89,46 @@ describe("setColorChannel — hue survives achromatic intermediates", () => {
     expect(Math.abs(grayH.value - blueH.value)).toBeLessThan(15);
   });
 });
+
+describe("setColorChannel writers (2026-07-12 audit T-8)", () => {
+  const base = parseColor("oklch(0.6 0.15 200)")!;
+
+  it("alpha writes are display-percent (0–100) mapped to 0–1 and clamped", () => {
+    expect(setColorChannel(base, "rgb", "alpha", 50).alpha).toBeCloseTo(0.5, 6);
+    expect(setColorChannel(base, "oklch", "alpha", 150).alpha).toBe(1);
+    expect(setColorChannel(base, "hsl", "alpha", -10).alpha).toBe(0);
+  });
+
+  it("rgb writer maps 0–255 display units", () => {
+    const next = setColorChannel(base, "rgb", "r", 255);
+    const rgb = colorChannels(next, "rgb").find((c) => c.key === "r")!;
+    expect(rgb.value).toBe(255);
+  });
+
+  it("hsl saturation write round-trips through the display scale", () => {
+    const next = setColorChannel(base, "hsl", "s", 80);
+    const s = colorChannels(next, "hsl").find((c) => c.key === "s")!;
+    expect(Math.abs(s.value - 80)).toBeLessThanOrEqual(1);
+  });
+
+  it("hsb brightness write round-trips through the display scale", () => {
+    const next = setColorChannel(base, "hsb", "b", 90);
+    const b = colorChannels(next, "hsb").find((c) => c.key === "b")!;
+    expect(Math.abs(b.value - 90)).toBeLessThanOrEqual(1);
+  });
+
+  it("p3 channel write clamps to 0–1 and round-trips", () => {
+    const next = setColorChannel(base, "p3", "g", 0.75);
+    const g = colorChannels(next, "p3").find((c) => c.key === "g")!;
+    expect(g.value).toBeCloseTo(0.75, 2);
+    expect(setColorChannel(base, "p3", "g", 1.5)).toEqual(
+      setColorChannel(base, "p3", "g", 1),
+    );
+  });
+
+  it("oklab a/b writes clamp to the engine bound of ±0.5", () => {
+    const next = setColorChannel(base, "oklab", "a", 0.9);
+    const a = colorChannels(next, "oklab").find((c) => c.key === "a")!;
+    expect(a.value).toBeLessThanOrEqual(0.5);
+  });
+});

@@ -420,3 +420,28 @@ describe("sampleStopsAt (C-6 / T-1)", () => {
     expect(mid.l).toBeCloseTo(0.5, 6);
   });
 });
+
+describe("gradient lib edge cases (2026-07-12 audit T-3 / T-6 / T-9)", () => {
+  it("rejects gradients with malformed stop colors", () => {
+    expect(
+      parseGradient("linear-gradient(90deg, notacolor, #ffffff)"),
+    ).toBeNull();
+    expect(
+      parseGradient("linear-gradient(90deg, #ffffff 0%, oklch(nope) 100%)"),
+    ).toBeNull();
+  });
+
+  it("projectStopPosition is the identity for a zero-length segment", () => {
+    const p = { x: 0.4, y: 0.4 };
+    expect(projectStopPosition(0.3, p, { ...p })).toBe(0.3);
+    expect(reverseProjectStopPosition(0.3, p, { ...p })).toBe(0.3);
+  });
+
+  it("parses negative midpoint hints (spec-legal)", () => {
+    const g = parseGradient(
+      "linear-gradient(90deg, #ffffff 0%, -10%, #000000 100%)",
+    )!;
+    expect(g).not.toBeNull();
+    expect(g.stops[1].hint).toBeCloseTo(-0.1, 6);
+  });
+});

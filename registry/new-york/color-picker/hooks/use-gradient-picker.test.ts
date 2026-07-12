@@ -330,3 +330,43 @@ describe("setCenter clamps to the gradient box (2026-07-12 audit C-8)", () => {
     }
   });
 });
+
+describe("reverseStops midpoint hints (2026-07-12 audit T-4)", () => {
+  it("re-attaches mirrored hints to the stop that follows in the new order", () => {
+    const white = { l: 1, c: 0, h: 0, alpha: 1 };
+    const black = { l: 0, c: 0, h: 0, alpha: 1 };
+    const { result } = renderHook(() =>
+      useGradientPicker({
+        defaultValue: {
+          ...DEFAULT_LINEAR,
+          stops: [
+            { color: white, position: 0 },
+            // Hint at 10% belongs to the white→black segment, stored on the
+            // following stop per the lib convention.
+            { color: black, position: 1, hint: 0.1 },
+          ],
+        },
+      }),
+    );
+    act(() => result.current.reverseStops());
+    const stops = result.current.stops;
+    // Order flipped: black now first, white last.
+    expect(stops[0].color.l).toBe(0);
+    expect(stops[1].color.l).toBe(1);
+    // The mirrored hint (0.9) must live on the *following* stop of the
+    // black→white segment — the white stop — or formatStops drops it.
+    expect(stops[0].hint).toBeUndefined();
+    expect(stops[1].hint).toBeCloseTo(0.9, 6);
+  });
+});
+
+describe("removeStop unknown id (2026-07-12 audit T-5)", () => {
+  it("is a no-op for an id that does not exist", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: DEFAULT_LINEAR }),
+    );
+    const before = result.current.stops;
+    act(() => result.current.removeStop("no-such-id"));
+    expect(result.current.stops).toEqual(before);
+  });
+});

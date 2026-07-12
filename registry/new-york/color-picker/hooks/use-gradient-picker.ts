@@ -615,12 +615,21 @@ export function useGradientPicker(
       apply((prev) => {
         if (prev.stops.length < 2) return prev;
         // Mirror each stop's position around 0.5 so the visual order flips
-        // while ids stay attached to their colors. Re-sort to keep the
-        // invariant that `stops` is position-ascending.
+        // while ids stay attached to their colors. A hint lives on the stop
+        // that *follows* its segment, so after the flip the mirrored hint
+        // must move to the segment's other stop (the one that follows in
+        // the new order) — keeping it in place would strand it on a stop
+        // that now leads, where formatStops silently drops it.
+        const movedHints = new Map<string, number>();
+        prev.stops.forEach((s, i) => {
+          if (s.hint !== undefined && i > 0) {
+            movedHints.set(prev.stops[i - 1].id, 1 - s.hint);
+          }
+        });
         const flipped = prev.stops.map((s) => ({
           ...s,
           position: 1 - s.position,
-          hint: s.hint === undefined ? undefined : 1 - s.hint,
+          hint: movedHints.get(s.id),
         }));
         return { gradient: prev.gradient, stops: sortByPosition(flipped) };
       }),

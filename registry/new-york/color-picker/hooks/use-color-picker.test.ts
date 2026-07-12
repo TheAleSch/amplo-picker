@@ -195,3 +195,27 @@ describe("useColorPicker", () => {
     expect(result.current.color.l).toBeCloseTo(1, 1);
   });
 });
+
+describe("setFormat gamut clamp (2026-07-12 audit T-2)", () => {
+  it("clamps out-of-gamut state into the new format's gamut, pinning hue", () => {
+    const { result } = renderHook(() =>
+      useColorPicker({ defaultValue: "oklch(0.7 0.4 30)", defaultFormat: "oklch" }),
+    );
+    expect(result.current.gamut.inSrgb).toBe(false);
+    const hueBefore = result.current.color.h;
+    act(() => result.current.setFormat("hex"));
+    expect(result.current.gamut.inSrgb).toBe(true);
+    // Chroma is the only lossy axis: hue must survive the clamp exactly.
+    expect(result.current.color.h).toBeCloseTo(hueBefore, 6);
+    expect(result.current.color.c).toBeLessThan(0.4);
+  });
+
+  it("does not touch state when already inside the new gamut", () => {
+    const { result } = renderHook(() =>
+      useColorPicker({ defaultValue: "#336699", defaultFormat: "hex" }),
+    );
+    const before = result.current.color;
+    act(() => result.current.setFormat("rgb"));
+    expect(result.current.color).toEqual(before);
+  });
+});

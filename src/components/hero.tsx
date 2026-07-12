@@ -208,7 +208,16 @@ export function Hero() {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {v === "base" ? "Base UI" : "Radix UI"}
+                  {v === "base" ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      Base UI
+                      <span className="rounded-full bg-emerald-500/15 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                        New
+                      </span>
+                    </span>
+                  ) : (
+                    "Radix UI"
+                  )}
                 </button>
               );
             })}

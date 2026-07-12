@@ -16,3 +16,6 @@ public/r/*.json
 # pnpm 11 auto-regenerates this with invalid placeholder content; we pin
 # pnpm 9 via packageManager and do not use a workspace file.
 pnpm-workspace.yaml
+
+# local planning/notes — not part of the shipped repo
+/docs

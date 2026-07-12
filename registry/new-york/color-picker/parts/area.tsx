@@ -194,6 +194,22 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   const [derivedPx, derivedPy] = positionFor(mode, color, chromaMax, gamut);
   const [px, py] = pickPos ?? [derivedPx, derivedPy];
 
+  // role="application" carries no value semantics, so keyboard adjustments
+  // would otherwise be silent to screen readers. Announce the value text in a
+  // polite live region, debounced so held-down arrows don't flood the queue.
+  const [liveText, setLiveText] = React.useState("");
+  const liveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const announce = React.useCallback((text: string) => {
+    if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
+    liveTimerRef.current = setTimeout(() => setLiveText(text), 150);
+  }, []);
+  React.useEffect(
+    () => () => {
+      if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
+    },
+    [],
+  );
+
   const moveTo = React.useCallback(
     (x: number, y: number) => {
       const xn = clamp01(x);
@@ -205,15 +221,18 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       // defensive only — guards against drift at numerical boundaries. When
       // gamut === "none" the user has explicitly opted out of warping and we
       // skip clamping entirely (raw OKLCH plane).
+      let committed: OklchColor;
       if (gamut !== "none") {
         const targetHue = next.h;
         const clamped = toGamut(next, gamut as Gamut);
-        setColor({ ...clamped, h: targetHue });
+        committed = { ...clamped, h: targetHue };
       } else {
-        setColor(next);
+        committed = next;
       }
+      setColor(committed);
+      announce(ariaValueTextFor(mode, committed, chromaMax, gamut));
     },
-    [mode, chromaMax, color, setColor, gamut],
+    [mode, chromaMax, color, setColor, gamut, announce],
   );
 
   const handlePointer = React.useCallback(
@@ -337,6 +356,9 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
           )}
         </svg>
       )}
+      <span aria-live="polite" className="sr-only">
+        {liveText}
+      </span>
       <div
         className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]"
         style={{

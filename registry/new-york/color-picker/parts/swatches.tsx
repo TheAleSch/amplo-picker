@@ -37,6 +37,38 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
   ref,
 ) {
   const { color, setColor } = useColorPickerContext();
+  // Roving tabindex per the APG listbox pattern: Tab enters the group once,
+  // arrows move between options. Focus index survives re-renders but is
+  // clamped when the presets array shrinks.
+  const [focusIdx, setFocusIdx] = React.useState(0);
+  const optionRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
+  const roveTo = (idx: number) => {
+    const clamped = Math.max(0, Math.min(idx, presets.length - 1));
+    setFocusIdx(clamped);
+    optionRefs.current[clamped]?.focus();
+  };
+  const onOptionKeyDown = (e: React.KeyboardEvent, i: number) => {
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        e.preventDefault();
+        roveTo(i + 1);
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        e.preventDefault();
+        roveTo(i - 1);
+        break;
+      case "Home":
+        e.preventDefault();
+        roveTo(0);
+        break;
+      case "End":
+        e.preventDefault();
+        roveTo(presets.length - 1);
+        break;
+    }
+  };
   // Compare presets to the current color in canonical OKLCH form so the active
   // ring shows regardless of the user's active output format. A hex-string
   // comparison would never match when the format is anything but `hex`.
@@ -73,10 +105,16 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
         return (
           <button
             key={`${p}-${i}`}
+            ref={(el) => {
+              optionRefs.current[i] = el;
+            }}
             type="button"
             role="option"
             aria-selected={active}
             aria-label={p}
+            tabIndex={i === Math.min(focusIdx, presets.length - 1) ? 0 : -1}
+            onKeyDown={(e) => onOptionKeyDown(e, i)}
+            onFocus={() => setFocusIdx(i)}
             onClick={() => setColor(p)}
             className={cn(
               // before/after pseudo-padding: keep the 20px visual chip but give the

@@ -575,7 +575,6 @@ export default function PlaygroundPage() {
               );
             })}
           </div>
-          {(
             <div
               role="tablist"
               aria-label="Component variant"
@@ -603,7 +602,6 @@ export default function PlaygroundPage() {
                 );
               })}
             </div>
-          )}
           {fillMode === "color" && (
           <div className="flex flex-wrap items-center gap-1.5">
             {VARIANTS.map((v) => {
@@ -871,44 +869,44 @@ export default function PlaygroundPage() {
                       gradientParts.repeatingToggle) && (
                       <div className="flex items-center justify-between gap-2">
                         {gradientParts.typeSwitcher ? (
-                          <GradientPicker.TypeSwitcher />
+                          <GP.TypeSwitcher />
                         ) : (
                           <span />
                         )}
                         <div className="flex items-center gap-1.5">
                           {gradientParts.repeatingToggle && (
-                            <GradientPicker.RepeatingToggle />
+                            <GP.RepeatingToggle />
                           )}
-                          {gradientParts.reverseStops && <GradientPicker.ReverseStops />}
+                          {gradientParts.reverseStops && <GP.ReverseStops />}
                         </div>
                       </div>
                     )}
-                    {gradientParts.bar && <GradientPicker.Bar />}
-                    {gradientParts.area && <GradientPicker.Area />}
-                    {gradientParts.shapeSwitcher && <GradientPicker.ShapeSwitcher />}
+                    {gradientParts.bar && <GP.Bar />}
+                    {gradientParts.area && <GP.Area />}
+                    {gradientParts.shapeSwitcher && <GP.ShapeSwitcher />}
 
                     {(gradientParts.positionGroup || gradientParts.angleGroup) && (
                       <div className="flex w-full items-center gap-2 empty:hidden">
                         {gradientParts.positionGroup && (
-                          <GradientPicker.PositionGroup>
-                            {gradientParts.positionPad && <GradientPicker.PositionPad />}
-                            {gradientParts.positionInput && <GradientPicker.PositionInput />}
-                            {gradientParts.radiusInput && <GradientPicker.RadiusInput />}
-                            {gradientParts.ellipseRadiiInput && <GradientPicker.EllipseRadiiInput />}
-                          </GradientPicker.PositionGroup>
+                          <GP.PositionGroup>
+                            {gradientParts.positionPad && <GP.PositionPad />}
+                            {gradientParts.positionInput && <GP.PositionInput />}
+                            {gradientParts.radiusInput && <GP.RadiusInput />}
+                            {gradientParts.ellipseRadiiInput && <GP.EllipseRadiiInput />}
+                          </GP.PositionGroup>
                         )}
                         {gradientParts.angleGroup && (
-                          <GradientPicker.AngleGroup>
-                            {gradientParts.anglePad && <GradientPicker.AnglePad />}
-                            {gradientParts.angleInput && <GradientPicker.AngleInput />}
-                          </GradientPicker.AngleGroup>
+                          <GP.AngleGroup>
+                            {gradientParts.anglePad && <GP.AnglePad />}
+                            {gradientParts.angleInput && <GP.AngleInput />}
+                          </GP.AngleGroup>
                         )}
                       </div>
                     )}
 
-                    {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
+                    {gradientParts.radialSizeSelect && <GP.RadialSizeSelect />}
                     {gradientParts.stopColor && (
-                      <GradientPicker.StopColor>
+                      <GP.StopColor>
                         <CP.Area />
                         <div className="flex flex-col gap-1.5">
                           <CP.Hue />
@@ -924,17 +922,17 @@ export default function PlaygroundPage() {
                             presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
                           />
                         )}
-                      </GradientPicker.StopColor>
+                      </GP.StopColor>
                     )}
-                    {gradientParts.stopList && <GradientPicker.StopList />}
-                    {gradientParts.interpSwitcher && <GradientPicker.InterpSwitcher />}
+                    {gradientParts.stopList && <GP.StopList />}
+                    {gradientParts.interpSwitcher && <GP.InterpSwitcher />}
                     {gradientParts.presets && (
-                      <GradientPicker.Presets
+                      <GP.Presets
                         presets={gradientPresets}
                         onAdd={addGradientPreset}
                       />
                     )}
-                    {gradientParts.cssInput && <GradientPicker.CssInput />}
+                    {gradientParts.cssInput && <GP.CssInput />}
                   </FP.Pane>
                 </FP.Root>
               )}

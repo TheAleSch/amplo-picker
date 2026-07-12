@@ -386,7 +386,10 @@ export function useGradientPicker(
       apply((prev) => {
         if (prev.gradient.type === "linear") return prev;
         return {
-          gradient: { ...(prev.gradient as RadialGradient | ConicGradient), center: xy },
+          gradient: {
+            ...(prev.gradient as RadialGradient | ConicGradient),
+            center: { x: clamp01(xy.x), y: clamp01(xy.y) },
+          },
           stops: prev.stops,
         };
       }),

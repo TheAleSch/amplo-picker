@@ -314,3 +314,19 @@ describe("useGradientPicker", () => {
     }
   });
 });
+
+describe("setCenter clamps to the gradient box (2026-07-12 audit C-8)", () => {
+  it("clamps out-of-box centers like setLinearStart/End do", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: DEFAULT_RADIAL }),
+    );
+    act(() => {
+      result.current.setCenter({ x: 1.7, y: -0.3 });
+    });
+    const g = result.current.gradient;
+    expect(g.type).toBe("radial");
+    if (g.type === "radial") {
+      expect(g.center).toEqual({ x: 1, y: 0 });
+    }
+  });
+});

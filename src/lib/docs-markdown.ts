@@ -22,7 +22,7 @@ export const REGISTRY_URL = FILL_PICKER_URL;
 /** Short llms.txt index per https://llmstxt.org. */
 export const LLMS_TXT = `# Amplo Fill Picker
 
-> OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
+> OKLCH-native, Display-P3-aware color / fill picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
 The picker stores all state as OKLCH (perceptually uniform) and converts to hex / rgb / hsl / hsb / oklch / oklab / display-p3 on demand. The component API follows the Radix compound pattern across three namespaces: \`ColorPicker\` (solid color), \`GradientPicker\` (linear / radial / conic gradients with CSS Color 4 interpolation), and \`FillPicker\` (a switcher that toggles between the two). There is no kitchen-sink default component; consumers compose the layout they want.
 
@@ -62,7 +62,7 @@ pnpm dlx shadcn@latest add ${FILL_PICKER_RADIX_URL}
 /** Full markdown reference. Mirrors /docs page structure. */
 export const DOCS_MARKDOWN = `# Amplo Fill Picker
 
-OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
+OKLCH-native, Display-P3-aware color / fill picker for shadcn. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
 > **For AI agents:** This file is the canonical reference. Every API surface the user can compose is documented below. The component is shadcn-style — there is no default \`<ColorPicker />\`; consumers compose \`<ColorPicker.Root>\` with the parts they need.
 
@@ -520,7 +520,7 @@ MIT.
 `;
 
 /** Curated prompt for the "Copy for AI" button. Designed to paste into Claude/Cursor/ChatGPT. */
-export const AI_PROMPT = `I'm integrating Amplo Fill Picker — an OKLCH-native, Display-P3-aware color picker for shadcn — into my Next.js + Tailwind v4 app.
+export const AI_PROMPT = `I'm integrating Amplo Fill Picker — an OKLCH-native, Display-P3-aware color / fill picker for shadcn — into my Next.js + Tailwind v4 app.
 
 Read the full reference here before answering: ${SITE_URL}/llms-full.txt
 

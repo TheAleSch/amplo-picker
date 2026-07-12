@@ -1,6 +1,6 @@
 # Amplo Fill Picker
 
-OKLCH-native, Display-P3-aware fill picker for [shadcn/ui](https://ui.shadcn.com). Color today, gradients now, images and video on the way. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
+OKLCH-native, Display-P3-aware color / fill picker for [shadcn/ui](https://ui.shadcn.com). Color today, gradients now, images and video on the way. Composable, accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app with one shadcn CLI command — pick the entry point that fits.
 
 ```sh
 # Base UI (default — plain names, matching shadcn's Base-UI-first registry):

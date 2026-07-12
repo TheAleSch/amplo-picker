@@ -179,7 +179,13 @@ function StopRow({
             value={Math.round(toDisplay(s.position) * 100)}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
-              if (Number.isFinite(v)) ctx.moveStop(s.id, fromDisplay(v / 100));
+              // Clamp the typed *displayed* percent to the track; moveStop
+              // itself no longer clamps (extrapolated stops are legal).
+              if (Number.isFinite(v))
+                ctx.moveStop(
+                  s.id,
+                  fromDisplay(Math.max(0, Math.min(1, v / 100))),
+                );
             }}
             aria-label="Stop position"
             className="w-10"

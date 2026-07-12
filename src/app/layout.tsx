@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 const SITE_URL = "https://amplo.ale.design";
 const SITE_TITLE = "Amplo Color Picker";
 const SITE_DESCRIPTION =
-  "OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware.";
+  "OKLCH-native, Display-P3-aware color / fill picker for shadcn. Composable, accessible, gamut-aware.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -66,9 +66,12 @@ export default function RootLayout({
         <script src="/theme-init.js" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} flex min-h-svh flex-col bg-background font-sans text-foreground antialiased`}
       >
-        {children}
+        {/* Flex column: pages that fill flex-1 exactly (the home hero) get
+            viewport-minus-footer with zero page scroll; taller pages (docs,
+            playground) grow normally and push the footer down. */}
+        <div className="flex flex-1 flex-col">{children}</div>
         <Footer />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}

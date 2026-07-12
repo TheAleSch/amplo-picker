@@ -44,23 +44,33 @@ function useMeasuredMark(
       const sr = sec.getBoundingClientRect();
       const mr = mk.getBoundingClientRect();
       if (sr.width === 0 || sr.height === 0) return;
-      setV({
+      const next = {
         center: {
           x: (mr.left - sr.left + mr.width / 2) / sr.width,
           y: (mr.top - sr.top + mr.height / 2) / sr.height,
         },
         width: mr.width / sr.width,
-      });
+      };
+      // Bail when nothing changed — a fresh object every call would
+      // re-render the whole Hero (both pickers included) for free.
+      setV((prev) =>
+        prev.center.x === next.center.x &&
+        prev.center.y === next.center.y &&
+        prev.width === next.width
+          ? prev
+          : next,
+      );
     };
     measure();
+    // Mark and section scroll together, so their *relative* geometry only
+    // changes on layout changes — the ResizeObserver covers those; no
+    // scroll listener (it forced layout on every scroll frame).
     const ro = new ResizeObserver(measure);
     if (sectionRef.current) ro.observe(sectionRef.current);
     if (markRef.current) ro.observe(markRef.current);
-    window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure);
     return () => {
       ro.disconnect();
-      window.removeEventListener("scroll", measure);
       window.removeEventListener("resize", measure);
     };
   }, [sectionRef, markRef]);
@@ -68,6 +78,9 @@ function useMeasuredMark(
 }
 
 type HaloParams = {
+  colorSpace: "srgb" | "display-p3";
+  fpsCap: number;
+  bloomDivisor: number;
   bloom: number;
   intensity: number;
   blurStride: number;
@@ -99,13 +112,16 @@ const P3_VIVID_PRESETS = [
 ];
 
 const DEFAULT_HALO: HaloParams = {
-  bloom: 6,
-  intensity: 1,
+  colorSpace: "display-p3",
+  fpsCap: 90,
+  bloomDivisor: 8,
+  bloom: 6.4,
+  intensity: 1.7,
   blurStride: 30,
   blurPasses: 4,
   lodStep: 2.6,
   lodCount: 4,
-  whitepoint: 1.0,
+  whitepoint: 1.1,
   hueSpeed: 1.0,
   haloHueOffset: 0,
   swirlL: 0.66,
@@ -115,21 +131,33 @@ const DEFAULT_HALO: HaloParams = {
 };
 
 export function Hero() {
-  const halo = DEFAULT_HALO;
+  const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+  const [frameStats, setFrameStats] = React.useState<{
+    fps: number;
+    gpuMs: number | null;
+  } | null>(null);
   const [variant, setVariant] = React.useState<Variant>("base");
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
   const { center, width } = useMeasuredMark(sectionRef, markRef);
 
+  // flex-1 + overflow-hidden: the hero fills the layout's viewport-height
+  // flex column minus the footer, so the page itself never scrolls. Tall
+  // content (the gradient tab on short windows) scrolls *inside* the
+  // content div, beneath the floating toolbar.
   return (
     <section
       ref={sectionRef}
-      className="relative isolate min-h-screen overflow-hidden bg-background text-foreground"
+      className="relative isolate min-h-0 flex-1 overflow-hidden bg-background text-foreground"
     >
       <GodRayCanvas
         className="absolute inset-0"
         markCenterFraction={center}
         markWidthFraction={width}
+        bloomDivisor={halo.bloomDivisor}
+        colorSpace={halo.colorSpace}
+        fpsCap={halo.fpsCap}
+        onFrameStats={setFrameStats}
         bloom={halo.bloom}
         intensity={halo.intensity}
         blurStride={halo.blurStride}
@@ -147,7 +175,7 @@ export function Hero() {
 
       <Toolbar />
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 pb-8 pt-20 lg:px-16 lg:pb-16 lg:pt-24">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col overflow-y-auto px-6 pb-8 pt-20 lg:px-16 lg:pb-16 lg:pt-24">
         <div className="flex flex-1 flex-col items-center justify-center gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
           {/* Left column: mark + centered title + subtitle */}
           <div className="flex flex-col items-center gap-6 text-center">
@@ -174,7 +202,7 @@ export function Hero() {
               Amplo Picker
             </h1>
             <p className="max-w-[300px] text-sm leading-[1.5] text-foreground/70 sm:max-w-[480px] sm:text-base">
-              OKLCH-native, Display-P3-aware color picker for shadcn.
+              OKLCH-native, Display-P3-aware color / fill picker for shadcn.
               Composable, accessible, gamut-aware.
             </p>
           </div>
@@ -234,7 +262,163 @@ export function Hero() {
         </div>
       </div>
 
+      <HaloTuner value={halo} onChange={setHalo} stats={frameStats} />
     </section>
+  );
+}
+
+// Tuner field spec: key, label, min, max, step.
+type NumericHaloKey = Exclude<keyof HaloParams, "colorSpace">;
+const TUNER_FIELDS: Array<[NumericHaloKey, string, number, number, number]> = [
+  ["fpsCap", "fps cap", 30, 240, 5],
+  ["bloomDivisor", "bloom res ÷", 1, 8, 1],
+  ["bloom", "bloom", 0, 12, 0.1],
+  ["intensity", "intensity", 0, 3, 0.05],
+  ["blurStride", "blur stride", 1, 60, 1],
+  ["blurPasses", "blur passes", 1, 8, 1],
+  ["lodStep", "lod step", 0.2, 4, 0.1],
+  ["lodCount", "lod count", 1, 8, 1],
+  ["whitepoint", "whitepoint", 0.2, 4, 0.05],
+  ["hueSpeed", "hue speed", 0, 4, 0.05],
+  ["haloHueOffset", "halo hue Δ", -3.14, 3.14, 0.01],
+  ["swirlL", "fill L", 0, 1, 0.01],
+  ["swirlC", "fill C", 0, 0.5, 0.005],
+  ["haloL", "halo L", 0, 1, 0.01],
+  ["haloC", "halo C", 0, 0.5, 0.005],
+];
+
+/**
+ * Dev-only floating panel for live-tuning the godray shader. Every slider
+ * streams straight into GodRayCanvas uniforms via paramsRef (no GL rebuild)
+ * except `bloom res ÷`, which reallocates the bloom buffers (brief re-init).
+ */
+function HaloTuner({
+  value,
+  onChange,
+  stats,
+}: {
+  value: HaloParams;
+  onChange: (v: HaloParams) => void;
+  stats: { fps: number; gpuMs: number | null } | null;
+}) {
+  const [open, setOpen] = React.useState(false);
+  // In production the tuner is hidden until the user types "tunehalo"
+  // anywhere on the page (not while focused in an input). Dev builds show
+  // the button straight away.
+  const [unlocked, setUnlocked] = React.useState(
+    process.env.NODE_ENV !== "production",
+  );
+  React.useEffect(() => {
+    if (unlocked) return;
+    const SECRET = "tunehalo";
+    let buffer = "";
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key.length !== 1) return;
+      buffer = (buffer + e.key.toLowerCase()).slice(-SECRET.length);
+      if (buffer === SECRET) {
+        setUnlocked(true);
+        setOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [unlocked]);
+  const [copied, setCopied] = React.useState(false);
+  // NOTE: keep this return below every hook — early returns above a hook
+  // violate the Rules of Hooks once `unlocked` flips.
+  if (!unlocked) return null;
+  const copy = async () => {
+    await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+  return (
+    <div className="absolute bottom-4 right-4 z-20 flex flex-col items-end gap-2">
+      {open && (
+        <div className="w-64 rounded-lg border border-border bg-background/80 p-3 shadow-lg backdrop-blur">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-medium">Halo tuner</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={copy}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                {copied ? "copied!" : "copy JSON"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(DEFAULT_HALO)}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                reset
+              </button>
+            </div>
+          </div>
+          {/* Framerate: left number is the real render rate (fps cap and
+              vsync apply); "max" is the theoretical rate the GPU could
+              sustain, derived from measured GPU frame time. */}
+          <div className="mb-2 rounded bg-muted/60 px-2 py-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+            {stats
+              ? `${stats.fps.toFixed(0)} fps` +
+                (stats.gpuMs !== null
+                  ? ` · gpu ${stats.gpuMs.toFixed(2)}ms ≈ ${(1000 / stats.gpuMs).toFixed(0)} fps max`
+                  : " · gpu timer n/a")
+              : "measuring…"}
+          </div>
+          <div className="mb-2 grid grid-cols-[76px_1fr] items-center gap-2 text-[11px]">
+            <span className="truncate text-muted-foreground">colorspace</span>
+            <div className="flex gap-1">
+              {(["display-p3", "srgb"] as const).map((cs) => (
+                <button
+                  key={cs}
+                  type="button"
+                  onClick={() => onChange({ ...value, colorSpace: cs })}
+                  className={cn(
+                    "rounded border px-2 py-0.5",
+                    value.colorSpace === cs
+                      ? "border-foreground/40 bg-foreground/10 text-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {cs === "display-p3" ? "P3" : "sRGB"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto pr-1">
+            {TUNER_FIELDS.map(([key, label, min, max, step]) => (
+              <label key={key} className="grid grid-cols-[76px_1fr_40px] items-center gap-2 text-[11px]">
+                <span className="truncate text-muted-foreground">{label}</span>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={value[key]}
+                  onChange={(e) =>
+                    onChange({ ...value, [key]: Number(e.target.value) })
+                  }
+                  className="h-1 w-full accent-foreground"
+                />
+                <span className="text-right font-mono tabular-nums">
+                  {value[key] % 1 === 0 ? value[key] : value[key].toFixed(2)}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-full border border-border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow backdrop-blur hover:text-foreground"
+      >
+        {open ? "close tuner" : "tune halo"}
+      </button>
+    </div>
   );
 }
 

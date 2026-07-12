@@ -81,6 +81,9 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       step={1}
       largeStep={10}
       orientation={orientation}
+      // Keep the thumb inside the track at min/max — the default
+      // center alignment lets it overhang the rounded track ends.
+      thumbAlignment="edge"
       className={cn(
         "relative touch-none select-none",
         isVertical ? "h-32 w-3" : "h-3 w-full",

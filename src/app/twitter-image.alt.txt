@@ -1,1 +1,1 @@
-Amplo Color Picker — OKLCH-native, Display-P3-aware color picker for shadcn.
+Amplo Color Picker — OKLCH-native, Display-P3-aware color / fill picker for shadcn.

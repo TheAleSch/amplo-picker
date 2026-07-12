@@ -83,7 +83,10 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           >
             <span
               aria-hidden
-              className="absolute inset-0 rounded-[inherit]"
+              // Inner radius = outer minus the 1px border; reusing the outer
+              // radius (rounded-[inherit]) curves too early and leaves dark
+              // notches at the corners.
+              className="absolute inset-0 rounded-[calc(var(--radius-sm)-1px)]"
               style={{ background: p }}
             />
           </Radio.Root>

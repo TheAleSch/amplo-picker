@@ -44,23 +44,33 @@ function useMeasuredMark(
       const sr = sec.getBoundingClientRect();
       const mr = mk.getBoundingClientRect();
       if (sr.width === 0 || sr.height === 0) return;
-      setV({
+      const next = {
         center: {
           x: (mr.left - sr.left + mr.width / 2) / sr.width,
           y: (mr.top - sr.top + mr.height / 2) / sr.height,
         },
         width: mr.width / sr.width,
-      });
+      };
+      // Bail when nothing changed — a fresh object every call would
+      // re-render the whole Hero (both pickers included) for free.
+      setV((prev) =>
+        prev.center.x === next.center.x &&
+        prev.center.y === next.center.y &&
+        prev.width === next.width
+          ? prev
+          : next,
+      );
     };
     measure();
+    // Mark and section scroll together, so their *relative* geometry only
+    // changes on layout changes — the ResizeObserver covers those; no
+    // scroll listener (it forced layout on every scroll frame).
     const ro = new ResizeObserver(measure);
     if (sectionRef.current) ro.observe(sectionRef.current);
     if (markRef.current) ro.observe(markRef.current);
-    window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure);
     return () => {
       ro.disconnect();
-      window.removeEventListener("scroll", measure);
       window.removeEventListener("resize", measure);
     };
   }, [sectionRef, markRef]);
@@ -68,6 +78,7 @@ function useMeasuredMark(
 }
 
 type HaloParams = {
+  bloomDivisor: number;
   bloom: number;
   intensity: number;
   blurStride: number;
@@ -99,6 +110,7 @@ const P3_VIVID_PRESETS = [
 ];
 
 const DEFAULT_HALO: HaloParams = {
+  bloomDivisor: 4,
   bloom: 6,
   intensity: 1,
   blurStride: 30,
@@ -115,7 +127,7 @@ const DEFAULT_HALO: HaloParams = {
 };
 
 export function Hero() {
-  const halo = DEFAULT_HALO;
+  const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
   const [variant, setVariant] = React.useState<Variant>("base");
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
@@ -130,6 +142,7 @@ export function Hero() {
         className="absolute inset-0"
         markCenterFraction={center}
         markWidthFraction={width}
+        bloomDivisor={halo.bloomDivisor}
         bloom={halo.bloom}
         intensity={halo.intensity}
         blurStride={halo.blurStride}
@@ -234,7 +247,102 @@ export function Hero() {
         </div>
       </div>
 
+      <HaloTuner value={halo} onChange={setHalo} />
     </section>
+  );
+}
+
+// Tuner field spec: key, label, min, max, step.
+const TUNER_FIELDS: Array<[keyof HaloParams, string, number, number, number]> = [
+  ["bloomDivisor", "bloom res ÷", 1, 8, 1],
+  ["bloom", "bloom", 0, 12, 0.1],
+  ["intensity", "intensity", 0, 3, 0.05],
+  ["blurStride", "blur stride", 1, 60, 1],
+  ["blurPasses", "blur passes", 1, 8, 1],
+  ["lodStep", "lod step", 0.2, 4, 0.1],
+  ["lodCount", "lod count", 1, 8, 1],
+  ["whitepoint", "whitepoint", 0.2, 4, 0.05],
+  ["hueSpeed", "hue speed", 0, 4, 0.05],
+  ["haloHueOffset", "halo hue Δ", -3.14, 3.14, 0.01],
+  ["swirlL", "fill L", 0, 1, 0.01],
+  ["swirlC", "fill C", 0, 0.5, 0.005],
+  ["haloL", "halo L", 0, 1, 0.01],
+  ["haloC", "halo C", 0, 0.5, 0.005],
+];
+
+/**
+ * Dev-only floating panel for live-tuning the godray shader. Every slider
+ * streams straight into GodRayCanvas uniforms via paramsRef (no GL rebuild)
+ * except `bloom res ÷`, which reallocates the bloom buffers (brief re-init).
+ */
+function HaloTuner({
+  value,
+  onChange,
+}: {
+  value: HaloParams;
+  onChange: (v: HaloParams) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const copy = async () => {
+    await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+  return (
+    <div className="absolute bottom-4 right-4 z-20 flex flex-col items-end gap-2">
+      {open && (
+        <div className="w-64 rounded-lg border border-border bg-background/80 p-3 shadow-lg backdrop-blur">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-medium">Halo tuner</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={copy}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                {copied ? "copied!" : "copy JSON"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(DEFAULT_HALO)}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                reset
+              </button>
+            </div>
+          </div>
+          <div className="flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto pr-1">
+            {TUNER_FIELDS.map(([key, label, min, max, step]) => (
+              <label key={key} className="grid grid-cols-[76px_1fr_40px] items-center gap-2 text-[11px]">
+                <span className="truncate text-muted-foreground">{label}</span>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={value[key]}
+                  onChange={(e) =>
+                    onChange({ ...value, [key]: Number(e.target.value) })
+                  }
+                  className="h-1 w-full accent-foreground"
+                />
+                <span className="text-right font-mono tabular-nums">
+                  {value[key] % 1 === 0 ? value[key] : value[key].toFixed(2)}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-full border border-border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow backdrop-blur hover:text-foreground"
+      >
+        {open ? "close tuner" : "tune halo"}
+      </button>
+    </div>
   );
 }
 

@@ -30,11 +30,15 @@ export const FormatSwitcher = React.forwardRef<
       aria-label="Color format"
       value={format}
       onValueChange={(v) => setFormat(v as ColorFormat)}
-      className={cn("uppercase", className)}
+      className="uppercase"
       contentClassName="uppercase"
       wrapperProps={{
         "data-slot": "color-picker-format-switcher",
-        className: "w-full",
+        // The wrapper is the flex participant — layout classes from the
+        // caller (flex-1, widths) must land here, or a sibling like the
+        // flex-1 EyeDropper gets squeezed to min-content by the wrapper's
+        // w-full basis.
+        className: cn("w-full", className),
         ...(rest as React.HTMLAttributes<HTMLDivElement>),
       }}
     >

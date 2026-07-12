@@ -146,6 +146,45 @@ describe("useColorPicker", () => {
     expect(result.current.color.h).toBeCloseTo(240, 1);
   });
 
+  it("uncontrolled: setFromString to gray keeps last chromatic hue", () => {
+    const { result } = renderHook(() =>
+      useColorPicker({ defaultValue: "oklch(0.7 0.18 240)" }),
+    );
+    act(() => {
+      result.current.setFromString("#808080");
+    });
+    // Re-saturating from the parsed gray must stay in the blue family, not
+    // snap to red — the parse defaulted h to 0.
+    act(() => {
+      result.current.setComponent("c", 0.15);
+    });
+    expect(result.current.color.h).toBeCloseTo(240, 1);
+  });
+
+  it("uncontrolled: string setColor to gray keeps last chromatic hue", () => {
+    const { result } = renderHook(() =>
+      useColorPicker({ defaultValue: "oklch(0.7 0.18 240)" }),
+    );
+    act(() => {
+      result.current.setColor("#808080");
+    });
+    expect(result.current.color.h).toBeCloseTo(240, 1);
+  });
+
+  it("string-controlled: authored OKLCH hue on an achromatic color wins over the remembered hue", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: string }) => useColorPicker({ value }),
+      { initialProps: { value: "oklch(0.7 0.18 240)" } },
+    );
+    // OKLCH can encode hue at zero chroma — the string authored 90, so the
+    // hue substitution must not overwrite it with the prior 240.
+    rerender({ value: "oklch(0.5 0 90)" });
+    expect(result.current.color.h).toBeCloseTo(90, 1);
+    // Same for black with an authored hue.
+    rerender({ value: "oklch(0 0 180)" });
+    expect(result.current.color.h).toBeCloseTo(180, 1);
+  });
+
   it("controlled mode: value prop overrides internal state", () => {
     const { result, rerender } = renderHook(
       ({ value }: { value: string }) => useColorPicker({ value }),

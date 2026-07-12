@@ -3,7 +3,7 @@
 import * as React from "react";
 import {
   parseColor,
-  formatColor,
+  parseColorDetailed,
   formatAll,
   gamutFromFormat,
   gamutInfo,
@@ -145,14 +145,29 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
 
   const isControlledStringInput =
     isControlledColor && typeof controlledValue === "string";
-  const rawColor = isControlledColor ? coerce(controlledValue, BLACK) : internalColor;
-  if (!isAchromatic(rawColor)) lastGoodHueRef.current = rawColor.h;
-  // Only substitute on string-controlled inputs: those are the ones that
-  // round-trip through a CSS format and lose the hue. Object-controlled or
-  // uncontrolled state already carries the hue verbatim, including explicit
-  // user assignments like setComponent("h", 0) on a black/white color.
+  const controlledParsed = isControlledStringInput
+    ? parseColorDetailed(controlledValue as string)
+    : null;
+  const rawColor = isControlledStringInput
+    ? (controlledParsed?.color ?? BLACK)
+    : isControlledColor
+      ? coerce(controlledValue, BLACK)
+      : internalColor;
+  // A hue is "good" (worth remembering) when it's meaningful: any chromatic
+  // color, or a string that authored a hue even at zero chroma (OKLCH can).
+  const controlledHueAuthored = controlledParsed
+    ? !controlledParsed.hueMissing
+    : false;
+  if (!isAchromatic(rawColor) || controlledHueAuthored) {
+    lastGoodHueRef.current = rawColor.h;
+  }
+  // Only substitute on string-controlled inputs whose parse actually lost
+  // the hue (achromatic hex/rgb/hsl round-trips). Strings that author a hue
+  // (e.g. `oklch(0.5 0 90)`), object-controlled, and uncontrolled state all
+  // carry the hue verbatim — including explicit user assignments like
+  // setComponent("h", 0) on a black/white color.
   const color: OklchColor =
-    isControlledStringInput && isAchromatic(rawColor)
+    isControlledStringInput && (controlledParsed?.hueMissing ?? true)
       ? { ...rawColor, h: lastGoodHueRef.current }
       : rawColor;
   const format = isControlledFormat ? controlledFormat! : internalFormat;
@@ -187,12 +202,31 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
     }
   }, []);
 
+  // Commit a string input, re-pinning the remembered hue when the parse
+  // lost it (achromatic hex/rgb/hsl) — otherwise a gray commit would store
+  // the defaulted h: 0 and later re-saturation would snap to red.
+  const commitString = React.useCallback(
+    (s: string): boolean => {
+      const parsed = parseColorDetailed(s);
+      if (!parsed) return false;
+      const next = parsed.hueMissing
+        ? { ...parsed.color, h: lastGoodHueRef.current }
+        : parsed.color;
+      commitColor(next);
+      return true;
+    },
+    [commitColor],
+  );
+
   const setColor = React.useCallback(
     (next: string | OklchColor) => {
-      const parsed = coerce(next, color);
-      commitColor(parsed);
+      if (typeof next === "string") {
+        commitString(next);
+        return;
+      }
+      commitColor(next);
     },
-    [color, commitColor],
+    [commitColor, commitString],
   );
 
   const setComponent = React.useCallback(
@@ -245,13 +279,8 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
   );
 
   const setFromString = React.useCallback(
-    (s: string) => {
-      const parsed = parseColor(s);
-      if (!parsed) return false;
-      commitColor(parsed);
-      return true;
-    },
-    [commitColor],
+    (s: string) => commitString(s),
+    [commitString],
   );
 
   return {

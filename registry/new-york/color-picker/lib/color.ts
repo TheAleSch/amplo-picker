@@ -44,22 +44,46 @@ function isInRec2020(ok: { mode: "oklch"; l: number; c: number; h: number; alpha
   return channelsInRange(toRec2020(ok));
 }
 
+export interface ParsedColor {
+  color: OklchColor;
+  /**
+   * True when the source string carried no OKLCH-scale hue — an achromatic
+   * hex/rgb/hsl where the round-trip loses hue and `color.h` is a defaulted 0.
+   * False whenever the hue is meaningful: chromatic colors, and OKLCH/OKLab
+   * strings that author a hue even at zero chroma.
+   */
+  hueMissing: boolean;
+}
+
 /**
- * Parse a CSS color string into the canonical OKLCH form.
- * Returns null when the string can't be parsed.
+ * Parse a CSS color string into the canonical OKLCH form, reporting whether
+ * the hue survived the round-trip. Returns null when the string can't be
+ * parsed.
  */
-export function parseColor(input: string): OklchColor | null {
+export function parseColorDetailed(input: string): ParsedColor | null {
   if (!input || typeof input !== "string") return null;
   const parsed = culoriParse(input.trim());
   if (!parsed) return null;
   const oklch = toOklch(parsed);
   if (!oklch) return null;
+  const hueMissing = !Number.isFinite(oklch.h);
   return {
-    l: clamp(oklch.l ?? 0, 0, 1),
-    c: Math.max(oklch.c ?? 0, 0),
-    h: Number.isFinite(oklch.h) ? (oklch.h as number) : 0,
-    alpha: oklch.alpha ?? 1,
+    color: {
+      l: clamp(oklch.l ?? 0, 0, 1),
+      c: Math.max(oklch.c ?? 0, 0),
+      h: hueMissing ? 0 : (oklch.h as number),
+      alpha: oklch.alpha ?? 1,
+    },
+    hueMissing,
   };
+}
+
+/**
+ * Parse a CSS color string into the canonical OKLCH form.
+ * Returns null when the string can't be parsed.
+ */
+export function parseColor(input: string): OklchColor | null {
+  return parseColorDetailed(input)?.color ?? null;
 }
 
 export function isValidColor(input: string): boolean {

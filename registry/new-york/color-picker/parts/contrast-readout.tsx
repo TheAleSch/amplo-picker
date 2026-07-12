@@ -69,9 +69,29 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
     }
 
     const togglable = metrics.length > 1;
+    // Spoken summary of the active metric — the ratio and pass/fail must be
+    // part of the accessible name, not just the visible text the aria-label
+    // would otherwise override.
+    const summary =
+      active === "wcag"
+        ? `WCAG ${contrast.wcag.toFixed(2)} to 1, AA ${
+            contrast.wcagLevel.aaNormal ? "pass" : "fail"
+          }, AAA ${contrast.wcagLevel.aaaNormal ? "pass" : "fail"}`
+        : `APCA Lc ${contrast.apca.toFixed(1)}, ${apcaLevel(contrast.apca)}`;
+    // Announced only when the user cycles metrics — announcing every color
+    // change would flood the SR queue during drags.
+    const [cycleAnnouncement, setCycleAnnouncement] = React.useState("");
     const cycle = () => {
       const i = metrics.indexOf(active);
-      setActive(metrics[(i + 1) % metrics.length]);
+      const next = metrics[(i + 1) % metrics.length];
+      setActive(next);
+      setCycleAnnouncement(
+        next === "wcag"
+          ? `WCAG ${contrast.wcag.toFixed(2)} to 1, AA ${
+              contrast.wcagLevel.aaNormal ? "pass" : "fail"
+            }, AAA ${contrast.wcagLevel.aaaNormal ? "pass" : "fail"}`
+          : `APCA Lc ${contrast.apca.toFixed(1)}, ${apcaLevel(contrast.apca)}`,
+      );
     };
 
     const baseClass =
@@ -116,7 +136,7 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
                 data-slot="color-picker-contrast-readout"
                 type="button"
                 onClick={cycle}
-                aria-label={`Contrast (${active.toUpperCase()}). Click to switch to ${nextMetric.toUpperCase()}.`}
+                aria-label={`Contrast: ${summary}. Click to switch to ${nextMetric.toUpperCase()}.`}
                 className={cn(
                   baseClass,
                   "cursor-pointer text-left motion-safe:transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -126,6 +146,9 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
               >
                 {body}
                 <span aria-hidden="true" className="ml-auto text-muted-foreground">⇅</span>
+                <span aria-live="polite" className="sr-only">
+                  {cycleAnnouncement}
+                </span>
               </button>
             </TooltipTrigger>
             <TooltipContent
@@ -155,7 +178,7 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
               data-slot="color-picker-contrast-readout"
               role="group"
               tabIndex={0}
-              aria-label="Contrast against background"
+              aria-label={`Contrast against background: ${summary}`}
               className={cn(
                 baseClass,
                 "cursor-default outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -183,6 +206,11 @@ export const ContrastReadout = React.forwardRef<HTMLDivElement, ContrastReadoutP
     );
   },
 );
+
+function apcaLevel(lc: number): "headline" | "body" | "fail" {
+  const abs = Math.abs(lc);
+  return abs >= 75 ? "headline" : abs >= 60 ? "body" : "fail";
+}
 
 function WcagBody({
   wcag,
@@ -230,9 +258,7 @@ function ApcaBody({
   showValue: boolean;
   showBadges: boolean;
 }) {
-  const abs = Math.abs(lc);
-  const level: "fail" | "body" | "headline" =
-    abs >= 75 ? "headline" : abs >= 60 ? "body" : "fail";
+  const level = apcaLevel(lc);
   return (
     <>
       {(showLabel || showValue) && (

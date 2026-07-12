@@ -135,7 +135,10 @@ function keywordToRadii(
  * - **Linear** — start / end endpoint handles tinted with the first / last
  *   stop colors. Dragging endpoints rotates the angle (and, on first
  *   drag, promotes to free-position mode). Middle stops are edited on
- *   `<GradientPicker.Bar>`, never on the canvas.
+ *   `<GradientPicker.Bar>`, never on the canvas — the overlay only edits
+ *   *geometry*. Consumers mounting an Overlay by itself should pair it
+ *   with a `<GradientPicker.Bar>` or `<GradientPicker.StopList>` somewhere
+ *   in the same Root, or inner stops won't be editable by pointer at all.
  * - **Radial** — center handle + edge handle. Edge handle drives radius
  *   (px for circles, normalized for ellipses); center moves the
  *   gradient and leaves the keyword `size` alone — keyword extents

@@ -48,7 +48,13 @@ export const Lightness = React.forwardRef<HTMLDivElement, LightnessProps>(functi
       {...rest}
     >
       <Slider.Control
-        className="relative h-full w-full rounded-full outline-none"
+        className={cn(
+          "relative h-full w-full rounded-full outline-none",
+          // WCAG 2.5.8: widen the pointer target to 24px on the thin axis.
+          isVertical
+            ? "before:absolute before:-inset-x-1.5 before:content-['']"
+            : "before:absolute before:-inset-y-1.5 before:content-['']",
+        )}
         style={{
           // Vertical uses `to top` so the min (l=0) renders at the bottom to
           // match Base UI's bottom-anchored vertical thumb.

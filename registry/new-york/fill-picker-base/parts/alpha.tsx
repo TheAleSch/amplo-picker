@@ -41,7 +41,15 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
       )}
       {...rest}
     >
-      <Slider.Control className="relative h-full w-full rounded-full outline-none">
+      <Slider.Control
+        className={cn(
+          "relative h-full w-full rounded-full outline-none",
+          // WCAG 2.5.8: widen the pointer target to 24px on the thin axis.
+          isVertical
+            ? "before:absolute before:-inset-x-1.5 before:content-['']"
+            : "before:absolute before:-inset-y-1.5 before:content-['']",
+        )}
+      >
         <div
           aria-hidden="true"
           className="absolute inset-0 overflow-hidden rounded-full"

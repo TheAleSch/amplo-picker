@@ -217,6 +217,8 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             }}
             className={cn(
               "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]",
+              // WCAG 2.5.8: small visual dot, ≥24px pointer target.
+              "before:absolute before:-inset-1.5 before:content-['']",
               selected && "outline-2 outline-offset-1 outline-ring",
             )}
           />

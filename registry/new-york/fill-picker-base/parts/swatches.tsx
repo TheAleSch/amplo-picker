@@ -98,13 +98,20 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
             value={p}
             aria-label={p}
             className={cn(
-              "relative size-5 cursor-pointer overflow-hidden rounded-sm border border-border outline-none transition-transform",
+              // before/after pseudo-padding: 20px visual chip, 28px hit area
+              // (WCAG 2.5.8). No overflow-hidden — it would clip the inset.
+              "relative size-5 cursor-pointer rounded-sm border border-border outline-none transition-transform",
+              "before:absolute before:-inset-1 before:content-['']",
               "focus-visible:ring-2 focus-visible:ring-ring hover:scale-110",
               "data-[checked]:ring-2 data-[checked]:ring-ring",
             )}
             style={{ backgroundImage: CHECKERBOARD, backgroundSize: "8px 8px" }}
           >
-            <span aria-hidden className="absolute inset-0" style={{ background: p }} />
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-[inherit]"
+              style={{ background: p }}
+            />
           </Radio.Root>
         ))}
       </RadioGroup>
@@ -114,7 +121,8 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           aria-label="Add current color to swatches"
           onClick={() => onAdd(color, formatColor(color, "hex"))}
           className={cn(
-            "inline-flex size-5 cursor-pointer items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none transition-colors",
+            "relative inline-flex size-5 cursor-pointer items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none transition-colors",
+            "before:absolute before:-inset-1 before:content-['']",
             "hover:border-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
           )}
         >

@@ -905,6 +905,8 @@ function Handle({ label, position, className, style, ...rest }: HandleProps) {
       }}
       className={cn(
         "absolute -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full",
+        // WCAG 2.5.8: 14px visual dot, ≥24px pointer target.
+        "before:absolute before:-inset-1.5 before:content-['']",
         // Solid background so the dashed gradient line behind the dot is
         // fully hidden by it (a translucent fill would let the line bleed
         // through visibly). `pointer-events-auto` so the buttons keep

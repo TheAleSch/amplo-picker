@@ -140,7 +140,8 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           aria-label="Add current color to swatches"
           onClick={() => onAdd(color, formatColor(color, "hex"))}
           className={cn(
-            "inline-flex size-5 cursor-pointer items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none motion-safe:transition-colors",
+            "relative inline-flex size-5 cursor-pointer items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground outline-none motion-safe:transition-colors",
+            "before:absolute before:-inset-1 before:content-['']",
             "hover:border-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
           )}
         >

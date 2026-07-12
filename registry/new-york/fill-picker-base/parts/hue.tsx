@@ -89,7 +89,13 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       {...rest}
     >
       <Slider.Control
-        className="relative h-full w-full rounded-full outline-none"
+        className={cn(
+          "relative h-full w-full rounded-full outline-none",
+          // WCAG 2.5.8: widen the pointer target to 24px on the thin axis.
+          isVertical
+            ? "before:absolute before:-inset-x-1.5 before:content-['']"
+            : "before:absolute before:-inset-y-1.5 before:content-['']",
+        )}
         style={{ background: gradient }}
       >
         <Slider.Thumb

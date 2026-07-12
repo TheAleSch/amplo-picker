@@ -89,7 +89,11 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
       onKeyDown={onKeyDown}
       className={cn(
         "relative cursor-pointer rounded-full outline-none touch-none",
-        isVertical ? "h-32 w-3" : "h-3 w-full",
+        // WCAG 2.5.8: the visual track stays 12px thin, but a pseudo-element
+        // widens the pointer target to 24px on the thin axis.
+        isVertical
+          ? "h-32 w-3 before:absolute before:-inset-x-1.5 before:content-['']"
+          : "h-3 w-full before:absolute before:-inset-y-1.5 before:content-['']",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover",
         className,
       )}

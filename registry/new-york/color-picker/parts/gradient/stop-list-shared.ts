@@ -31,7 +31,10 @@ export function isEventFromRowControl(
  */
 export function stopListKeyNav(e: React.KeyboardEvent<HTMLElement>): void {
   if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
-  if (isEventFromRowControl(e) && !isOption(e.target)) return;
+  // Only navigate when the key originated on an option row itself. Keys
+  // from nested controls (position/color inputs — where ArrowUp/Down mean
+  // "nudge the value") must never be stolen by list navigation.
+  if (!isOption(e.target)) return;
   const options = Array.from(
     e.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'),
   );

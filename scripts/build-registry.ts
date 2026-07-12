@@ -8,10 +8,40 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const ROOT = path.resolve(process.cwd());
 const MANIFEST = path.join(ROOT, "registry.json");
 const OUT_DIR = path.join(ROOT, "public", "r");
+
+/**
+ * Registry item names become output filenames (`public/r/<name>.json`), so
+ * they must never carry path separators or traversal segments — a malicious
+ * manifest could otherwise overwrite arbitrary repo files at build time.
+ */
+export function assertSafeItemName(name: string): void {
+  if (!/^[a-z0-9][a-z0-9._-]*$/i.test(name) || name.includes("..")) {
+    throw new Error(`registry item name is not a safe filename: ${name}`);
+  }
+}
+
+/**
+ * Resolve a manifest-relative file path and assert it stays inside `root`
+ * — both lexically (no `..` escape) and physically (realpath, so a symlink
+ * inside the tree can't pull outside file contents into published JSON).
+ */
+export function resolveContained(root: string, rel: string): string {
+  const resolved = path.resolve(root, rel);
+  if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+    throw new Error(`registry.json path escapes repo root: ${rel}`);
+  }
+  const realRoot = fs.realpathSync(root);
+  const real = fs.realpathSync(resolved);
+  if (real !== realRoot && !real.startsWith(realRoot + path.sep)) {
+    throw new Error(`registry.json path escapes repo root via symlink: ${rel}`);
+  }
+  return real;
+}
 
 interface RegistryFile {
   path: string;
@@ -42,6 +72,7 @@ function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   for (const item of manifest.items) {
+    assertSafeItemName(item.name);
     const out = {
       $schema: "https://ui.shadcn.com/schema/registry-item.json",
       name: item.name,
@@ -53,11 +84,7 @@ function main() {
       dependencies: item.dependencies ?? [],
       registryDependencies: item.registryDependencies ?? [],
       files: item.files.map((f) => {
-        const resolved = path.resolve(ROOT, f.path);
-        if (resolved !== ROOT && !resolved.startsWith(ROOT + path.sep)) {
-          throw new Error(`registry.json path escapes repo root: ${f.path}`);
-        }
-        const content = fs.readFileSync(resolved, "utf8");
+        const content = fs.readFileSync(resolveContained(ROOT, f.path), "utf8");
         return {
           path: f.path,
           type: f.type,
@@ -111,4 +138,11 @@ function main() {
   console.log(`✓ wrote ${path.relative(ROOT, registryPath)}`);
 }
 
-main();
+// Only run when executed directly (pnpm registry:build), not when the
+// containment helpers are imported by tests.
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+) {
+  main();
+}

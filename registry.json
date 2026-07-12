@@ -200,6 +200,11 @@
           "target": "components/ui/fill-picker/lib/color.ts"
         },
         {
+          "path": "registry/new-york/color-picker/lib/swatch-presets.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/lib/swatch-presets.ts"
+        },
+        {
           "path": "registry/new-york/color-picker/lib/constants.ts",
           "type": "registry:lib",
           "target": "components/ui/fill-picker/lib/constants.ts"

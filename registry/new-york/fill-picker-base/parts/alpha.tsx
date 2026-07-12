@@ -5,6 +5,7 @@ import { Slider } from "@base-ui/react/slider";
 import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
 import { formatColor } from "@/registry/new-york/color-picker/lib/color";
 import { cn } from "@/lib/utils";
+import { CHECKERBOARD_LG as CHECKERBOARD } from "@/registry/new-york/color-picker/lib/constants";
 
 // See Hue: omit `defaultValue` (Slider.Root owns it as a number).
 export interface AlphaProps
@@ -12,8 +13,6 @@ export interface AlphaProps
   orientation?: "horizontal" | "vertical";
 }
 
-const CHECKERBOARD =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><rect width='6' height='6' fill='%23ccc'/><rect x='6' y='6' width='6' height='6' fill='%23ccc'/></svg>\")";
 
 export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha(
   { orientation = "horizontal", className, ...rest },

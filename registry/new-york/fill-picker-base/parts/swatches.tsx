@@ -8,29 +8,16 @@ import { useColorPickerContext } from "@/registry/new-york/color-picker/context"
 import { formatColor, parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 import { cn } from "@/lib/utils";
-
-// Inline SVG checkerboard so transparent / partially-opaque presets read as
-// translucent rather than solid against the popover bg.
-const CHECKERBOARD =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><rect width='4' height='4' fill='%23ccc'/><rect x='4' y='4' width='4' height='4' fill='%23ccc'/></svg>\")";
+import { CHECKERBOARD_SM as CHECKERBOARD } from "@/registry/new-york/color-picker/lib/constants";
+import {
+  DEFAULT_SWATCH_PRESETS,
+  isSameSwatchColor,
+} from "@/registry/new-york/color-picker/lib/swatch-presets";
 
 export interface SwatchesProps extends React.HTMLAttributes<HTMLDivElement> {
   presets?: string[];
   onAdd?: (color: OklchColor, hex: string) => void;
 }
-
-const DEFAULT_PRESETS = [
-  "oklch(0.95 0 0)",
-  "oklch(0.75 0 0)",
-  "oklch(0.5 0 0)",
-  "oklch(0.25 0 0)",
-  "oklch(0.05 0 0)",
-  "oklch(0.7 0.18 30)",
-  "oklch(0.7 0.18 90)",
-  "oklch(0.7 0.18 150)",
-  "oklch(0.7 0.18 210)",
-  "oklch(0.7 0.18 270)",
-];
 
 // Sentinel RadioGroup value used when the current color doesn't match any
 // preset — keeps every Radio unchecked without needing an `undefined` value
@@ -50,31 +37,18 @@ const NONE = "__none__";
  * stays a plain button rendered as a sibling of the RadioGroup.
  */
 export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function Swatches(
-  { presets = DEFAULT_PRESETS, onAdd, className, ...rest },
+  { presets = DEFAULT_SWATCH_PRESETS, onAdd, className, ...rest },
   ref,
 ) {
   const { color, setColor } = useColorPickerContext();
 
-  const isSamePreset = React.useCallback(
-    (preset: OklchColor) => {
-      if (Math.abs(preset.l - color.l) >= 1e-3) return false;
-      if (Math.abs(preset.c - color.c) >= 1e-3) return false;
-      if (Math.abs(preset.alpha - color.alpha) >= 1e-3) return false;
-      if (preset.c < 1e-3 || color.c < 1e-3) return true;
-      const d = (((preset.h - color.h) % 360) + 360) % 360;
-      const wrapped = d > 180 ? 360 - d : d;
-      return wrapped < 0.1;
-    },
-    [color],
-  );
-
   const activeValue = React.useMemo(() => {
     for (const p of presets) {
       const parsed = parseColor(p);
-      if (parsed && isSamePreset(parsed)) return p;
+      if (parsed && isSameSwatchColor(parsed, color)) return p;
     }
     return NONE;
-  }, [presets, isSamePreset]);
+  }, [presets, color]);
 
   return (
     <div

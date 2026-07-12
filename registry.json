@@ -49,6 +49,11 @@
           "target": "components/ui/fill-picker-base/parts/format-switcher.tsx"
         },
         {
+          "path": "registry/new-york/fill-picker-base/parts/gradient/field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gradient/field.tsx"
+        },
+        {
           "path": "registry/new-york/fill-picker-base/parts/channel-input.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker-base/parts/channel-input.tsx"

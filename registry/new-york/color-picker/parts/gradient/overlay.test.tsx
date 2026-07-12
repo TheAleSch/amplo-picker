@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import * as React from "react";
 import { Root } from "./root";
 import { Area } from "./area";
+import { Overlay } from "./overlay";
 import { RadiusInput } from "./radius-input";
 import { EllipseRadiiInput } from "./ellipse-radii-input";
 import {
+  DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   type Gradient,
   type RadialGradient,
@@ -245,5 +247,62 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
     const g = latest as RadialGradient;
     expect(g.shape).toBe("ellipse");
     expect(g.radii).toEqual({ x: 0.5, y: 0.3 });
+  });
+});
+
+// A-6 (2026-07-12 audit): free-positioned linear endpoints moved x/y with
+// arrows while exposing 1D slider semantics whose value stayed the angle.
+// A-8: 2D handles (center, endpoints) were silent to SR under keyboard.
+describe("Overlay handle semantics", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("angle-only linear: endpoint handle is a 1D angle slider", () => {
+    render(
+      <Root defaultValue={DEFAULT_LINEAR}>
+        <Overlay />
+      </Root>,
+    );
+    const start = screen.getByRole("slider", { name: "Gradient start" });
+    expect(start).toHaveAttribute("aria-valuenow", "90");
+  });
+
+  it("free-positioned linear: endpoint handles are 2D pads, not angle sliders", () => {
+    render(
+      <Root
+        defaultValue={{
+          ...DEFAULT_LINEAR,
+          start: { x: 0.2, y: 0.3 },
+          end: { x: 0.8, y: 0.7 },
+        }}
+      >
+        <Overlay />
+      </Root>,
+    );
+    const start = screen.getByLabelText(/^Gradient start/);
+    expect(start).toHaveAttribute("role", "application");
+    expect(start).not.toHaveAttribute("aria-valuenow");
+    expect(start.getAttribute("aria-label")).toMatch(/x 20%.*y 30%/);
+  });
+
+  it("announces center moves in a live region (radial)", () => {
+    vi.useFakeTimers();
+    render(
+      <Root defaultValue={DEFAULT_RADIAL}>
+        <Overlay />
+      </Root>,
+    );
+    const center = screen.getByLabelText(/^Gradient center/);
+    act(() => {
+      center.focus();
+      fireEvent.keyDown(center, { key: "ArrowRight" });
+    });
+    act(() => {
+      vi.runAllTimers();
+    });
+    const live = document.querySelector(
+      '[data-slot="gradient-overlay"] [aria-live="polite"]',
+    );
+    expect(live).not.toBeNull();
+    expect(live!.textContent).toMatch(/x 51%/);
   });
 });

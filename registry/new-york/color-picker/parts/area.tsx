@@ -13,6 +13,7 @@ import {
   toGamut,
 } from "../lib/color";
 import type { Gamut, OklchColor } from "../lib/types";
+import { useLiveAnnounce } from "./use-live-announce";
 import { cn } from "@/lib/utils";
 
 export type AreaMode = "oklch-cl" | "hsv-sv" | "oklch-hc";
@@ -197,18 +198,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
   // role="application" carries no value semantics, so keyboard adjustments
   // would otherwise be silent to screen readers. Announce the value text in a
   // polite live region, debounced so held-down arrows don't flood the queue.
-  const [liveText, setLiveText] = React.useState("");
-  const liveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const announce = React.useCallback((text: string) => {
-    if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
-    liveTimerRef.current = setTimeout(() => setLiveText(text), 150);
-  }, []);
-  React.useEffect(
-    () => () => {
-      if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
-    },
-    [],
-  );
+  const [liveText, announce] = useLiveAnnounce();
 
   const moveTo = React.useCallback(
     (x: number, y: number) => {

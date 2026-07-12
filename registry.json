@@ -230,6 +230,11 @@
           "target": "components/ui/fill-picker/parts/area.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/use-live-announce.ts",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/use-live-announce.ts"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/hue.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/hue.tsx"

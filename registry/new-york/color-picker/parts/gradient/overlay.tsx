@@ -6,6 +6,7 @@ import { useGradientPickerContext } from "../../contexts/gradient";
 import { type RadialSizeKeyword } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 import { CHECKERBOARD_LG } from "../../lib/constants";
+import { useLiveAnnounce } from "../use-live-announce";
 
 export interface OverlayProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -451,6 +452,11 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     target.addEventListener("pointercancel", cleanup);
   };
 
+  // 2D handles (center, free-positioned endpoints) use role="application",
+  // which has no value semantics — announce keyboard moves in a polite live
+  // region rendered at the overlay root.
+  const [liveText, announce] = useLiveAnnounce();
+
   const onKeyDownLinearStop = (
     id: string,
     position: number,
@@ -519,6 +525,9 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     };
     if (which === "linear-a") ctx.setLinearStart(next);
     else ctx.setLinearEnd(next);
+    announce(
+      `${which === "linear-a" ? "Start" : "End"} x ${Math.round(next.x * 100)}%, y ${Math.round(next.y * 100)}%`,
+    );
   };
 
   const onKeyDownConicDial = (e: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -592,10 +601,14 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       y = 0.5;
     } else return;
     e.preventDefault();
-    ctx.setCenter({
+    const next = {
       x: Math.max(0, Math.min(1, x)),
       y: Math.max(0, Math.min(1, y)),
-    });
+    };
+    ctx.setCenter(next);
+    announce(
+      `Center x ${Math.round(next.x * 100)}%, y ${Math.round(next.y * 100)}%`,
+    );
   };
 
   const beginDrag = (kind: HandleKind) => (
@@ -640,6 +653,9 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       )}
       {...rest}
     >
+      <span aria-live="polite" className="sr-only">
+        {liveText}
+      </span>
       {handles && (
         <>
           {handles.showConnector && handles.b && (
@@ -701,20 +717,32 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
 
           {gradient.type === "linear" ? (
             <>
+              {/* Free-positioned endpoints move in 2D (x/y), so they must
+                 not claim role="slider" — its 1D value model would keep
+                 announcing the angle while arrows change position. They
+                 become labelled 2D pads like the center handle; angle-only
+                 mode keeps the true slider semantics. */}
               <Handle
-                label="Gradient start"
+                label={
+                  gradient.start
+                    ? `Gradient start, x ${Math.round(gradient.start.x * 100)}%, y ${Math.round(gradient.start.y * 100)}%`
+                    : "Gradient start"
+                }
                 position={handles.a}
                 onPointerDown={beginDrag("linear-a")}
                 onKeyDown={(e) => onKeyDownLinearEndpoint("linear-a", e)}
-                role="slider"
-                aria-valuemin={0}
-                aria-valuemax={360}
-                aria-valuenow={Math.round(gradient.angle)}
-                aria-valuetext={
-                  gradient.start
-                    ? `start x ${Math.round(gradient.start.x * 100)}%, y ${Math.round(gradient.start.y * 100)}%`
-                    : `${Math.round(gradient.angle)} degrees`
-                }
+                {...(gradient.start
+                  ? {
+                      role: "application" as const,
+                      "aria-roledescription": "2D pad for gradient endpoint",
+                    }
+                  : {
+                      role: "slider" as const,
+                      "aria-valuemin": 0,
+                      "aria-valuemax": 360,
+                      "aria-valuenow": Math.round(gradient.angle),
+                      "aria-valuetext": `${Math.round(gradient.angle)} degrees`,
+                    })}
                 // Endpoint handles are always anchored to the first / last
                 // stop, so they render in that stop's color.
                 style={
@@ -723,19 +751,26 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
               />
               {handles.b && (
                 <Handle
-                  label="Gradient end"
+                  label={
+                    gradient.end
+                      ? `Gradient end, x ${Math.round(gradient.end.x * 100)}%, y ${Math.round(gradient.end.y * 100)}%`
+                      : "Gradient end"
+                  }
                   position={handles.b}
                   onPointerDown={beginDrag("linear-b")}
                   onKeyDown={(e) => onKeyDownLinearEndpoint("linear-b", e)}
-                  role="slider"
-                  aria-valuemin={0}
-                  aria-valuemax={360}
-                  aria-valuenow={Math.round(gradient.angle)}
-                  aria-valuetext={
-                    gradient.end
-                      ? `end x ${Math.round(gradient.end.x * 100)}%, y ${Math.round(gradient.end.y * 100)}%`
-                      : `${Math.round(gradient.angle)} degrees`
-                  }
+                  {...(gradient.end
+                    ? {
+                        role: "application" as const,
+                        "aria-roledescription": "2D pad for gradient endpoint",
+                      }
+                    : {
+                        role: "slider" as const,
+                        "aria-valuemin": 0,
+                        "aria-valuemax": 360,
+                        "aria-valuenow": Math.round(gradient.angle),
+                        "aria-valuetext": `${Math.round(gradient.angle)} degrees`,
+                      })}
                   style={(() => {
                     const last = ctx.stops[ctx.stops.length - 1];
                     return last ? stopSwatchStyle(last.color) : undefined;

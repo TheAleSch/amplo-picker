@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import { useLiveAnnounce } from "../use-live-announce";
 
 export interface PositionPadProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: number;
@@ -13,6 +14,8 @@ export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
     const ctx = useGradientPickerContext();
     const padRef = React.useRef<HTMLDivElement | null>(null);
     React.useImperativeHandle(ref, () => padRef.current as HTMLDivElement);
+    // role="application" is silent under keyboard — announce moves politely.
+    const [liveText, announce] = useLiveAnnounce();
 
     if (ctx.gradient.type === "linear") return null;
     const center = ctx.gradient.center;
@@ -52,19 +55,23 @@ export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
     const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       const step = e.shiftKey ? 0.05 : 0.01;
       const clamp = (n: number) => Math.max(0, Math.min(1, n));
+      let next: { x: number; y: number };
       if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        ctx.setCenter({ x: clamp(center.x - step), y: center.y });
+        next = { x: clamp(center.x - step), y: center.y };
       } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        ctx.setCenter({ x: clamp(center.x + step), y: center.y });
+        next = { x: clamp(center.x + step), y: center.y };
       } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        ctx.setCenter({ x: center.x, y: clamp(center.y - step) });
+        next = { x: center.x, y: clamp(center.y - step) };
       } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        ctx.setCenter({ x: center.x, y: clamp(center.y + step) });
+        next = { x: center.x, y: clamp(center.y + step) };
+      } else {
+        return;
       }
+      e.preventDefault();
+      ctx.setCenter(next);
+      announce(
+        `x ${Math.round(next.x * 100)}%, y ${Math.round(next.y * 100)}%`,
+      );
     };
 
     return (
@@ -84,6 +91,9 @@ export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
         )}
         {...rest}
       >
+        <span aria-live="polite" className="sr-only">
+          {liveText}
+        </span>
         <div
           aria-hidden
           className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background bg-foreground"

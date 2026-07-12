@@ -221,6 +221,14 @@ export interface GodRayCanvasProps {
   className?: string;
   markCenterFraction?: { x: number; y: number };
   markWidthFraction?: number;
+  /**
+   * Resolution divisor for the halo/bloom chain (paint 1b + blur + mipmaps).
+   * The blur is a low-pass filter, so anything above its cutoff is discarded
+   * anyway — running it at 1/4 res is ~16× cheaper and visually identical.
+   * The sharp silhouette always renders at full resolution. Changing this
+   * reallocates GL buffers (brief re-init).
+   */
+  bloomDivisor?: number;
   intensity?: number;
   bloom?: number;
   blurStride?: number;
@@ -240,6 +248,7 @@ export function GodRayCanvas({
   className,
   markCenterFraction = { x: 0.34, y: 0.4 },
   markWidthFraction = 0.24,
+  bloomDivisor = 4,
   intensity = 0.75,
   bloom = 6,
   blurStride = 30,
@@ -361,8 +370,9 @@ export function GodRayCanvas({
     // paintTex holds the fill (sharp). haloSrc holds a separately colored
     // copy of the silhouette used as the bloom input — letting the user
     // pick a different L/C for the halo than for the fill. blurA/blurB are
-    // the H/V Gaussian intermediates, run at full canvas resolution for
-    // the sharpest halo edge. blurB has mipmaps and is the bloom source.
+    // the H/V Gaussian intermediates. blurB has mipmaps and is the bloom
+    // source. The whole halo chain lives at 1/bloomDivisor resolution: the
+    // Gaussian discards those frequencies anyway, so only cost changes.
     const paintTex = makeRtTex(false);
     const haloSrc = makeRtTex(false);
     const blurA = makeRtTex(false);
@@ -373,26 +383,34 @@ export function GodRayCanvas({
     const fboB = gl.createFramebuffer()!;
     let paintW = 0;
     let paintH = 0;
+    // Bloom chain (haloSrc → blurA/blurB → mips) runs at reduced resolution.
+    let bloomW = 0;
+    let bloomH = 0;
+    const div = Math.max(1, Math.round(bloomDivisor));
 
     const allocBuffers = (w: number, h: number) => {
       if (w === paintW && h === paintH) return;
       paintW = w;
       paintH = h;
+      bloomW = Math.max(1, Math.floor(w / div));
+      bloomH = Math.max(1, Math.floor(h / div));
 
       const allocAttach = (
         tex: WebGLTexture,
         fbo: WebGLFramebuffer,
+        tw: number,
+        th: number,
       ) => {
         gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, fboInternal, w, h, 0, gl.RGBA, fboType, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, fboInternal, tw, th, 0, gl.RGBA, fboType, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
       };
 
-      allocAttach(paintTex, paintFbo);
-      allocAttach(haloSrc, haloFbo);
-      allocAttach(blurA, fboA);
-      allocAttach(blurB, fboB);
+      allocAttach(paintTex, paintFbo, w, h);
+      allocAttach(haloSrc, haloFbo, bloomW, bloomH);
+      allocAttach(blurA, fboA, bloomW, bloomH);
+      allocAttach(blurB, fboB, bloomW, bloomH);
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     };
@@ -423,6 +441,10 @@ export function GodRayCanvas({
 
     let raf = 0;
     const start = performance.now();
+    // Reduced motion: draw one static frame instead of animating.
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -433,13 +455,12 @@ export function GodRayCanvas({
       if (canvas.width !== W) canvas.width = W;
       if (canvas.height !== H) canvas.height = H;
       allocBuffers(W, H);
+      // The animation loop repaints anyway; the static frame must repaint
+      // here or a resize would leave a stretched stale image.
+      if (reducedMotion) renderFrame();
     };
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-    resize();
-
-    const tick = () => {
+    const renderFrame = () => {
       const t = (performance.now() - start) / 1000;
       const aspect = canvas.width / canvas.height;
       const p = paramsRef.current;
@@ -470,8 +491,11 @@ export function GodRayCanvas({
       gl.uniform1f(uPaintHueOffset, 0.0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-      // Pass 1b: paint halo colors into haloSrc (the bloom input).
+      // Pass 1b: paint halo colors into haloSrc (the bloom input) at bloom
+      // resolution — the shader works in UV space, so only the viewport
+      // changes.
       gl.bindFramebuffer(gl.FRAMEBUFFER, haloFbo);
+      gl.viewport(0, 0, bloomW, bloomH);
       gl.uniform1f(uPaintSwirlL, p.haloL);
       gl.uniform1f(uPaintSwirlC, p.haloC);
       gl.uniform1f(uPaintHueOffset, p.haloHueOffset);
@@ -479,9 +503,11 @@ export function GodRayCanvas({
 
       // Pass 2: separable Gaussian blur, iterated p.blurPasses times.
       // Combined sigma multiplies by sqrt(N) per iteration → wider, softer
-      // halo without ever increasing the per-iteration tap count.
+      // halo without ever increasing the per-iteration tap count. u_step is
+      // in UV space relative to the *canvas* size, so blurStride keeps its
+      // meaning (px on screen) at any bloomDivisor.
       gl.useProgram(blurProg);
-      gl.viewport(0, 0, paintW, paintH);
+      gl.viewport(0, 0, bloomW, bloomH);
       gl.uniform1i(uBlurSrc, 0);
       const passes = Math.max(1, Math.min(8, Math.round(p.blurPasses)));
       let blurSrc: WebGLTexture = haloSrc;
@@ -522,14 +548,39 @@ export function GodRayCanvas({
       gl.uniform1i(uCompLodCount, Math.max(1, Math.min(8, Math.round(p.lodCount))));
       gl.uniform1f(uCompWhitepoint, Math.max(0.01, p.whitepoint));
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
 
+    const tick = () => {
+      renderFrame();
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    const startLoop = () => {
+      if (raf) return;
+      if (reducedMotion) renderFrame();
+      else raf = requestAnimationFrame(tick);
+    };
+    const stopLoop = () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    resize();
+
+    // Don't burn GPU while the hero is scrolled out of view — rAF only
+    // auto-pauses on hidden *tabs*, not for off-screen elements.
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) startLoop();
+      else stopLoop();
+    });
+    io.observe(canvas);
+    startLoop();
 
     return () => {
-      cancelAnimationFrame(raf);
+      stopLoop();
       ro.disconnect();
+      io.disconnect();
       gl.deleteProgram(paintProg);
       gl.deleteProgram(blurProg);
       gl.deleteProgram(compProg);
@@ -549,7 +600,7 @@ export function GodRayCanvas({
       gl.deleteFramebuffer(fboA);
       gl.deleteFramebuffer(fboB);
     };
-  }, [markCenterFraction.x, markCenterFraction.y, markWidthFraction]);
+  }, [markCenterFraction.x, markCenterFraction.y, markWidthFraction, bloomDivisor]);
 
   return (
     <canvas

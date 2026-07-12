@@ -4,12 +4,9 @@ import * as React from "react";
 import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
 import type { GradientType } from "@/registry/new-york/color-picker/lib/gradient";
 import { FieldSelect, FieldSelectItem } from "./field";
+import { GRADIENT_TYPE_OPTIONS } from "@/registry/new-york/color-picker/lib/gradient-options";
 
-const TYPES: { value: GradientType; label: string }[] = [
-  { value: "linear", label: "Linear" },
-  { value: "radial", label: "Radial" },
-  { value: "conic", label: "Conic" },
-];
+const TYPES = GRADIENT_TYPE_OPTIONS;
 
 const TYPE_ITEMS = Object.fromEntries(
   TYPES.map((t) => [t.value, t.label]),

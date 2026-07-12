@@ -334,6 +334,11 @@
           "target": "components/ui/fill-picker/lib/gradient.ts"
         },
         {
+          "path": "registry/new-york/color-picker/lib/gradient-options.ts",
+          "type": "registry:lib",
+          "target": "components/ui/fill-picker/lib/gradient-options.ts"
+        },
+        {
           "path": "registry/new-york/color-picker/contexts/gradient.ts",
           "type": "registry:lib",
           "target": "components/ui/fill-picker/contexts/gradient.ts"

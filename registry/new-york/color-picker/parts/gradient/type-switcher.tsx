@@ -5,12 +5,9 @@ import { SelectItem } from "@/components/ui/select";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { GradientType } from "../../lib/gradient";
 import { FieldSelect } from "../field";
+import { GRADIENT_TYPE_OPTIONS } from "../../lib/gradient-options";
 
-const TYPES: { value: GradientType; label: string }[] = [
-  { value: "linear", label: "Linear" },
-  { value: "radial", label: "Radial" },
-  { value: "conic", label: "Conic" },
-];
+const TYPES = GRADIENT_TYPE_OPTIONS;
 
 /**
  * Bound to `gradient.type`. Built on `<FieldSelect>` (shadcn `<Select>`

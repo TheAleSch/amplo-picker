@@ -18,50 +18,9 @@ import {
 } from "@/components/ui/tooltip";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { GradientInterp } from "../../lib/gradient";
+import { GRADIENT_INTERP_OPTIONS } from "../../lib/gradient-options";
 
-/**
- * Selectable interpolation spaces. Each maps to the CSS Color 4
- * `<gradient> in <space>` clause emitted by `formatGradient`.
- *
- * The description is surfaced via the ⓘ icon next to each option, so
- * users hovering an option in the open menu see *why* they'd pick it.
- */
-const OPTIONS: {
-  value: GradientInterp;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: "oklch",
-    label: "OKLCH",
-    description:
-      "Perceptually uniform polar space. Smooth hue arcs, no muddy mid-tones. Recommended default.",
-  },
-  {
-    value: "oklab",
-    label: "OKLab",
-    description:
-      "Perceptual but cartesian — a straight line through OK space. Smooth lightness, no hue rotation.",
-  },
-  {
-    value: "srgb",
-    label: "sRGB",
-    description:
-      "Legacy browser default. Mixes in gamma-encoded sRGB; often grays through the middle of two saturated colors.",
-  },
-  {
-    value: "hsl",
-    label: "HSL",
-    description:
-      "Walks the hue circle the shorter way between the two stops.",
-  },
-  {
-    value: "hsl-longer",
-    label: "HSL (longer hue)",
-    description:
-      "Walks the hue circle the longer way — produces a full rainbow sweep between two stops.",
-  },
-];
+const OPTIONS = GRADIENT_INTERP_OPTIONS;
 
 // `<SelectItem>` here is wrapped in `RowWithInfo`, not a direct child of
 // `<SelectContent>`, so `<Select>`'s automatic value→label extraction

@@ -7,35 +7,9 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
 import type { RadialSizeKeyword } from "@/registry/new-york/color-picker/lib/gradient";
 import { FieldSelect, FieldSelectItem } from "./field";
+import { RADIAL_SIZE_OPTIONS } from "@/registry/new-york/color-picker/lib/gradient-options";
 
-/**
- * The four CSS `<size>` keywords for radial gradients, each with a
- * one-sentence hover explanation surfaced via the ⓘ icon.
- *
- * https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient#size
- */
-const SIZE_OPTIONS: { value: RadialSizeKeyword; description: string }[] = [
-  {
-    value: "closest-side",
-    description:
-      "Ends at the side of the box closest to the center (the shortest reachable edge).",
-  },
-  {
-    value: "closest-corner",
-    description:
-      "Ends at the corner of the box closest to the center — passes through the nearest corner.",
-  },
-  {
-    value: "farthest-side",
-    description:
-      "Ends at the side of the box farthest from the center (the longest reachable edge).",
-  },
-  {
-    value: "farthest-corner",
-    description:
-      "Default. Ends at the corner of the box farthest from the center — gradient covers the entire box.",
-  },
-];
+const SIZE_OPTIONS = RADIAL_SIZE_OPTIONS;
 
 export interface RadialSizeSelectProps {
   className?: string;

@@ -174,7 +174,7 @@ export function Hero() {
               Amplo Picker
             </h1>
             <p className="max-w-[300px] text-sm leading-[1.5] text-foreground/70 sm:max-w-[480px] sm:text-base">
-              OKLCH-native, Display-P3-aware color picker for shadcn.
+              OKLCH-native, Display-P3-aware fill picker for shadcn.
               Composable, accessible, gamut-aware.
             </p>
           </div>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { FillPickerContext } from "../../contexts/fill";
+import { FillPickerContext, FillPickerIdContext } from "../../contexts/fill";
 import {
   useFillPicker,
   type UseFillPickerProps,
@@ -61,8 +61,10 @@ export const Root = React.forwardRef<HTMLDivElement, RootProps>(function Root(
   React.useEffect(() => {
     if (innerHeight !== null) animateRef.current = true;
   }, [innerHeight]);
+  const idBase = React.useId();
   return (
     <FillPickerContext.Provider value={state}>
+      <FillPickerIdContext.Provider value={idBase}>
       <div
         ref={ref}
         data-slot="fill-picker"
@@ -81,6 +83,7 @@ export const Root = React.forwardRef<HTMLDivElement, RootProps>(function Root(
           {children}
         </div>
       </div>
+      </FillPickerIdContext.Provider>
     </FillPickerContext.Provider>
   );
 });

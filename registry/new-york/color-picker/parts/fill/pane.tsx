@@ -4,7 +4,12 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { ColorPickerContext } from "../../context";
 import { GradientPickerContext } from "../../contexts/gradient";
-import { useFillPickerContext } from "../../contexts/fill";
+import {
+  fillPaneId,
+  fillTabId,
+  FillPickerIdContext,
+  useFillPickerContext,
+} from "../../contexts/fill";
 import { useColorPicker } from "../../hooks/use-color-picker";
 import { useGradientPicker } from "../../hooks/use-gradient-picker";
 import type { FillMode } from "../../hooks/use-fill-picker";
@@ -20,17 +25,25 @@ export const Pane = React.forwardRef<HTMLDivElement, PaneProps>(function Pane(
   ref,
 ) {
   const fill = useFillPickerContext();
+  const idBase = React.useContext(FillPickerIdContext);
   if (fill.mode !== mode) return null;
+
+  // APG tabpanel wiring: named by its tab, referenced by aria-controls.
+  const panelProps = {
+    role: "tabpanel" as const,
+    id: fillPaneId(idBase, mode),
+    "aria-labelledby": fillTabId(idBase, mode),
+  };
 
   if (mode === "color") {
     return (
-      <ColorPaneInner ref={ref} className={className} {...rest}>
+      <ColorPaneInner ref={ref} className={className} {...panelProps} {...rest}>
         {children}
       </ColorPaneInner>
     );
   }
   return (
-    <GradientPaneInner ref={ref} className={className} {...rest}>
+    <GradientPaneInner ref={ref} className={className} {...panelProps} {...rest}>
       {children}
     </GradientPaneInner>
   );

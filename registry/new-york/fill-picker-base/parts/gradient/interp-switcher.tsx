@@ -83,7 +83,15 @@ function RowWithInfo({
             }
           />
           <Tooltip.Portal>
-            <Tooltip.Positioner side="right" align="center" sideOffset={4}>
+            {/* z-50 on the POSITIONER, not just the popup: the positioner is
+                the element that competes with the Select popup's z-50
+                positioner — with z-auto it renders behind the open menu. */}
+            <Tooltip.Positioner
+              side="right"
+              align="center"
+              sideOffset={4}
+              className="z-50"
+            >
               <Tooltip.Popup
                 className={cn(
                   "z-50 max-w-[220px] overflow-hidden rounded-md bg-primary px-3 py-1.5 text-[11px] normal-case tracking-normal text-primary-foreground",

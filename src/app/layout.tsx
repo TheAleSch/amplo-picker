@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 const SITE_URL = "https://amplo.ale.design";
 const SITE_TITLE = "Amplo Color Picker";
 const SITE_DESCRIPTION =
-  "OKLCH-native, Display-P3-aware color picker for shadcn. Composable, accessible, gamut-aware.";
+  "OKLCH-native, Display-P3-aware color / fill picker for shadcn. Composable, accessible, gamut-aware.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

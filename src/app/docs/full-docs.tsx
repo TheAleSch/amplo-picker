@@ -169,7 +169,7 @@ export function FullDocs({ variant }: { variant: Variant }) {
             </Link>
           </div>
           <p className="text-muted-foreground">
-            OKLCH-native, Display-P3-aware color picker. Composable,
+            OKLCH-native, Display-P3-aware color / fill picker. Composable,
             accessible, gamut-aware. Drop into any Next.js + Tailwind v4 app
             with a single shadcn CLI command — pick the entry point that fits.
           </p>

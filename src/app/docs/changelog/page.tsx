@@ -24,7 +24,7 @@ const RELEASES: Release[] = [
     date: "2026-05-04",
     title: "Initial release",
     changes: [
-      "OKLCH-native, Display-P3-aware color picker distributed as a shadcn registry.",
+      "OKLCH-native, Display-P3-aware color / fill picker distributed as a shadcn registry.",
       "Compose-only parts: Area, Hue, Lightness, Alpha, FormatSwitcher, ChannelInput, Swatches, GamutBadge, ContrastReadout, Preview, EyeDropper, and CssInput.",
       "Lossless format toggles (hex / rgb / hsl / hsb / oklch / oklab / display-p3), WCAG + APCA contrast metrics, gamut detection with soft-proofing, and full keyboard accessibility.",
     ],

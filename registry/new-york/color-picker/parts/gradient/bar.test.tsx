@@ -54,6 +54,32 @@ describe("GradientPicker.Bar", () => {
     expect(handle.getAttribute("aria-valuenow")).toBe(afterDrag);
   });
 
+  it("ignores document moves from other pointers (multi-touch)", () => {
+    render(
+      <Root defaultValue={DEFAULT_LINEAR}>
+        <Bar />
+      </Root>,
+    );
+    const handle = screen.getAllByRole("slider")[0];
+    act(() => {
+      fireEvent.pointerDown(handle, { pointerId: 1, clientX: 8, clientY: 8, buttons: 1 });
+    });
+    const before = handle.getAttribute("aria-valuenow");
+    // Second finger sliding elsewhere must not move this stop, and its
+    // buttons: 0 hover-move must not end the drag.
+    act(() => {
+      fireEvent.pointerMove(document, { pointerId: 2, clientX: 300, clientY: 8, buttons: 1 });
+      fireEvent.pointerMove(document, { pointerId: 2, clientX: 320, clientY: 8, buttons: 0 });
+      fireEvent.pointerUp(document, { pointerId: 2, clientX: 320, clientY: 8 });
+    });
+    expect(handle.getAttribute("aria-valuenow")).toBe(before);
+    // Original pointer still drags.
+    act(() => {
+      fireEvent.pointerMove(document, { pointerId: 1, clientX: 200, clientY: 8, buttons: 1 });
+    });
+    expect(handle.getAttribute("aria-valuenow")).toBe("50");
+  });
+
   it("the selected handle has aria-current=true", () => {
     render(
       <Root defaultValue={DEFAULT_LINEAR}>

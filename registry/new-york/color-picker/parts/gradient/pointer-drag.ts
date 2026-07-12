@@ -23,6 +23,9 @@ export function trackPointerDrag(
     // over the target; the buttons check below handles missed releases.
   }
   const move = (ev: PointerEvent) => {
+    // Only the dragging pointer steers or ends the gesture — a second
+    // touch point wandering over the captured element must not.
+    if (ev.pointerId !== pointerId) return;
     if (ev.buttons === 0) {
       end(ev);
       return;
@@ -30,6 +33,7 @@ export function trackPointerDrag(
     onMove(ev);
   };
   const end = (ev?: Event) => {
+    if (ev instanceof PointerEvent && ev.pointerId !== pointerId) return;
     if (ev instanceof PointerEvent) {
       try {
         target.releasePointerCapture(ev.pointerId);

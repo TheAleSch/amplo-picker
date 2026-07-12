@@ -124,8 +124,12 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     // 3px slack absorbs the jitter of a deliberate click.
     const startX = e.clientX;
     const startY = e.clientY;
+    // Document-level listeners see every pointer; only the one that started
+    // this drag may steer or end it (multi-touch).
+    const dragPointerId = e.pointerId;
     let moved = false;
     const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== dragPointerId) return;
       // Self-heal a missed release: without pointer capture, letting go of
       // the button outside the browser window never delivers pointerup, so
       // the first re-entry move arrives with no buttons pressed. End the
@@ -157,7 +161,8 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       document.removeEventListener("pointercancel", onUp);
       activeDragCleanupRef.current = null;
     };
-    const onUp = () => {
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== dragPointerId) return;
       cleanup();
       if (pendingRemove) ctx.removeStop(id);
       else if (!moved && editOnClick) setOpenStopId(id);

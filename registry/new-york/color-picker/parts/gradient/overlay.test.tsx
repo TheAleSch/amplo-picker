@@ -341,6 +341,39 @@ describe("Overlay drag self-heal (stuck conic drag)", () => {
     expect(latest.type === "conic" ? latest.center.x : NaN).toBeCloseTo(afterDrag, 6);
   });
 
+  it("ignores moves and releases from other pointers (multi-touch)", () => {
+    let latest: Gradient = DEFAULT_CONIC;
+    render(
+      <Root
+        defaultValue={DEFAULT_CONIC}
+        onValueChange={(g) => {
+          latest = g;
+        }}
+      >
+        <Overlay />
+      </Root>,
+    );
+    const center = screen.getByLabelText(/^Gradient center/);
+    act(() => {
+      fireEvent.pointerDown(center, { pointerId: 1, clientX: 200, clientY: 60, buttons: 1 });
+    });
+    // A second finger moving over the handle must not steer the drag…
+    act(() => {
+      fireEvent.pointerMove(center, { pointerId: 2, clientX: 320, clientY: 60, buttons: 1 });
+    });
+    expect(latest.type === "conic" ? latest.center.x : NaN).toBeCloseTo(0.5, 3);
+    // …a second finger lifting (buttons 0 / pointerup) must not end it…
+    act(() => {
+      fireEvent.pointerMove(center, { pointerId: 2, clientX: 320, clientY: 60, buttons: 0 });
+      fireEvent.pointerUp(center, { pointerId: 2, clientX: 320, clientY: 60 });
+    });
+    // …and the original pointer keeps dragging.
+    act(() => {
+      fireEvent.pointerMove(center, { pointerId: 1, clientX: 240, clientY: 60, buttons: 1 });
+    });
+    expect(latest.type === "conic" ? latest.center.x : NaN).toBeCloseTo(240 / 400, 3);
+  });
+
   it("cleans up when pointer capture is lost (window blur mid-drag)", () => {
     let latest: Gradient = DEFAULT_CONIC;
     render(

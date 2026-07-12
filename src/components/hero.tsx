@@ -78,6 +78,7 @@ function useMeasuredMark(
 }
 
 type HaloParams = {
+  colorSpace: "srgb" | "display-p3";
   bloomDivisor: number;
   bloom: number;
   intensity: number;
@@ -110,6 +111,7 @@ const P3_VIVID_PRESETS = [
 ];
 
 const DEFAULT_HALO: HaloParams = {
+  colorSpace: "display-p3",
   bloomDivisor: 4,
   bloom: 6,
   intensity: 1,
@@ -128,6 +130,10 @@ const DEFAULT_HALO: HaloParams = {
 
 export function Hero() {
   const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+  const [frameStats, setFrameStats] = React.useState<{
+    fps: number;
+    gpuMs: number | null;
+  } | null>(null);
   const [variant, setVariant] = React.useState<Variant>("base");
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
@@ -143,6 +149,8 @@ export function Hero() {
         markCenterFraction={center}
         markWidthFraction={width}
         bloomDivisor={halo.bloomDivisor}
+        colorSpace={halo.colorSpace}
+        onFrameStats={setFrameStats}
         bloom={halo.bloom}
         intensity={halo.intensity}
         blurStride={halo.blurStride}
@@ -247,13 +255,14 @@ export function Hero() {
         </div>
       </div>
 
-      <HaloTuner value={halo} onChange={setHalo} />
+      <HaloTuner value={halo} onChange={setHalo} stats={frameStats} />
     </section>
   );
 }
 
 // Tuner field spec: key, label, min, max, step.
-const TUNER_FIELDS: Array<[keyof HaloParams, string, number, number, number]> = [
+type NumericHaloKey = Exclude<keyof HaloParams, "colorSpace">;
+const TUNER_FIELDS: Array<[NumericHaloKey, string, number, number, number]> = [
   ["bloomDivisor", "bloom res ÷", 1, 8, 1],
   ["bloom", "bloom", 0, 12, 0.1],
   ["intensity", "intensity", 0, 3, 0.05],
@@ -278,9 +287,11 @@ const TUNER_FIELDS: Array<[keyof HaloParams, string, number, number, number]> = 
 function HaloTuner({
   value,
   onChange,
+  stats,
 }: {
   value: HaloParams;
   onChange: (v: HaloParams) => void;
+  stats: { fps: number; gpuMs: number | null } | null;
 }) {
   const [open, setOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
@@ -310,6 +321,36 @@ function HaloTuner({
               >
                 reset
               </button>
+            </div>
+          </div>
+          {/* Framerate: rAF fps is vsync-capped; the uncapped number comes
+              from the GPU timer (frame cost → theoretical fps). */}
+          <div className="mb-2 rounded bg-muted/60 px-2 py-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+            {stats
+              ? `${stats.fps.toFixed(0)} fps` +
+                (stats.gpuMs !== null
+                  ? ` · gpu ${stats.gpuMs.toFixed(2)}ms · ~${(1000 / stats.gpuMs).toFixed(0)} fps uncapped`
+                  : " · gpu timer n/a")
+              : "measuring…"}
+          </div>
+          <div className="mb-2 grid grid-cols-[76px_1fr] items-center gap-2 text-[11px]">
+            <span className="truncate text-muted-foreground">colorspace</span>
+            <div className="flex gap-1">
+              {(["display-p3", "srgb"] as const).map((cs) => (
+                <button
+                  key={cs}
+                  type="button"
+                  onClick={() => onChange({ ...value, colorSpace: cs })}
+                  className={cn(
+                    "rounded border px-2 py-0.5",
+                    value.colorSpace === cs
+                      ? "border-foreground/40 bg-foreground/10 text-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {cs === "display-p3" ? "P3" : "sRGB"}
+                </button>
+              ))}
             </div>
           </div>
           <div className="flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto pr-1">

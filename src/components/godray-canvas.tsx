@@ -108,6 +108,9 @@ uniform float u_intensity;
 uniform float u_lodStep;
 uniform int u_lodCount;
 uniform float u_whitepoint;
+// 1.0 → rotate into Display-P3 primaries (canvas tagged display-p3);
+// 0.0 → stay in sRGB primaries (canvas tagged srgb). Same transfer curve.
+uniform float u_outputP3;
 
 // Display-P3 uses the same transfer function as sRGB but wider primaries.
 // We compute everything in linear sRGB (where OKLab natively lands), then
@@ -162,8 +165,8 @@ void main() {
 
   vec3 col = (sharp + bloom * u_bloomScale) * u_intensity;
   vec3 mapped = toneMap(col, u_whitepoint);
-  vec3 p3 = linearSrgbToLinearP3(mapped);
-  vec3 display = linearToTransfer(p3);
+  vec3 primaries = mix(mapped, linearSrgbToLinearP3(mapped), u_outputP3);
+  vec3 display = linearToTransfer(primaries);
   display += (ign(gl_FragCoord.xy) - 0.5) / 255.0;
   // Coverage-based alpha: silhouette is fully opaque, bloom carries its own
   // luminance, dark regions go transparent so the section bg shows through.
@@ -229,6 +232,19 @@ export interface GodRayCanvasProps {
    * reallocates GL buffers (brief re-init).
    */
   bloomDivisor?: number;
+  /**
+   * Frame-stats callback, invoked ~2×/second while the loop runs. `fps` is
+   * the rAF rate (vsync-capped). `gpuMs` is the GPU render time per frame
+   * via EXT_disjoint_timer_query_webgl2 (null when unsupported — Safari) —
+   * 1000/gpuMs is the *uncapped* framerate the shader could sustain.
+   */
+  onFrameStats?: (stats: { fps: number; gpuMs: number | null }) => void;
+  /**
+   * Output color space. "display-p3" tags the drawing buffer P3 and rotates
+   * the shader's linear-sRGB result into P3 primaries; "srgb" skips both.
+   * Live-switchable — useful for eyeballing what non-P3 displays get.
+   */
+  colorSpace?: "srgb" | "display-p3";
   intensity?: number;
   bloom?: number;
   blurStride?: number;
@@ -249,6 +265,8 @@ export function GodRayCanvas({
   markCenterFraction = { x: 0.34, y: 0.4 },
   markWidthFraction = 0.24,
   bloomDivisor = 4,
+  onFrameStats,
+  colorSpace = "display-p3",
   intensity = 0.75,
   bloom = 6,
   blurStride = 30,
@@ -267,6 +285,7 @@ export function GodRayCanvas({
   // Live-tunable uniforms read from a ref every frame so changes don't
   // tear down/recreate any GL resources — the panel can stream values.
   const paramsRef = React.useRef({
+    colorSpace,
     intensity,
     bloom,
     blurStride,
@@ -282,6 +301,7 @@ export function GodRayCanvas({
     haloC,
   });
   paramsRef.current = {
+    colorSpace,
     intensity,
     bloom,
     blurStride,
@@ -296,6 +316,9 @@ export function GodRayCanvas({
     haloL,
     haloC,
   };
+
+  const onFrameStatsRef = React.useRef(onFrameStats);
+  onFrameStatsRef.current = onFrameStats;
 
   React.useEffect(() => {
     const canvas = ref.current;
@@ -435,12 +458,15 @@ export function GodRayCanvas({
     const uCompLodStep = gl.getUniformLocation(compProg, "u_lodStep");
     const uCompLodCount = gl.getUniformLocation(compProg, "u_lodCount");
     const uCompWhitepoint = gl.getUniformLocation(compProg, "u_whitepoint");
+    const uCompOutputP3 = gl.getUniformLocation(compProg, "u_outputP3");
 
     const [, , vbW, vbH] = AMPLO_RAINBOW_VIEWBOX.split(" ").map(Number);
     const markAspect = vbW / vbH;
 
     let raf = 0;
     const start = performance.now();
+    // Setup tagged the context display-p3; renderFrame retags on change.
+    let appliedColorSpace = "display-p3";
     // Reduced motion: draw one static frame instead of animating.
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -547,11 +573,76 @@ export function GodRayCanvas({
       gl.uniform1f(uCompLodStep, p.lodStep);
       gl.uniform1i(uCompLodCount, Math.max(1, Math.min(8, Math.round(p.lodCount))));
       gl.uniform1f(uCompWhitepoint, Math.max(0.01, p.whitepoint));
+      gl.uniform1f(uCompOutputP3, p.colorSpace === "display-p3" ? 1 : 0);
+      // Retag the drawing buffer when the target space changes so the
+      // browser's compositor interprets the shader output correctly.
+      if (p.colorSpace !== appliedColorSpace) {
+        appliedColorSpace = p.colorSpace;
+        try {
+          (gl as WebGL2RenderingContext & { drawingBufferColorSpace?: string }).drawingBufferColorSpace = p.colorSpace;
+        } catch {
+          /* older browsers: uniform still switches the primaries */
+        }
+      }
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
+    // Frame stats: rAF fps is trivial; true GPU cost needs the disjoint
+    // timer extension (Chrome/Edge/Firefox — Safari lacks it, gpuMs stays
+    // null there). One query object, re-issued only after its result is
+    // read: overlapping TIME_ELAPSED queries on one object are invalid.
+    interface TimerExt {
+      TIME_ELAPSED_EXT: number;
+      GPU_DISJOINT_EXT: number;
+    }
+    const timerExt = gl.getExtension(
+      "EXT_disjoint_timer_query_webgl2",
+    ) as TimerExt | null;
+    const gpuQuery = timerExt ? gl.createQuery() : null;
+    let queryPending = false;
+    let gpuMs: number | null = null;
+    let statFrames = 0;
+    let statT0 = performance.now();
+
     const tick = () => {
+      const wantStats = !!onFrameStatsRef.current;
+      let measuring = false;
+      if (wantStats && timerExt && gpuQuery) {
+        if (queryPending) {
+          if (gl.getParameter(timerExt.GPU_DISJOINT_EXT)) {
+            queryPending = false; // discard — timer state is unreliable
+          } else if (gl.getQueryParameter(gpuQuery, gl.QUERY_RESULT_AVAILABLE)) {
+            const ns = gl.getQueryParameter(gpuQuery, gl.QUERY_RESULT) as number;
+            const ms = ns / 1e6;
+            // Light EMA so the readout doesn't jitter frame to frame.
+            gpuMs = gpuMs === null ? ms : gpuMs * 0.8 + ms * 0.2;
+            queryPending = false;
+          }
+        }
+        if (!queryPending) {
+          gl.beginQuery(timerExt.TIME_ELAPSED_EXT, gpuQuery);
+          measuring = true;
+        }
+      }
       renderFrame();
+      if (measuring && timerExt) {
+        gl.endQuery(timerExt.TIME_ELAPSED_EXT);
+        queryPending = true;
+      }
+
+      if (wantStats) {
+        statFrames++;
+        const now = performance.now();
+        const elapsed = now - statT0;
+        if (elapsed >= 500) {
+          onFrameStatsRef.current?.({
+            fps: (statFrames * 1000) / elapsed,
+            gpuMs,
+          });
+          statFrames = 0;
+          statT0 = now;
+        }
+      }
       raf = requestAnimationFrame(tick);
     };
     const startLoop = () => {
@@ -581,6 +672,7 @@ export function GodRayCanvas({
       stopLoop();
       ro.disconnect();
       io.disconnect();
+      if (gpuQuery) gl.deleteQuery(gpuQuery);
       gl.deleteProgram(paintProg);
       gl.deleteProgram(blurProg);
       gl.deleteProgram(compProg);

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Plus, Minus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
 import {
@@ -85,21 +86,16 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
           );
         })}
         {showAddStop && (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={handleAddStop}
             aria-label="Add stop"
-            className={cn(
-              "inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border bg-background px-4 font-mono text-xs tracking-wide whitespace-nowrap shadow-xs transition-all outline-none",
-              "hover:bg-accent hover:text-accent-foreground",
-              "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              "disabled:pointer-events-none disabled:opacity-50",
-              "dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-            )}
+            className="h-8 cursor-pointer font-mono text-xs tracking-wide shadow-xs"
           >
             <Plus aria-hidden className="size-3.5" />
             Add stop
-          </button>
+          </Button>
         )}
       </div>
     );

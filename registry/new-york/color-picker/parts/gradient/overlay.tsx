@@ -132,10 +132,10 @@ function keywordToRadii(
  *
  * Handle behavior by gradient type (identical to the in-Area version):
  *
- * - **Linear** — start / end endpoint handles + a colored dot for every
- *   middle stop. Dragging endpoints rotates the angle (and, on first
- *   drag, promotes to free-position mode); dragging a middle stop
- *   slides it along the gradient line.
+ * - **Linear** — start / end endpoint handles tinted with the first / last
+ *   stop colors. Dragging endpoints rotates the angle (and, on first
+ *   drag, promotes to free-position mode). Middle stops are edited on
+ *   `<GradientPicker.Bar>`, never on the canvas.
  * - **Radial** — center handle + edge handle. Edge handle drives radius
  *   (px for circles, normalized for ellipses); center moves the
  *   gradient and leaves the keyword `size` alone — keyword extents
@@ -406,72 +406,10 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     return ((next % 360) + 360) % 360;
   };
 
-  /**
-   * Project a pointer position onto the line a→b and return the parametric
-   * position along the segment in [0, 1]. Used by the in-line stop handles
-   * so dragging a stop slides it along the visible gradient line, even when
-   * the pointer drifts away from the line itself.
-   */
-  const projectOntoLineRaw = (a: XY, b: XY, p: XY): number => {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len2 = dx * dx + dy * dy;
-    if (len2 === 0) return 0;
-    return ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
-  };
-
-  const beginStopDrag = (id: string) => (
-    e: React.PointerEvent<HTMLButtonElement>,
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!handles || !handles.b) return;
-    ctx.selectStop(id);
-    const a = handles.a;
-    const b = handles.b;
-    // Delta-based drag: the press itself never moves the stop, and motion
-    // applies the pointer's *offset* along the line. Absolute projection
-    // teleported the stop to wherever the press landed inside the enlarged
-    // hit area — on a short [start, end] segment that could clamp it all
-    // the way to an endpoint before the user even moved.
-    const startT =
-      ctx.stops.find((s) => s.id === id)?.position ?? 0;
-    const startPointerT = projectOntoLineRaw(
-      a,
-      b,
-      localFromEvent(e.clientX, e.clientY),
-    );
-    trackPointerDrag(e.currentTarget, e.pointerId, (ev) => {
-      const t =
-        startT +
-        projectOntoLineRaw(a, b, localFromEvent(ev.clientX, ev.clientY)) -
-        startPointerT;
-      ctx.moveStop(id, Math.max(0, Math.min(1, t)));
-    });
-  };
-
   // 2D handles (center, free-positioned endpoints) use role="application",
   // which has no value semantics — announce keyboard moves in a polite live
   // region rendered at the overlay root.
   const [liveText, announce] = useLiveAnnounce();
-
-  const onKeyDownLinearStop = (
-    id: string,
-    position: number,
-    e: React.KeyboardEvent<HTMLButtonElement>,
-  ) => {
-    const step = e.shiftKey ? 0.05 : 0.01;
-    let next = position;
-    if (e.key === "ArrowLeft" || e.key === "ArrowDown") next -= step;
-    else if (e.key === "ArrowRight" || e.key === "ArrowUp") next += step;
-    else if (e.key === "Delete" || e.key === "Backspace") {
-      e.preventDefault();
-      ctx.removeStop(id);
-      return;
-    } else return;
-    e.preventDefault();
-    ctx.moveStop(id, Math.max(0, Math.min(1, next)));
-  };
 
   /**
    * Stack three background layers so a handle dot shows the stop's actual
@@ -761,38 +699,10 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
                   })()}
                 />
               )}
-              {/* Middle-stop handles: every stop between the first and last
-                 lives on the gradient line as a colored dot. Drag projects
-                 the pointer onto the a→b segment so the handle can slide
-                 even if the user wanders off the line. First and last
-                 stops are already represented by the endpoint handles
-                 above and are intentionally omitted here. */}
-              {handles.b &&
-                ctx.stops.length > 2 &&
-                ctx.stops.slice(1, -1).map((s) => {
-                  const a = handles.a;
-                  const b = handles.b as XY;
-                  const px = a.x + (b.x - a.x) * s.position;
-                  const py = a.y + (b.y - a.y) * s.position;
-                  const pct = Math.round(s.position * 100);
-                  return (
-                    <Handle
-                      key={s.id}
-                      label={`Gradient stop at ${pct}%`}
-                      position={{ x: px, y: py }}
-                      onPointerDown={beginStopDrag(s.id)}
-                      onKeyDown={(e) =>
-                        onKeyDownLinearStop(s.id, s.position, e)
-                      }
-                      role="slider"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={pct}
-                      aria-valuetext={`${pct} percent`}
-                      style={stopSwatchStyle(s.color)}
-                    />
-                  );
-                })}
+              {/* Middle stops are intentionally NOT rendered on the canvas:
+                 the Bar is the editing surface for inner stops. The overlay
+                 surfaces only the gradient *geometry* — the two endpoints
+                 (tinted with the first / last stop colors) and the line. */}
             </>
           ) : (
             <>

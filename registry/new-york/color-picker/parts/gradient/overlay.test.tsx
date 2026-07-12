@@ -363,7 +363,7 @@ describe("Overlay drag self-heal (stuck conic drag)", () => {
   });
 });
 
-describe("middle-stop handle drag is relative (no press jump)", () => {
+describe("linear overlay shows endpoints only", () => {
   const positioned: Gradient = {
     ...DEFAULT_LINEAR,
     start: { x: 0.25, y: 0.5 },
@@ -374,35 +374,14 @@ describe("middle-stop handle drag is relative (no press jump)", () => {
       { color: { l: 0, c: 0, h: 0, alpha: 1 }, position: 1 },
     ],
   };
-  // Rig rect is 400x120 → the line runs (100,60)→(300,60); the middle stop
-  // sits at x=200. The expanded hit area means presses land off-center.
-  it("does not move the stop on pointerdown, then moves by pointer delta", () => {
-    let latest: Gradient = positioned;
+  it("renders no middle-stop handles — the Bar owns inner-stop editing", () => {
     render(
-      <Root
-        value={positioned}
-        onValueChange={(g) => {
-          latest = g;
-        }}
-      >
+      <Root value={positioned}>
         <Overlay />
       </Root>,
     );
-    const midHandle = screen.getByLabelText(/^Gradient stop at/);
-    fireEvent.pointerDown(midHandle, {
-      pointerId: 1, clientX: 215, clientY: 60, buttons: 1,
-    });
-    // Press alone must not displace the stop (absolute projection would
-    // have jumped it to 0.575).
-    const mid = () =>
-      latest.type === "linear"
-        ? [...latest.stops].sort((a, b) => a.position - b.position)[1].position
-        : NaN;
-    expect(mid()).toBeCloseTo(0.5, 6);
-    // Moving +20px along a 200px line moves the stop by exactly +0.1.
-    fireEvent.pointerMove(midHandle, {
-      pointerId: 1, clientX: 235, clientY: 60, buttons: 1,
-    });
-    expect(mid()).toBeCloseTo(0.6, 3);
+    expect(screen.queryByLabelText(/^Gradient stop at/)).toBeNull();
+    expect(screen.getByLabelText(/^Gradient start/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Gradient end/)).toBeTruthy();
   });
 });

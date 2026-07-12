@@ -15,6 +15,7 @@ import {
 } from "@/registry/new-york/color-picker/fill-picker";
 import { ColorPickerBase } from "@/registry/new-york/fill-picker-base/color-picker";
 import { GradientPickerBase } from "@/registry/new-york/fill-picker-base/gradient";
+import { FillPickerBase } from "@/registry/new-york/fill-picker-base/fill";
 import { parseColor, formatColor } from "@/registry/new-york/color-picker/lib/color";
 import type {
   ColorFormat,
@@ -420,11 +421,9 @@ export default function PlaygroundPage() {
   const [fillMode, setFillMode] = React.useState<"color" | "gradient" | "fill">(
     "color",
   );
-  // Base UI is the default variant for the gradient demo — same posture as
-  // the docs at /docs and the color picker's own variant switcher.
-  const [gradientUiVariant, setGradientUiVariant] = React.useState<
-    "base" | "radix"
-  >("base");
+  // Base UI is the default variant for every demo (Solid, Gradient,
+  // Fill) — same posture as the docs at /docs and the hero switcher.
+  const [uiVariant, setUiVariant] = React.useState<"base" | "radix">("base");
   const [gradientParts, setGradientParts] = React.useState<GradientPartsState>(
     GRADIENT_PARTS_DEFAULT,
   );
@@ -503,14 +502,17 @@ export default function PlaygroundPage() {
 
   // Both variants expose the identical namespace; the Base UI objects are
   // structurally compatible with the Radix ones (verified), so the casts
-  // are safe. Only the gradient demo is affected — Solid and Fill (tabs)
-  // stay on the Radix variant for now.
-  const GP = (gradientUiVariant === "base"
-    ? (GradientPickerBase as unknown as typeof GradientPicker)
-    : GradientPicker) as typeof GradientPicker;
-  const CPg = (gradientUiVariant === "base"
+  // are safe. The toggle drives all three demos: Solid, Gradient, Fill.
+  const CP = (uiVariant === "base"
     ? (ColorPickerBase as unknown as typeof ColorPicker)
     : ColorPicker) as typeof ColorPicker;
+  const GP = (uiVariant === "base"
+    ? (GradientPickerBase as unknown as typeof GradientPicker)
+    : GradientPicker) as typeof GradientPicker;
+  const FP = (uiVariant === "base"
+    ? (FillPickerBase as unknown as typeof FillPicker)
+    : FillPicker) as typeof FillPicker;
+  const CPg = CP;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12">
@@ -573,21 +575,21 @@ export default function PlaygroundPage() {
               );
             })}
           </div>
-          {fillMode === "gradient" && (
+          {(
             <div
               role="tablist"
-              aria-label="Gradient component variant"
+              aria-label="Component variant"
               className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
             >
               {(["base", "radix"] as const).map((v) => {
-                const isActive = gradientUiVariant === v;
+                const isActive = uiVariant === v;
                 return (
                   <button
                     key={v}
                     type="button"
                     role="tab"
                     aria-selected={isActive}
-                    onClick={() => setGradientUiVariant(v)}
+                    onClick={() => setUiVariant(v)}
                     className={cn(
                       "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
                       "focus-visible:ring-2 focus-visible:ring-ring",
@@ -673,7 +675,7 @@ export default function PlaygroundPage() {
               }
             >
               {fillMode === "color" && (
-              <ColorPicker.Root
+              <CP.Root
                 value={color}
                 onValueChange={(c) => setColor(c)}
                 backgroundColor={bg}
@@ -685,13 +687,13 @@ export default function PlaygroundPage() {
                   (parts.contrastReadout && contrastMetrics.length > 0)) && (
                   <div className="flex items-stretch gap-2">
                     {parts.gamutBadge && (
-                      <ColorPicker.GamutBadge
+                      <CP.GamutBadge
                         showLabel={gamutShowLabel}
                         className="w-auto flex-1 justify-center"
                       />
                     )}
                     {parts.contrastReadout && contrastMetrics.length > 0 && (
-                      <ColorPicker.ContrastReadout
+                      <CP.ContrastReadout
                         metrics={contrastMetrics}
                         showLabel={contrastShowLabel}
                         showValue={contrastShowValue}
@@ -702,31 +704,31 @@ export default function PlaygroundPage() {
                   </div>
                 )}
                 {parts.area && (
-                  <ColorPicker.Area
+                  <CP.Area
                     mode={areaMode}
                     showWarningLines={showWarningLines}
                     softProof={softProof}
                     style={areaHeight ? { height: areaHeight } : undefined}
                   />
                 )}
-                {parts.preview && <ColorPicker.Preview />}
+                {parts.preview && <CP.Preview />}
                 {(parts.hue || parts.chroma || parts.lightness || parts.alpha) && (
                   eyedropperBesideSliders && parts.eyeDropper ? (
                     <div className="flex items-center gap-2">
-                      <ColorPicker.EyeDropper />
+                      <CP.EyeDropper />
                       <div className="flex flex-1 flex-col gap-1.5">
-                        {parts.hue && <ColorPicker.Hue />}
-                        {parts.chroma && <ColorPicker.Chroma />}
-                        {parts.lightness && <ColorPicker.Lightness />}
-                        {parts.alpha && <ColorPicker.Alpha />}
+                        {parts.hue && <CP.Hue />}
+                        {parts.chroma && <CP.Chroma />}
+                        {parts.lightness && <CP.Lightness />}
+                        {parts.alpha && <CP.Alpha />}
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-1.5">
-                      {parts.hue && <ColorPicker.Hue />}
-                      {parts.chroma && <ColorPicker.Chroma />}
-                      {parts.lightness && <ColorPicker.Lightness />}
-                      {parts.alpha && <ColorPicker.Alpha />}
+                      {parts.hue && <CP.Hue />}
+                      {parts.chroma && <CP.Chroma />}
+                      {parts.lightness && <CP.Lightness />}
+                      {parts.alpha && <CP.Alpha />}
                     </div>
                   )
                 )}
@@ -735,31 +737,31 @@ export default function PlaygroundPage() {
                     (parts.eyeDropper && !eyedropperBesideSliders)) && (
                     <div className="flex items-center gap-2">
                       {parts.formatSwitcher && (
-                        <ColorPicker.FormatSwitcher className="flex-1" />
+                        <CP.FormatSwitcher className="flex-1" />
                       )}
                       {parts.eyeDropper && !eyedropperBesideSliders && (
-                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                        <CP.EyeDropper className="h-8 w-full flex-1" />
                       )}
                     </div>
                   )}
                 {parts.channelInput && (
-                  <ColorPicker.ChannelInput showFormat={showChannelFormat} />
+                  <CP.ChannelInput showFormat={showChannelFormat} />
                 )}
                 {formatRowAfterChannel &&
                   (parts.formatSwitcher ||
                     (parts.eyeDropper && !eyedropperBesideSliders)) && (
                     <div className="flex items-center gap-2">
                       {parts.formatSwitcher && (
-                        <ColorPicker.FormatSwitcher className="flex-1" />
+                        <CP.FormatSwitcher className="flex-1" />
                       )}
                       {parts.eyeDropper && !eyedropperBesideSliders && (
-                        <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                        <CP.EyeDropper className="h-8 w-full flex-1" />
                       )}
                     </div>
                   )}
-                {parts.input && <ColorPicker.CssInput />}
+                {parts.input && <CP.CssInput />}
                 {parts.swatches && (
-                  <ColorPicker.Swatches
+                  <CP.Swatches
                     presets={["#fff", "#000", "oklch(0.7 0.18 30)", ...savedSwatches]}
                     onAdd={(_c, hex) =>
                       setSavedSwatches((prev) =>
@@ -768,11 +770,11 @@ export default function PlaygroundPage() {
                     }
                   />
                 )}
-              </ColorPicker.Root>
+              </CP.Root>
               )}
               {fillMode === "gradient" && (
                 <GP.Root
-                  key={gradientUiVariant}
+                  key={uiVariant}
                   value={gradient}
                   onValueChange={setGradient}
                 >
@@ -848,22 +850,22 @@ export default function PlaygroundPage() {
                 </GP.Root>
               )}
               {fillMode === "fill" && (
-                <FillPicker.Root value={fill} onValueChange={setFill}>
-                  <FillPicker.Tabs className="self-stretch">
-                    <FillPicker.Tab mode="color" className="flex-1">
+                <FP.Root value={fill} onValueChange={setFill}>
+                  <FP.Tabs className="self-stretch">
+                    <FP.Tab mode="color" className="flex-1">
                       Solid
-                    </FillPicker.Tab>
-                    <FillPicker.Tab mode="gradient" className="flex-1">
+                    </FP.Tab>
+                    <FP.Tab mode="gradient" className="flex-1">
                       Gradient
-                    </FillPicker.Tab>
-                  </FillPicker.Tabs>
-                  <FillPicker.Pane mode="color" className="flex flex-col gap-2">
-                    <ColorPicker.Area />
-                    <ColorPicker.Hue />
-                    <ColorPicker.Alpha />
-                    <ColorPicker.ChannelInput />
-                  </FillPicker.Pane>
-                  <FillPicker.Pane mode="gradient" className="flex flex-col gap-2">
+                    </FP.Tab>
+                  </FP.Tabs>
+                  <FP.Pane mode="color" className="flex flex-col gap-2">
+                    <CP.Area />
+                    <CP.Hue />
+                    <CP.Alpha />
+                    <CP.ChannelInput />
+                  </FP.Pane>
+                  <FP.Pane mode="gradient" className="flex flex-col gap-2">
                     {(gradientParts.typeSwitcher ||
                       gradientParts.reverseStops ||
                       gradientParts.repeatingToggle) && (
@@ -907,18 +909,18 @@ export default function PlaygroundPage() {
                     {gradientParts.radialSizeSelect && <GradientPicker.RadialSizeSelect />}
                     {gradientParts.stopColor && (
                       <GradientPicker.StopColor>
-                        <ColorPicker.Area />
+                        <CP.Area />
                         <div className="flex flex-col gap-1.5">
-                          <ColorPicker.Hue />
-                          <ColorPicker.Alpha />
+                          <CP.Hue />
+                          <CP.Alpha />
                         </div>
                         <div className="flex items-center gap-2">
-                          <ColorPicker.FormatSwitcher className="flex-1" />
-                          <ColorPicker.EyeDropper className="h-8 w-full flex-1" />
+                          <CP.FormatSwitcher className="flex-1" />
+                          <CP.EyeDropper className="h-8 w-full flex-1" />
                         </div>
-                        <ColorPicker.ChannelInput showFormat={false} />
+                        <CP.ChannelInput showFormat={false} />
                         {gradientParts.stopSwatches && (
-                          <ColorPicker.Swatches
+                          <CP.Swatches
                             presets={["#fff", "#000", "oklch(0.7 0.18 30)"]}
                           />
                         )}
@@ -933,8 +935,8 @@ export default function PlaygroundPage() {
                       />
                     )}
                     {gradientParts.cssInput && <GradientPicker.CssInput />}
-                  </FillPicker.Pane>
-                </FillPicker.Root>
+                  </FP.Pane>
+                </FP.Root>
               )}
             </div>
           </div>
@@ -943,7 +945,7 @@ export default function PlaygroundPage() {
             <CodeBlock code={code} />
           ) : fillMode === "gradient" ? (
             <CodeBlock
-              code={`${buildGradientSnippet(gradientParts, gradientUiVariant)}\n\n/* Output CSS */\n${gradientCss}`}
+              code={`${buildGradientSnippet(gradientParts, uiVariant)}\n\n/* Output CSS */\n${gradientCss}`}
             />
           ) : (
             <CodeBlock

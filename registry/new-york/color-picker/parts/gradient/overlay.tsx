@@ -412,13 +412,12 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
    * so dragging a stop slides it along the visible gradient line, even when
    * the pointer drifts away from the line itself.
    */
-  const projectOntoLine = (a: XY, b: XY, p: XY): number => {
+  const projectOntoLineRaw = (a: XY, b: XY, p: XY): number => {
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const len2 = dx * dx + dy * dy;
     if (len2 === 0) return 0;
-    const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
-    return Math.max(0, Math.min(1, t));
+    return ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
   };
 
   const beginStopDrag = (id: string) => (
@@ -430,14 +429,25 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     ctx.selectStop(id);
     const a = handles.a;
     const b = handles.b;
-    const apply = (clientX: number, clientY: number) => {
-      const t = projectOntoLine(a, b, localFromEvent(clientX, clientY));
-      ctx.moveStop(id, t);
-    };
-    apply(e.clientX, e.clientY);
-    trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
-      apply(ev.clientX, ev.clientY),
+    // Delta-based drag: the press itself never moves the stop, and motion
+    // applies the pointer's *offset* along the line. Absolute projection
+    // teleported the stop to wherever the press landed inside the enlarged
+    // hit area — on a short [start, end] segment that could clamp it all
+    // the way to an endpoint before the user even moved.
+    const startT =
+      ctx.stops.find((s) => s.id === id)?.position ?? 0;
+    const startPointerT = projectOntoLineRaw(
+      a,
+      b,
+      localFromEvent(e.clientX, e.clientY),
     );
+    trackPointerDrag(e.currentTarget, e.pointerId, (ev) => {
+      const t =
+        startT +
+        projectOntoLineRaw(a, b, localFromEvent(ev.clientX, ev.clientY)) -
+        startPointerT;
+      ctx.moveStop(id, Math.max(0, Math.min(1, t)));
+    });
   };
 
   // 2D handles (center, free-positioned endpoints) use role="application",

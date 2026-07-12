@@ -218,8 +218,8 @@ function ChannelField({
       onValueChange={(v) => {
         if (v !== null) onChange(v);
       }}
-      min={channel.min}
-      max={channel.max}
+      min={Number.isFinite(channel.min) ? channel.min : undefined}
+      max={Number.isFinite(channel.max) ? channel.max : undefined}
       step={channel.step}
       largeStep={channel.bigStep}
       allowWheelScrub

@@ -25,6 +25,27 @@ describe("setColorChannel — oklch chroma is unbounded above", () => {
   });
 });
 
+describe("colorChannels — descriptor bounds never clamp legal edits", () => {
+  // The Base UI NumberField enforces descriptor min/max on step/scrub, so a
+  // descriptor max below a legal value silently destroys wide-gamut edits.
+  it("OKLCH C descriptor does not bound wide-gamut chroma below its value", () => {
+    const c = colorChannels(wide, "oklch").find((ch) => ch.key === "c")!;
+    expect(c.value).toBeCloseTo(0.55, 6);
+    expect(c.max).toBeGreaterThan(c.value);
+    // setColorChannel accepts any chroma ≥ 0 — the descriptor must too.
+    expect(c.max).toBe(Infinity);
+  });
+
+  it("OKLab a/b descriptors match the engine clamp of ±0.5", () => {
+    const chs = colorChannels(wide, "oklab");
+    for (const key of ["a", "b"]) {
+      const ch = chs.find((d) => d.key === key)!;
+      expect(ch.min).toBe(-0.5);
+      expect(ch.max).toBe(0.5);
+    }
+  });
+});
+
 describe("setColorChannel — hue survives achromatic intermediates", () => {
   // hsl(240 50% 50%) — a saturated blue with a well-defined hue.
   const blue = parseColor("hsl(240 50% 50%)")!;

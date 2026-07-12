@@ -17,6 +17,8 @@ export interface ChannelDescriptor {
   /** Current value in display units (e.g. RGB 0–255, OKLCH L 0–100). */
   value: number;
   min: number;
+  /** Hard edit bound; `Infinity` for channels unbounded in their space
+   * (OKLCH chroma). Clamping inputs must skip non-finite bounds. */
   max: number;
   /** Arrow-key step. */
   step: number;
@@ -93,7 +95,10 @@ export function colorChannels(
     case "oklch":
       return [
         intChannel("l", "L", round(color.l * 100, 0), 0, 100, "%"),
-        floatChannel("c", "C", round(color.c, 3), 0, 0.4, 0.005, 0.05, 3),
+        // Chroma is unbounded above at edit time (gamut limits apply at
+        // display via toGamut) — a finite max here would let clamping
+        // number fields destroy wide-gamut values.
+        floatChannel("c", "C", round(color.c, 3), 0, Infinity, 0.005, 0.05, 3),
         intChannel("h", "H", round(color.h, 0), 0, 360),
         ALPHA_DESCRIPTOR(color.alpha),
       ];
@@ -101,8 +106,8 @@ export function colorChannels(
       const lab = toOklab({ mode: "oklch", ...oklchObj(color) });
       return [
         intChannel("l", "L", round((lab?.l ?? color.l) * 100, 0), 0, 100, "%"),
-        floatChannel("a", "a", round(lab?.a ?? 0, 3), -0.4, 0.4, 0.005, 0.05, 3),
-        floatChannel("b", "b", round(lab?.b ?? 0, 3), -0.4, 0.4, 0.005, 0.05, 3),
+        floatChannel("a", "a", round(lab?.a ?? 0, 3), -0.5, 0.5, 0.005, 0.05, 3),
+        floatChannel("b", "b", round(lab?.b ?? 0, 3), -0.5, 0.5, 0.005, 0.05, 3),
         ALPHA_DESCRIPTOR(color.alpha),
       ];
     }

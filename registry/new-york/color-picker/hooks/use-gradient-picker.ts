@@ -576,7 +576,9 @@ export function useGradientPicker(
 
   const moveStop = React.useCallback(
     (id: string, position: number) => {
-      const clamped = Math.max(0, Math.min(1, position));
+      // Intentionally unclamped: on a positioned linear gradient, authored
+      // positions outside 0..1 extrapolate beyond the [start, end] segment
+      // (legal CSS). UI inputs clamp their own *displayed* coordinates.
       apply((prev) => {
         // Move the target stop to the end before sorting so that in a position
         // tie it sorts after existing stops at that position (stable sort).
@@ -585,7 +587,7 @@ export function useGradientPicker(
         if (!moved) return prev;
         return {
           gradient: prev.gradient,
-          stops: sortByPosition([...others, { ...moved, position: clamped }]),
+          stops: sortByPosition([...others, { ...moved, position }]),
         };
       });
     },

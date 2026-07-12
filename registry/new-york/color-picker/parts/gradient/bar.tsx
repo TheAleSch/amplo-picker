@@ -99,7 +99,12 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.target !== trackRef.current) return; // handles handle their own drag
     const displayed = displayedPositionFromEvent(e.clientX);
-    const authored = Math.max(0, Math.min(1, fromDisplay(displayed)));
+    // No clamp on the authored value: on a positioned linear, clicks outside
+    // the projected [start, end] segment extrapolate (< 0 / > 1 are legal
+    // CSS stop positions), so the stop lands where the user clicked instead
+    // of stacking on the first/last stop. Plain mode is unaffected —
+    // fromDisplay is the identity and `displayed` is already 0..1.
+    const authored = fromDisplay(displayed);
     ctx.addStop(authored, sampleStopsAt(ctx.stops, authored));
   };
 
@@ -170,12 +175,15 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       // same distance on screen regardless of whether the gradient is
       // positioned-linear or angle-only.
       const displayed = toDisplay(position);
+      // Clamp in displayed space: keyboard nudges stay on the visible track
+      // (moveStop itself no longer clamps, to allow extrapolated stops).
+      const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        ctx.moveStop(id, fromDisplay(displayed - step));
+        ctx.moveStop(id, fromDisplay(clamp01(displayed - step)));
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        ctx.moveStop(id, fromDisplay(displayed + step));
+        ctx.moveStop(id, fromDisplay(clamp01(displayed + step)));
       } else if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         ctx.removeStop(id);

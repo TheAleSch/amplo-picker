@@ -65,3 +65,34 @@ describe("GradientPicker.Bar", () => {
     expect(selected).toHaveLength(1);
   });
 });
+
+describe("click-to-add on a positioned linear gradient", () => {
+  it("adds the stop where the user clicked, extrapolating beyond the segment", () => {
+    // Segment projected to displayed [0.25, 0.75]. A click at displayed 0.1
+    // must land at authored (0.1 - 0.25) / 0.5 = -0.3 — not clamp onto the
+    // first stop at authored 0.
+    const positioned = {
+      ...DEFAULT_LINEAR,
+      start: { x: 0.25, y: 0.5 },
+      end: { x: 0.75, y: 0.5 },
+    };
+    let latest = positioned;
+    render(
+      <Root
+        defaultValue={positioned}
+        onValueChange={(g) => {
+          latest = g as typeof positioned;
+        }}
+      >
+        <Bar />
+      </Root>,
+    );
+    const track = document.querySelector(
+      '[data-slot="gradient-bar"]',
+    )!.firstElementChild as HTMLElement;
+    fireEvent.pointerDown(track, { pointerId: 1, clientX: 40, clientY: 8, buttons: 1 });
+    expect(latest.stops).toHaveLength(3);
+    const added = [...latest.stops].sort((a, b) => a.position - b.position)[0];
+    expect(added.position).toBeCloseTo(-0.3, 3);
+  });
+});

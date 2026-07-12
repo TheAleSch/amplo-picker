@@ -7,6 +7,7 @@ import { Overlay } from "./overlay";
 import { RadiusInput } from "./radius-input";
 import { EllipseRadiiInput } from "./ellipse-radii-input";
 import {
+  DEFAULT_CONIC,
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   type Gradient,
@@ -133,12 +134,12 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
         clientX: 200,
         clientY: 60,
         pointerId: 1,
-      });
+        buttons: 1,});
       fireEvent.pointerMove(center, {
         clientX: 240,
         clientY: 80,
         pointerId: 1,
-      });
+        buttons: 1,});
       fireEvent.pointerUp(center, {
         clientX: 240,
         clientY: 80,
@@ -177,12 +178,12 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
         clientX: 200,
         clientY: 60,
         pointerId: 1,
-      });
+        buttons: 1,});
       fireEvent.pointerMove(center, {
         clientX: 100,
         clientY: 40,
         pointerId: 1,
-      });
+        buttons: 1,});
       fireEvent.pointerUp(center, {
         clientX: 100,
         clientY: 40,
@@ -232,12 +233,12 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
         clientX: 200,
         clientY: 60,
         pointerId: 1,
-      });
+        buttons: 1,});
       fireEvent.pointerMove(center, {
         clientX: 240,
         clientY: 80,
         pointerId: 1,
-      });
+        buttons: 1,});
       fireEvent.pointerUp(center, {
         clientX: 240,
         clientY: 80,
@@ -304,5 +305,60 @@ describe("Overlay handle semantics", () => {
     );
     expect(live).not.toBeNull();
     expect(live!.textContent).toMatch(/x 51%/);
+  });
+});
+
+describe("Overlay drag self-heal (stuck conic drag)", () => {
+  it("ends a center drag when a move arrives with no buttons pressed", () => {
+    let latest: Gradient = DEFAULT_CONIC;
+    render(
+      <Root
+        defaultValue={DEFAULT_CONIC}
+        onValueChange={(g) => {
+          latest = g;
+        }}
+      >
+        <Overlay />
+      </Root>,
+    );
+    const center = screen.getByLabelText(/^Gradient center/);
+    act(() => {
+      fireEvent.pointerDown(center, { pointerId: 1, clientX: 200, clientY: 60, buttons: 1 });
+      fireEvent.pointerMove(center, { pointerId: 1, clientX: 240, clientY: 60, buttons: 1 });
+    });
+    const afterDrag =
+      latest.type === "conic" ? latest.center.x : NaN;
+    expect(afterDrag).toBeCloseTo(240 / 400, 3);
+    // Button already released (missed pointerup) — this move must end the
+    // drag, not keep dragging the center.
+    act(() => {
+      fireEvent.pointerMove(center, { pointerId: 1, clientX: 320, clientY: 60, buttons: 0 });
+    });
+    expect(latest.type === "conic" ? latest.center.x : NaN).toBeCloseTo(afterDrag, 6);
+    act(() => {
+      fireEvent.pointerMove(center, { pointerId: 1, clientX: 360, clientY: 60, buttons: 1 });
+    });
+    expect(latest.type === "conic" ? latest.center.x : NaN).toBeCloseTo(afterDrag, 6);
+  });
+
+  it("cleans up when pointer capture is lost (window blur mid-drag)", () => {
+    let latest: Gradient = DEFAULT_CONIC;
+    render(
+      <Root
+        defaultValue={DEFAULT_CONIC}
+        onValueChange={(g) => {
+          latest = g;
+        }}
+      >
+        <Overlay />
+      </Root>,
+    );
+    const center = screen.getByLabelText(/^Gradient center/);
+    act(() => {
+      fireEvent.pointerDown(center, { pointerId: 1, clientX: 200, clientY: 60, buttons: 1 });
+      fireEvent(center, new Event("lostpointercapture"));
+      fireEvent.pointerMove(center, { pointerId: 1, clientX: 320, clientY: 60, buttons: 1 });
+    });
+    expect(latest.type === "conic" ? latest.center.x : NaN).toBeCloseTo(0.5, 3);
   });
 });

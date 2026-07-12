@@ -7,6 +7,7 @@ import { type RadialSizeKeyword } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 import { CHECKERBOARD_LG } from "../../lib/constants";
 import { useLiveAnnounce } from "../use-live-announce";
+import { trackPointerDrag } from "./pointer-drag";
 
 export interface OverlayProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -426,8 +427,6 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     e.preventDefault();
     e.stopPropagation();
     if (!handles || !handles.b) return;
-    const target = e.currentTarget;
-    target.setPointerCapture(e.pointerId);
     ctx.selectStop(id);
     const a = handles.a;
     const b = handles.b;
@@ -436,20 +435,9 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
       ctx.moveStop(id, t);
     };
     apply(e.clientX, e.clientY);
-    const onMove = (ev: PointerEvent) => apply(ev.clientX, ev.clientY);
-    const cleanup = (ev: PointerEvent) => {
-      try {
-        target.releasePointerCapture(ev.pointerId);
-      } catch {
-        // pointer may already be released on cancel
-      }
-      target.removeEventListener("pointermove", onMove);
-      target.removeEventListener("pointerup", cleanup);
-      target.removeEventListener("pointercancel", cleanup);
-    };
-    target.addEventListener("pointermove", onMove);
-    target.addEventListener("pointerup", cleanup);
-    target.addEventListener("pointercancel", cleanup);
+    trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
+      apply(ev.clientX, ev.clientY),
+    );
   };
 
   // 2D handles (center, free-positioned endpoints) use role="application",
@@ -616,24 +604,10 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    const target = e.currentTarget;
-    target.setPointerCapture(e.pointerId);
     handleAt(kind, localFromEvent(e.clientX, e.clientY), e.shiftKey);
-    const onMove = (ev: PointerEvent) =>
-      handleAt(kind, localFromEvent(ev.clientX, ev.clientY), ev.shiftKey);
-    const cleanup = (ev: PointerEvent) => {
-      try {
-        target.releasePointerCapture(ev.pointerId);
-      } catch {
-        // pointer may already be released on cancel
-      }
-      target.removeEventListener("pointermove", onMove);
-      target.removeEventListener("pointerup", cleanup);
-      target.removeEventListener("pointercancel", cleanup);
-    };
-    target.addEventListener("pointermove", onMove);
-    target.addEventListener("pointerup", cleanup);
-    target.addEventListener("pointercancel", cleanup);
+    trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
+      handleAt(kind, localFromEvent(ev.clientX, ev.clientY), ev.shiftKey),
+    );
   };
 
   // Render ------------------------------------------------------------------

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
+import { trackPointerDrag } from "./pointer-drag";
 import { useLiveAnnounce } from "../use-live-announce";
 
 export interface PositionPadProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -32,24 +33,10 @@ export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
     };
 
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-      const target = e.currentTarget;
-      target.setPointerCapture(e.pointerId);
       ctx.setCenter(fromEvent(e.clientX, e.clientY));
-      const onMove = (ev: PointerEvent) =>
-        ctx.setCenter(fromEvent(ev.clientX, ev.clientY));
-      const cleanup = (ev: PointerEvent) => {
-        try {
-          target.releasePointerCapture(ev.pointerId);
-        } catch {
-          // pointer may already be released on cancel
-        }
-        target.removeEventListener("pointermove", onMove);
-        target.removeEventListener("pointerup", cleanup);
-        target.removeEventListener("pointercancel", cleanup);
-      };
-      target.addEventListener("pointermove", onMove);
-      target.addEventListener("pointerup", cleanup);
-      target.addEventListener("pointercancel", cleanup);
+      trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
+        ctx.setCenter(fromEvent(ev.clientX, ev.clientY)),
+      );
     };
 
     const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

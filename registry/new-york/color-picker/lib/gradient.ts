@@ -306,7 +306,10 @@ export function formatGradient(g: Gradient): string {
     let endingShape: string;
     if (g.shape === "circle" && g.radiusPx !== undefined) {
       endingShape = `${trim(g.radiusPx)}px`;
-    } else if (g.radii) {
+    } else if (g.shape === "ellipse" && g.radii) {
+      // The `% %` pair always implies ellipse in CSS, so it must never be
+      // emitted for shape: "circle" — stale radii from an earlier ellipse
+      // edit would silently flip the rendered shape.
       endingShape = `${trim(g.radii.x * 100)}% ${trim(g.radii.y * 100)}%`;
     } else {
       endingShape = `${g.shape} ${g.size}`;
@@ -364,7 +367,11 @@ function extractInterp(s: string): { interp: GradientInterp; rest: string } {
 }
 
 function parseStops(parts: string[]): GradientStop[] | null {
-  const stops: GradientStop[] = [];
+  const raw: Array<{
+    color: OklchColor;
+    position: number | null;
+    hint?: number;
+  }> = [];
   // A hint belongs to the stop that FOLLOWS it (formatStops emits stop i's
   // hint between stop i-1 and stop i), so stash it until the next color stop.
   let pendingHint: number | undefined;
@@ -372,7 +379,7 @@ function parseStops(parts: string[]): GradientStop[] | null {
     // Bare percentage hint: `30%`
     const hintMatch = p.match(/^(-?\d+(?:\.\d+)?)%$/);
     if (hintMatch) {
-      if (stops.length === 0) return null; // hint can't lead
+      if (raw.length === 0) return null; // hint can't lead
       if (pendingHint !== undefined) return null; // two hints in a row
       pendingHint = parseFloat(hintMatch[1]) / 100;
       continue;
@@ -387,15 +394,80 @@ function parseStops(parts: string[]): GradientStop[] | null {
     }
     const color = parseColor(colorStr);
     if (!color) return null;
-    stops.push({
+    raw.push({
       color,
-      position: position ?? (stops.length === 0 ? 0 : 1),
+      position,
       ...(pendingHint !== undefined ? { hint: pendingHint } : {}),
     });
     pendingHint = undefined;
   }
   if (pendingHint !== undefined) return null; // hint can't trail
-  return stops.length >= 1 ? stops : null;
+  if (raw.length === 0) return null;
+
+  // CSS Images 3 §3.4.3 position fixup:
+  //  1. First/last stops without a position default to 0% / 100%.
+  //  2. Explicit positions may never decrease — clamp to the running max.
+  //  3. Runs of unpositioned stops are spaced evenly between their
+  //     positioned neighbors.
+  if (raw[0].position === null) raw[0].position = 0;
+  if (raw[raw.length - 1].position === null) raw[raw.length - 1].position = 1;
+  let runningMax = raw[0].position as number;
+  for (const s of raw) {
+    if (s.position !== null) {
+      s.position = Math.max(s.position, runningMax);
+      runningMax = s.position;
+    }
+  }
+  let i = 0;
+  while (i < raw.length) {
+    if (raw[i].position !== null) {
+      i++;
+      continue;
+    }
+    let j = i;
+    while (raw[j].position === null) j++;
+    const prev = raw[i - 1].position as number;
+    const next = raw[j].position as number;
+    const count = j - i + 1; // gaps between prev and next
+    for (let k = i; k < j; k++) {
+      raw[k].position = prev + ((next - prev) * (k - i + 1)) / count;
+    }
+    i = j;
+  }
+  return raw.map((s) => ({
+    color: s.color,
+    position: s.position as number,
+    ...(s.hint !== undefined ? { hint: s.hint } : {}),
+  }));
+}
+
+/**
+ * Map a CSS `to <side-or-corner>` linear direction to a gradient angle.
+ * Corners use the square-box angles (45/135/225/315) — the picker's model
+ * only stores an angle, so the CSS "magic corner" aspect-dependence is
+ * intentionally approximated. Returns null for invalid pairs
+ * (`to left right`).
+ */
+function sideOrCornerAngle(
+  a: string,
+  b: string | undefined,
+): number | null {
+  const set = new Set([a.toLowerCase(), ...(b ? [b.toLowerCase()] : [])]);
+  if (b && set.size !== 2) return null;
+  const has = (s: string) => set.has(s);
+  if ((has("top") && has("bottom")) || (has("left") && has("right"))) {
+    return null;
+  }
+  if (set.size === 1) {
+    if (has("top")) return 0;
+    if (has("right")) return 90;
+    if (has("bottom")) return 180;
+    return 270; // left
+  }
+  if (has("top") && has("right")) return 45;
+  if (has("bottom") && has("right")) return 135;
+  if (has("bottom") && has("left")) return 225;
+  return 315; // top left
 }
 
 export function parseGradient(input: string): Gradient | null {
@@ -416,10 +488,17 @@ export function parseGradient(input: string): Gradient | null {
     let stopParts = parts.slice(1);
 
     const angleMatch = rest.match(/^(-?\d+(?:\.\d+)?)deg$/i);
+    const toMatch = rest.match(
+      /^to\s+(top|bottom|left|right)(?:\s+(top|bottom|left|right))?$/i,
+    );
     if (angleMatch) {
       angle = parseFloat(angleMatch[1]);
+    } else if (toMatch) {
+      const dir = sideOrCornerAngle(toMatch[1], toMatch[2]);
+      if (dir === null) return null; // e.g. "to left right"
+      angle = dir;
     } else if (rest.length > 0) {
-      // rest wasn't an angle — treat it as the first stop
+      // rest wasn't a direction — treat it as the first stop
       stopParts = [rest, ...stopParts];
     }
 
@@ -591,7 +670,17 @@ export function sampleStopsAt(
   const a = sorted[i];
   const b = sorted[i + 1];
   const span = b.position - a.position;
-  const t = span === 0 ? 0 : (position - a.position) / span;
+  let t = span === 0 ? 0 : (position - a.position) / span;
+  // CSS midpoint hint: the hint (stored on the following stop, in absolute
+  // axis coordinates like `position`) marks where the blend reaches 50%.
+  // Browsers warp progress with t^(log(.5)/log(h)) so t = h lands at 0.5 —
+  // apply the same curve so click-to-add picks the color the user sees.
+  if (b.hint !== undefined && span > 0) {
+    const h = (b.hint - a.position) / span;
+    if (h > 0 && h < 1) {
+      t = Math.pow(t, Math.log(0.5) / Math.log(h));
+    }
+  }
   return {
     l: lerp(a.color.l, b.color.l, t),
     c: lerp(a.color.c, b.color.c, t),

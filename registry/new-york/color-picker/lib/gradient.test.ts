@@ -6,6 +6,7 @@ import {
   formatFill,
   projectStopPosition,
   reverseProjectStopPosition,
+  sampleStopsAt,
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
@@ -39,9 +40,13 @@ describe("formatGradient", () => {
     );
   });
 
-  it("emits explicit numeric radii when radii is set, overriding keywords", () => {
+  it("emits explicit numeric radii for ellipse, overriding keywords", () => {
     expect(
-      formatGradient({ ...DEFAULT_RADIAL, radii: { x: 0.48, y: 0.3 } }),
+      formatGradient({
+        ...DEFAULT_RADIAL,
+        shape: "ellipse",
+        radii: { x: 0.48, y: 0.3 },
+      }),
     ).toBe(
       "radial-gradient(48% 30% at 50% 50% in oklch, oklch(1 0 0) 0%, oklch(0 0 0) 100%)",
     );
@@ -291,5 +296,127 @@ describe("Fill helpers", () => {
 
   it("returns null for nonsense", () => {
     expect(parseFill("xxx")).toBeNull();
+  });
+});
+
+describe("parseGradient — CSS parity (2026-07-12 audit)", () => {
+  // C-4: unpositioned intermediate stops must be spaced evenly per CSS
+  // Images 3, not dumped at 100%.
+  it("evenly spaces unpositioned intermediate stops", () => {
+    const g = parseGradient("linear-gradient(90deg, #f00, #0f0, #00f)")!;
+    expect(g).not.toBeNull();
+    expect(g.stops.map((s) => s.position)).toEqual([0, 0.5, 1]);
+  });
+
+  it("spaces runs of unpositioned stops between anchored neighbors", () => {
+    const g = parseGradient(
+      "linear-gradient(90deg, #f00 20%, #0f0, #00f, #fff 80%)",
+    )!;
+    const positions = g.stops.map((s) => s.position);
+    expect(positions.length).toBe(4);
+    [0.2, 0.4, 0.6, 0.8].forEach((expected, i) => {
+      expect(positions[i]).toBeCloseTo(expected, 10);
+    });
+  });
+
+  it("clamps explicit positions to be non-decreasing (CSS fixup)", () => {
+    const g = parseGradient("linear-gradient(90deg, #f00 60%, #00f 20%)")!;
+    expect(g.stops.map((s) => s.position)).toEqual([0.6, 0.6]);
+  });
+
+  // C-5: `to <side-or-corner>` is standard CSS and must parse.
+  it("parses `to right` as 90deg", () => {
+    const g = parseGradient("linear-gradient(to right, #ffffff, #000000)")!;
+    expect(g).not.toBeNull();
+    expect(g.type).toBe("linear");
+    if (g.type === "linear") expect(g.angle).toBe(90);
+  });
+
+  it("parses the other sides and corners", () => {
+    const angleOf = (dir: string) => {
+      const g = parseGradient(`linear-gradient(${dir}, #fff, #000)`)!;
+      return g.type === "linear" ? g.angle : NaN;
+    };
+    expect(angleOf("to top")).toBe(0);
+    expect(angleOf("to bottom")).toBe(180);
+    expect(angleOf("to left")).toBe(270);
+    expect(angleOf("to top right")).toBe(45);
+    expect(angleOf("to bottom right")).toBe(135);
+    expect(angleOf("to bottom left")).toBe(225);
+    expect(angleOf("to left top")).toBe(315);
+  });
+});
+
+describe("formatGradient — circle never emits ellipse radii (C-7)", () => {
+  it("falls back to the keyword form when shape is circle with stale radii", () => {
+    const css = formatGradient({
+      ...DEFAULT_RADIAL,
+      shape: "circle",
+      radii: { x: 0.5, y: 0.3 },
+    });
+    expect(css).toContain("circle farthest-corner");
+    expect(css).not.toContain("50% 30%");
+  });
+
+  it("still emits radii for ellipse", () => {
+    const css = formatGradient({
+      ...DEFAULT_RADIAL,
+      shape: "ellipse",
+      radii: { x: 0.5, y: 0.3 },
+    });
+    expect(css).toContain("50% 30%");
+  });
+});
+
+describe("sampleStopsAt (C-6 / T-1)", () => {
+  const white = { l: 1, c: 0, h: 0, alpha: 1 };
+  const black = { l: 0, c: 0, h: 0, alpha: 1 };
+
+  it("lerps linearly without hints", () => {
+    const mid = sampleStopsAt(
+      [
+        { color: white, position: 0 },
+        { color: black, position: 1 },
+      ],
+      0.5,
+    );
+    expect(mid.l).toBeCloseTo(0.5, 6);
+  });
+
+  it("wraps hue via the short path (350 → 10)", () => {
+    const a = { l: 0.6, c: 0.2, h: 350, alpha: 1 };
+    const b = { l: 0.6, c: 0.2, h: 10, alpha: 1 };
+    const mid = sampleStopsAt(
+      [
+        { color: a, position: 0 },
+        { color: b, position: 1 },
+      ],
+      0.5,
+    );
+    expect(mid.h).toBeCloseTo(0, 1);
+  });
+
+  it("applies the CSS midpoint hint to sampling", () => {
+    // Hint at 10%: the visible ramp reaches the 50/50 blend already at
+    // position 0.1, so at 0.5 the paint is far darker than mid-gray.
+    const stops = [
+      { color: white, position: 0 },
+      { color: black, position: 1, hint: 0.1 },
+    ];
+    const atHint = sampleStopsAt(stops, 0.1);
+    expect(atHint.l).toBeCloseTo(0.5, 2);
+    // CSS curve t^(log .5 / log .1) at t = 0.5 → progress ≈ 0.812.
+    const mid = sampleStopsAt(stops, 0.5);
+    expect(mid.l).toBeCloseTo(1 - 0.5 ** (Math.log(0.5) / Math.log(0.1)), 6);
+    expect(mid.l).toBeLessThan(0.25);
+  });
+
+  it("ignores degenerate hints outside the segment", () => {
+    const stops = [
+      { color: white, position: 0.2 },
+      { color: black, position: 0.8, hint: 0.9 },
+    ];
+    const mid = sampleStopsAt(stops, 0.5);
+    expect(mid.l).toBeCloseTo(0.5, 6);
   });
 });

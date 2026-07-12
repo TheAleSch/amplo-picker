@@ -302,7 +302,33 @@ function HaloTuner({
   stats: { fps: number; gpuMs: number | null } | null;
 }) {
   const [open, setOpen] = React.useState(false);
+  // In production the tuner is hidden until the user types "tunehalo"
+  // anywhere on the page (not while focused in an input). Dev builds show
+  // the button straight away.
+  const [unlocked, setUnlocked] = React.useState(
+    process.env.NODE_ENV !== "production",
+  );
+  React.useEffect(() => {
+    if (unlocked) return;
+    const SECRET = "tunehalo";
+    let buffer = "";
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key.length !== 1) return;
+      buffer = (buffer + e.key.toLowerCase()).slice(-SECRET.length);
+      if (buffer === SECRET) {
+        setUnlocked(true);
+        setOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [unlocked]);
   const [copied, setCopied] = React.useState(false);
+  // NOTE: keep this return below every hook — early returns above a hook
+  // violate the Rules of Hooks once `unlocked` flips.
+  if (!unlocked) return null;
   const copy = async () => {
     await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
     setCopied(true);

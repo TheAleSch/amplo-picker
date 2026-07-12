@@ -10,6 +10,12 @@ import {
   type ChannelDescriptor,
 } from "@/registry/new-york/color-picker/lib/channels";
 import type { ColorFormat } from "@/registry/new-york/color-picker/lib/types";
+// FieldShell / FieldDivider are plain, Radix-free markup — shared with the
+// classic tree so the input chrome has one visual source of truth.
+import {
+  FieldDivider,
+  FieldShell,
+} from "@/registry/new-york/color-picker/parts/field";
 import { cn } from "@/lib/utils";
 
 export interface ChannelInputProps
@@ -61,20 +67,16 @@ export const ChannelInput = React.forwardRef<HTMLDivElement, ChannelInputProps>(
     };
 
     return (
-      <div
+      <FieldShell
         ref={ref}
         data-slot="color-picker-channel-input"
-        className={cn(
-          "flex h-8 items-stretch overflow-hidden rounded-md border border-input bg-transparent font-mono text-xs shadow-xs",
-          "focus-within:ring-1 focus-within:ring-ring",
-          className,
-        )}
+        className={className}
         {...rest}
       >
         {showFormat && (
           <>
             <FormatSelect format={format} formats={formats} onChange={setFormat} />
-            <Divider />
+            <FieldDivider />
           </>
         )}
         {format === "hex" ? (
@@ -87,11 +89,11 @@ export const ChannelInput = React.forwardRef<HTMLDivElement, ChannelInputProps>(
                 onChange={(v) => handleChannelChange(ch.key, v)}
                 onPasteColor={setFromString}
               />
-              {i < channels.length - 1 && <Divider />}
+              {i < channels.length - 1 && <FieldDivider />}
             </React.Fragment>
           ))
         )}
-      </div>
+      </FieldShell>
     );
   },
 );
@@ -255,8 +257,3 @@ function ChannelField({
   );
 }
 
-/* ────────────────────── Helpers ────────────────────── */
-
-function Divider() {
-  return <div aria-hidden className="w-px self-stretch bg-border" />;
-}

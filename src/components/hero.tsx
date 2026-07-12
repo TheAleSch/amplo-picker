@@ -29,7 +29,6 @@ type Variant = "base" | "radix";
 // Mark renders inline in the left column. Halo center + width are measured
 // from the actual DOM rect each frame so the godray canvas tracks the mark
 // regardless of viewport / breakpoint.
-const MARK_ASPECT = 290 / 333;
 const MARK_FALLBACK = { center: { x: 0.5, y: 0.3 }, width: 0.2 };
 
 function useMeasuredMark(
@@ -116,7 +115,7 @@ const DEFAULT_HALO: HaloParams = {
 };
 
 export function Hero() {
-  const [halo, setHalo] = React.useState<HaloParams>(DEFAULT_HALO);
+  const halo = DEFAULT_HALO;
   const [variant, setVariant] = React.useState<Variant>("base");
   const sectionRef = React.useRef<HTMLElement | null>(null);
   const markRef = React.useRef<HTMLDivElement | null>(null);
@@ -226,131 +225,11 @@ export function Hero() {
         </div>
       </div>
 
-      {/* <HaloTuner values={halo} onChange={setHalo} /> */}
     </section>
   );
 }
 
-function HaloTuner({
-  values,
-  onChange,
-}: {
-  values: HaloParams;
-  onChange: (next: HaloParams) => void;
-}) {
-  const [open, setOpen] = React.useState(true);
-  const set = (k: keyof HaloParams) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    onChange({ ...values, [k]: parseFloat(e.target.value) });
-  return (
-    <div className="fixed bottom-6 left-6 z-50 hidden w-72 rounded-lg border border-white/10 bg-black/70 text-white shadow-xl backdrop-blur-md lg:block">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between border-b border-white/10 px-4 py-2 text-sm font-medium"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span>Tune halo</span>
-        <span className="text-xs opacity-60">{open ? "−" : "+"}</span>
-      </button>
-      {open && (
-        <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4 text-xs">
-          <TunerSlider label="Bloom" min={0} max={6} step={0.05} value={values.bloom} onChange={set("bloom")} />
-          <TunerSlider label="Intensity" min={0} max={3} step={0.05} value={values.intensity} onChange={set("intensity")} />
-          <TunerSlider label="Whitepoint" min={1} max={20} step={0.1} value={values.whitepoint} onChange={set("whitepoint")} />
-          <TunerSlider label="Blur stride" min={1} max={80} step={1} value={values.blurStride} onChange={set("blurStride")} />
-          <TunerSlider label="Blur passes" min={1} max={6} step={1} value={values.blurPasses} onChange={set("blurPasses")} />
-          <TunerSlider label="LOD step" min={0.5} max={3} step={0.1} value={values.lodStep} onChange={set("lodStep")} />
-          <TunerSlider label="LOD count" min={1} max={8} step={1} value={values.lodCount} onChange={set("lodCount")} />
-          <TunerSlider label="Hue speed" min={0} max={1} step={0.01} value={values.hueSpeed} onChange={set("hueSpeed")} />
-          <TunerSlider label="Halo hue Δ" min={-3.14} max={3.14} step={0.05} value={values.haloHueOffset} onChange={set("haloHueOffset")} />
-          <TunerSlider label="Fill L" min={0.4} max={1} step={0.01} value={values.swirlL} onChange={set("swirlL")} />
-          <TunerSlider label="Fill C" min={0} max={0.5} step={0.01} value={values.swirlC} onChange={set("swirlC")} />
-          <TunerSlider label="Halo L" min={0.4} max={1} step={0.01} value={values.haloL} onChange={set("haloL")} />
-          <TunerSlider label="Halo C" min={0} max={0.5} step={0.01} value={values.haloC} onChange={set("haloC")} />
-          <button
-            type="button"
-            className="mt-1 self-start rounded border border-white/20 px-2 py-1 text-xs hover:bg-white/10"
-            onClick={() => onChange(DEFAULT_HALO)}
-          >
-            Reset
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
-function TunerSlider({
-  label,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-}: {
-  label: string;
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="flex items-center justify-between">
-        <span>{label}</span>
-        <span className="font-mono text-white/70">{value.toFixed(2)}</span>
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={onChange}
-        className="w-full accent-white"
-      />
-    </label>
-  );
-}
-
-function GradientShapeControls() {
-  const ctx = useGradientPickerContext();
-  if (ctx.gradient.type === "linear") {
-    return (
-      <GradientPicker.AngleGroup>
-        <GradientPicker.AnglePad />
-        <GradientPicker.AngleInput className="flex-1" />
-      </GradientPicker.AngleGroup>
-    );
-  }
-  if (ctx.gradient.type === "radial") {
-    return (
-      <div className="flex flex-col gap-2">
-        <GradientPicker.ShapeSwitcher />
-        <GradientPicker.PositionGroup>
-          <GradientPicker.PositionPad />
-          <GradientPicker.PositionInput />
-          {ctx.gradient.shape === "circle" && (
-            <GradientPicker.RadiusInput className="flex-1" />
-          )}
-        </GradientPicker.PositionGroup>
-      </div>
-    );
-  }
-  // conic
-  return (
-    <div className="flex items-center gap-2">
-      <GradientPicker.PositionGroup>
-        <GradientPicker.PositionPad />
-        <GradientPicker.PositionInput />
-      </GradientPicker.PositionGroup>
-      <GradientPicker.AngleGroup>
-        <GradientPicker.AnglePad />
-        <GradientPicker.AngleInput className="flex-1" />
-      </GradientPicker.AngleGroup>
-    </div>
-  );
-}
 
 /**
  * Hero-only variant of GradientShapeControls that omits angle controls —

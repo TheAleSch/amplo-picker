@@ -141,13 +141,14 @@ export function Hero() {
   const markRef = React.useRef<HTMLDivElement | null>(null);
   const { center, width } = useMeasuredMark(sectionRef, markRef);
 
-  // h-svh + overflow-hidden pins the hero to exactly one viewport: the page
-  // itself never scrolls. Tall content (the gradient tab on short windows)
-  // scrolls *inside* the content div, beneath the floating toolbar.
+  // flex-1 + overflow-hidden: the hero fills the layout's viewport-height
+  // flex column minus the footer, so the page itself never scrolls. Tall
+  // content (the gradient tab on short windows) scrolls *inside* the
+  // content div, beneath the floating toolbar.
   return (
     <section
       ref={sectionRef}
-      className="relative isolate h-svh overflow-hidden bg-background text-foreground"
+      className="relative isolate min-h-0 flex-1 overflow-hidden bg-background text-foreground"
     >
       <GodRayCanvas
         className="absolute inset-0"
@@ -330,13 +331,14 @@ function HaloTuner({
               </button>
             </div>
           </div>
-          {/* Framerate: rAF fps is vsync-capped; the uncapped number comes
-              from the GPU timer (frame cost → theoretical fps). */}
+          {/* Framerate: left number is the real render rate (fps cap and
+              vsync apply); "max" is the theoretical rate the GPU could
+              sustain, derived from measured GPU frame time. */}
           <div className="mb-2 rounded bg-muted/60 px-2 py-1 font-mono text-[11px] tabular-nums text-muted-foreground">
             {stats
               ? `${stats.fps.toFixed(0)} fps` +
                 (stats.gpuMs !== null
-                  ? ` · gpu ${stats.gpuMs.toFixed(2)}ms · ~${(1000 / stats.gpuMs).toFixed(0)} fps uncapped`
+                  ? ` · gpu ${stats.gpuMs.toFixed(2)}ms ≈ ${(1000 / stats.gpuMs).toFixed(0)} fps max`
                   : " · gpu timer n/a")
               : "measuring…"}
           </div>

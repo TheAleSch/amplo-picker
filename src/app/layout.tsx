@@ -66,9 +66,12 @@ export default function RootLayout({
         <script src="/theme-init.js" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} flex min-h-svh flex-col bg-background font-sans text-foreground antialiased`}
       >
-        {children}
+        {/* Flex column: pages that fill flex-1 exactly (the home hero) get
+            viewport-minus-footer with zero page scroll; taller pages (docs,
+            playground) grow normally and push the footer down. */}
+        <div className="flex flex-1 flex-col">{children}</div>
         <Footer />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}

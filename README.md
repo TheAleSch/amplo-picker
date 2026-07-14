@@ -220,10 +220,11 @@ Package manager is **pnpm**.
 - `pnpm test` — Vitest, single run. (`pnpm test:watch` for watch mode.)
 - `pnpm registry:build` — regenerate `public/r/<item>.json` from `registry.json`.
 
-Source roots:
+Source roots (the `new-york` segment is the shadcn style identifier):
 
 - `src/` — the demo / docs Next.js app (App Router). Not shipped to consumers.
-- `registry/new-york/color-picker/` — the actual component source bundled into the registry artifact. The `new-york` segment is the shadcn style identifier.
+- `registry/new-york/fill-picker-base/` — the **Base UI variant** (the default). Rebuilds the interactive parts on Base UI primitives and imports the shared engine + presentational parts from `color-picker/` via aliases.
+- `registry/new-york/color-picker/` — the shared OKLCH engine plus the original Radix-backed parts. Bundled into the registry artifact and consumed by both variants.
 
 ---
 

@@ -238,14 +238,23 @@ export function useGradientPicker(
     setPrevControlledValue(value);
     if (value !== lastEmittedRef.current) {
       const prev = stateRef.current;
+      // `prev.stops` is always position-sorted (attachIds and every mutating
+      // setter sort), so the incoming array must be sorted the same way
+      // before the element-wise compare. Without this, a controlled consumer
+      // who keeps their stops in insertion order rather than position order
+      // fails the match on *every* update and gets fresh ids each time —
+      // which orphans `selectedStopId` and any per-stop color format.
+      const incoming = [...value.stops].sort(
+        (a, b) => a.position - b.position,
+      );
       const structuralMatch =
         prev.gradient.type === value.type &&
-        prev.stops.length === value.stops.length &&
-        prev.stops.every((s, i) => s.position === value.stops[i].position);
+        prev.stops.length === incoming.length &&
+        prev.stops.every((s, i) => s.position === incoming[i].position);
       const next: InternalState = structuralMatch
         ? {
             gradient: value,
-            stops: prev.stops.map((s, i) => ({ ...value.stops[i], id: s.id })),
+            stops: prev.stops.map((s, i) => ({ ...incoming[i], id: s.id })),
           }
         : attachIds(value);
       if (!structuralMatch) {

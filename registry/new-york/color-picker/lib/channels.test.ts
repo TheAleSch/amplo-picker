@@ -151,16 +151,31 @@ describe("setColorChannel — direct hue writes wrap into [0, 360)", () => {
     expect(setColorChannel(base, "oklch", "h", 360).h).toBeCloseTo(0, 6);
   });
 
-  it("wraps hue written through the hsl and hsb scales", () => {
-    // These round-trip through culori, so compare on the format's own scale.
+  // Honest scope note: this asserts the *observable* contract for hsl/hsb —
+  // an out-of-range hue lands on the equivalent in-range angle. It does NOT
+  // discriminate the wrap(value, 360) call on those two branches: culori's
+  // HSL/HSV→OKLCH conversion is trig-based and already periodic, so removing
+  // the wrap there leaves this green (verified by mutation). The wrap is
+  // defensive on the hsl/hsb paths; it is load-bearing on the oklch path,
+  // which the cases above do discriminate.
+  it("normalizes out-of-range hue on the hsl and hsb scales", () => {
     for (const format of ["hsl", "hsb"] as const) {
-      const over = setColorChannel(base, format, "h", 400);
-      const equivalent = setColorChannel(base, format, "h", 40);
-      expect(over.h).toBeCloseTo(equivalent.h, 4);
+      const readBackHue = (color: OklchColor) =>
+        colorChannels(color, format).find((c) => c.key === "h")!.value;
 
-      const under = setColorChannel(base, format, "h", -30);
-      const equivalentUnder = setColorChannel(base, format, "h", 330);
-      expect(under.h).toBeCloseTo(equivalentUnder.h, 4);
+      expect(readBackHue(setColorChannel(base, format, "h", 400))).toBeCloseTo(
+        40,
+        1,
+      );
+      expect(readBackHue(setColorChannel(base, format, "h", -30))).toBeCloseTo(
+        330,
+        1,
+      );
+      // 360 must land on 0, not sit on the exclusive upper bound.
+      expect(readBackHue(setColorChannel(base, format, "h", 360))).toBeCloseTo(
+        0,
+        1,
+      );
     }
   });
 });

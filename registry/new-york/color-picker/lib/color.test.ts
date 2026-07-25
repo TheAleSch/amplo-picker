@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { converter } from "culori";
+import type { OklchColor } from "./types";
 import {
   parseColor,
   formatColor,
@@ -15,6 +17,8 @@ import {
   hslHue,
   hsbHue,
 } from "./color";
+
+const toOklch = converter("oklch");
 
 describe("parseColor", () => {
   it("parses #fff to white in OKLCH", () => {
@@ -424,16 +428,30 @@ describe("hslHue / hsbHue", () => {
 });
 
 describe("gamut epsilon tolerance", () => {
-  it("treats a hair over the sRGB surface as in-gamut but a real overshoot as out", () => {
-    // GAMUT_EPSILON (1e-4) exists so float noise at the boundary doesn't make
-    // the badge flicker. Pin both sides of it: pure red is exactly on the
-    // surface, and a clearly-out-of-sRGB P3 green must still read as out.
-    const onSurface = parseColor("#f00")!;
-    expect(gamutInfo(onSurface).inSrgb).toBe(true);
+  // GAMUT_EPSILON (1e-4) exists so float noise at the boundary doesn't make
+  // the badge flicker. Probe it directly: build colors that overshoot an sRGB
+  // channel by a known amount and check which side of the tolerance they land
+  // on. This pins the constant's magnitude — an epsilon of 0 fails the first
+  // case, and a looser 1e-2 fails the second.
+  const overshootRed = (over: number): OklchColor => {
+    const o = toOklch({ mode: "rgb", r: 1 + over, g: 0.2, b: 0.2 })!;
+    return { l: o.l!, c: o.c!, h: o.h ?? 0, alpha: 1 };
+  };
 
+  it("absorbs an overshoot smaller than the epsilon", () => {
+    expect(gamutInfo(overshootRed(2e-5)).inSrgb).toBe(true);
+    expect(gamutInfo(overshootRed(9e-5)).inSrgb).toBe(true);
+  });
+
+  it("reports an overshoot larger than the epsilon as out of gamut", () => {
+    expect(gamutInfo(overshootRed(2e-4)).inSrgb).toBe(false);
+    expect(gamutInfo(overshootRed(1e-3)).inSrgb).toBe(false);
+  });
+
+  it("still classifies obviously wide colors correctly", () => {
     const wayOut = parseColor("color(display-p3 0 1 0)")!;
     expect(gamutInfo(wayOut).inSrgb).toBe(false);
-    // …and comfortably inside the wider gamuts it belongs to.
     expect(gamutInfo(wayOut).inP3).toBe(true);
+    expect(gamutInfo(parseColor("#f00")!).inSrgb).toBe(true);
   });
 });

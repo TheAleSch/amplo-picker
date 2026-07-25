@@ -505,3 +505,86 @@ describe("setLinearStart / setLinearEnd", () => {
     expect((result.current.gradient as LinearGradient).start).toBeUndefined();
   });
 });
+
+// R2-1 (2026-07-25 adversarial review, round 2): sorting stops on entry made
+// the controlled structural-match compare a sorted prev against the caller's
+// raw array order. A consumer holding stops in insertion order then failed the
+// match on every update, minting fresh ids each time — which orphaned
+// selectedStopId (selectedStop went null) and any per-stop color format.
+describe("controlled sync keeps stop identity stable", () => {
+  const unsorted: LinearGradient = {
+    ...DEFAULT_LINEAR,
+    stops: [
+      { position: 0.7, color: { l: 0.5, c: 0.2, h: 260, alpha: 1 } },
+      { position: 0.2, color: { l: 0.6, c: 0.2, h: 30, alpha: 1 } },
+    ],
+  };
+
+  /** An update that touches nothing about the stops. */
+  const unrelatedEdit = (g: LinearGradient): LinearGradient => ({
+    ...g,
+    interp: g.interp === "oklch" ? "oklab" : "oklch",
+  });
+
+  it("preserves ids across an unrelated update to an unsorted controlled value", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: unsorted } },
+    );
+    const before = result.current.stops.map((s) => s.id);
+    rerender({ value: unrelatedEdit(unsorted) });
+    expect(result.current.stops.map((s) => s.id)).toEqual(before);
+  });
+
+  it("keeps the selection resolvable across that update", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: unsorted } },
+    );
+    const selected = result.current.selectedStopId;
+    rerender({ value: unrelatedEdit(unsorted) });
+    expect(result.current.selectedStopId).toBe(selected);
+    expect(result.current.selectedStop).not.toBeNull();
+  });
+
+  it("keeps per-stop color formats attached across that update", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: unsorted } },
+    );
+    const id = result.current.stops[0].id;
+    act(() => {
+      result.current.setStopColorFormat(id, "hsl");
+    });
+    rerender({ value: unrelatedEdit(unsorted) });
+    expect(result.current.getStopColorFormat(id)).toBe("hsl");
+  });
+
+  it("still re-keys when the stop set genuinely changes shape", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: unsorted } },
+    );
+    const before = result.current.stops.map((s) => s.id);
+    rerender({
+      value: {
+        ...unsorted,
+        stops: [
+          ...unsorted.stops,
+          { position: 0.9, color: { l: 0.4, c: 0.1, h: 10, alpha: 1 } },
+        ],
+      },
+    });
+    expect(result.current.stops).toHaveLength(3);
+    expect(result.current.stops.map((s) => s.id)).not.toEqual(before);
+  });
+
+  it("still sorts the stops it stores from an unsorted controlled value", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: unsorted } },
+    );
+    rerender({ value: unrelatedEdit(unsorted) });
+    expect(result.current.stops.map((s) => s.position)).toEqual([0.2, 0.7]);
+  });
+});

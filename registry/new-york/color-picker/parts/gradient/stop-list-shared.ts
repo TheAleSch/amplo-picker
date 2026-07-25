@@ -70,6 +70,29 @@ export function focusNeighborOption(row: HTMLElement): void {
   neighbor?.focus();
 }
 
+/**
+ * Same intent as `focusNeighborOption`, but scans a container by selector
+ * instead of walking siblings — the `<GradientPicker.Bar>` handles are
+ * `role="slider"` elements that may each sit inside a popover anchor wrapper,
+ * so they are not reliably DOM siblings of one another.
+ *
+ * Call *before* removing the focused element. Returns true when focus moved.
+ */
+export function focusNeighborIn(
+  container: HTMLElement | null,
+  current: HTMLElement,
+  selector: string,
+): boolean {
+  if (!container) return false;
+  const items = Array.from(container.querySelectorAll<HTMLElement>(selector));
+  const idx = items.indexOf(current);
+  if (idx === -1) return false;
+  const neighbor = items[idx + 1] ?? items[idx - 1];
+  if (!neighbor) return false;
+  neighbor.focus();
+  return true;
+}
+
 function findOptionSibling(
   el: HTMLElement,
   dir: "nextElementSibling" | "previousElementSibling",
@@ -98,6 +121,11 @@ export function insertStopAfterSelected<
   color: OklchColor;
 } {
   const sorted = [...stops].sort((a, b) => a.position - b.position);
+  // A stop-less gradient is degenerate but type-legal (`Gradient.stops` has no
+  // non-empty constraint), so a controlled consumer can hand us one. There is
+  // no anchor to place relative to — drop the first stop at 0 and let
+  // sampleStopsAt supply its neutral fallback color.
+  if (sorted.length === 0) return { position: 0, color: sampleStopsAt(sorted, 0) };
   const selectedIdx = sorted.findIndex((x) => x.id === selectedStopId);
   const anchorIdx = selectedIdx === -1 ? sorted.length - 1 : selectedIdx;
   const anchor = sorted[anchorIdx];

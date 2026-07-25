@@ -38,9 +38,20 @@ interface InternalState {
 // ---- Helpers ---------------------------------------------------------------
 
 function attachIds(g: Gradient): InternalState {
+  // Sort on entry. `formatStops` emits stops in array order and CSS requires
+  // non-decreasing positions, so an out-of-order (but perfectly type-legal)
+  // stop array arriving via `defaultValue`, a controlled `value`, or
+  // `setGradient` would emit CSS the browser silently clamps into a flat
+  // ramp. The mutating setters (addStop / moveStop / reverseStops) already
+  // route through `sortByPosition` for exactly this reason — the entry points
+  // did not. `gradient.stops` is never read for stop data (toPublicGradient
+  // always rebuilds it from `stops`), so sorting the id-bearing array is
+  // sufficient.
   return {
     gradient: g,
-    stops: g.stops.map((s) => ({ ...s, id: nextId() })),
+    stops: [...g.stops]
+      .sort((a, b) => a.position - b.position)
+      .map((s) => ({ ...s, id: nextId() })),
   };
 }
 

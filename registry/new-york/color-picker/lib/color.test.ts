@@ -11,6 +11,9 @@ import {
   isValidColor,
   findMaxChroma,
   findCusp,
+  gamutFromFormat,
+  hslHue,
+  hsbHue,
 } from "./color";
 
 describe("parseColor", () => {
@@ -354,5 +357,83 @@ describe("isValidColor", () => {
   it("rejects garbage", () => {
     expect(isValidColor("not a color")).toBe(false);
     expect(isValidColor("rgb(999 999 999)")).toBe(true); // culori is permissive; clamp at format time
+  });
+});
+
+// T-8/T-9/T-4 (2026-07-25 adversarial review): the APCA implementation was
+// asserted only directionally (`toBeLessThan(0)`, `Math.abs > 100`), so
+// scaling SAPC or inverting the near-equal-luminance branch stayed green.
+// gamutFromFormat / hslHue / hsbHue and the GAMUT_EPSILON tolerance had no
+// direct coverage at all.
+describe("apcaContrast — reference values", () => {
+  const black = parseColor("#000")!;
+  const white = parseColor("#fff")!;
+
+  it("matches the published Lc for black text on white", () => {
+    // APCA reference: #000 on #fff → Lc 106.04
+    expect(apcaContrast(black, white)).toBeCloseTo(106.04, 1);
+  });
+
+  it("matches the published Lc for white text on black", () => {
+    // APCA reference: #fff on #000 → Lc -107.88 (polarity is signed)
+    expect(apcaContrast(white, black)).toBeCloseTo(-107.88, 1);
+  });
+
+  it("returns exactly 0 when the two luminances are identical", () => {
+    // Exercises the deltaYmin branch — an inverted comparison here would
+    // leak a small nonzero Lc for a genuinely invisible pair.
+    const gray = parseColor("#888")!;
+    expect(apcaContrast(gray, gray)).toBe(0);
+  });
+
+  it("keeps light-on-dark negative and dark-on-light positive", () => {
+    const lighter = parseColor("#888")!;
+    const darker = parseColor("#555")!;
+    expect(apcaContrast(lighter, darker)).toBeLessThan(0);
+    expect(apcaContrast(darker, lighter)).toBeGreaterThan(0);
+  });
+});
+
+describe("gamutFromFormat", () => {
+  it("maps each format to its render gamut", () => {
+    expect(gamutFromFormat("hex")).toBe("srgb");
+    expect(gamutFromFormat("rgb")).toBe("srgb");
+    expect(gamutFromFormat("hsl")).toBe("srgb");
+    expect(gamutFromFormat("hsb")).toBe("srgb");
+    expect(gamutFromFormat("p3")).toBe("p3");
+    // Documented in CLAUDE.md: the unbounded formats still get a (wide)
+    // bounded surface rather than "none".
+    expect(gamutFromFormat("oklch")).toBe("rec2020");
+    expect(gamutFromFormat("oklab")).toBe("rec2020");
+  });
+});
+
+describe("hslHue / hsbHue", () => {
+  it("reports the format's own hue scale, not the OKLCH hue", () => {
+    const red = parseColor("#f00")!;
+    // Pure red is HSL/HSB hue 0 but OKLCH hue ~29 — the sliders depend on
+    // this distinction to line up with the channel inputs.
+    expect(hslHue(red)).toBeCloseTo(0, 3);
+    expect(hsbHue(red)).toBeCloseTo(0, 3);
+    expect(red.h).toBeGreaterThan(20);
+
+    const blue = parseColor("#00f")!;
+    expect(hslHue(blue)).toBeCloseTo(240, 1);
+    expect(hsbHue(blue)).toBeCloseTo(240, 1);
+  });
+});
+
+describe("gamut epsilon tolerance", () => {
+  it("treats a hair over the sRGB surface as in-gamut but a real overshoot as out", () => {
+    // GAMUT_EPSILON (1e-4) exists so float noise at the boundary doesn't make
+    // the badge flicker. Pin both sides of it: pure red is exactly on the
+    // surface, and a clearly-out-of-sRGB P3 green must still read as out.
+    const onSurface = parseColor("#f00")!;
+    expect(gamutInfo(onSurface).inSrgb).toBe(true);
+
+    const wayOut = parseColor("color(display-p3 0 1 0)")!;
+    expect(gamutInfo(wayOut).inSrgb).toBe(false);
+    // …and comfortably inside the wider gamuts it belongs to.
+    expect(gamutInfo(wayOut).inP3).toBe(true);
   });
 });

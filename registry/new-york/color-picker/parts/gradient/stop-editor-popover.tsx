@@ -42,8 +42,28 @@ export function StopEditorPopover({
   const grad = useGradientPickerContext();
   const stop = grad.stops.find((s) => s.id === stopId) ?? grad.stops[0];
   const format = grad.getStopColorFormat(stopId);
+  // Memoize on the channel values, not on `stop` identity — same reasoning as
+  // `<GradientPicker.StopColor>`'s Bound. The gradient hook allocates fresh
+  // stop objects on every controlled sync (even a structural match), so
+  // passing `stop?.color` straight through would hand the inner picker a new
+  // OklchColor identity on each parent render, turning Area's `[color]`
+  // effect into a per-render trigger.
+  const stopL = stop?.color.l;
+  const stopC = stop?.color.c;
+  const stopH = stop?.color.h;
+  const stopAlpha = stop?.color.alpha;
+  const liveColor = React.useMemo(
+    () =>
+      stopL === undefined ||
+      stopC === undefined ||
+      stopH === undefined ||
+      stopAlpha === undefined
+        ? undefined
+        : { l: stopL, c: stopC, h: stopH, alpha: stopAlpha },
+    [stopL, stopC, stopH, stopAlpha],
+  );
   const state = useColorPicker({
-    value: stop?.color,
+    value: liveColor,
     onValueChange: (c) => {
       if (stop) grad.setStopColor(stop.id, c);
     },

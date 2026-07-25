@@ -13,6 +13,8 @@ import {
 } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 import { StopEditorPopover } from "./stop-editor-popover";
+import { focusNeighborIn } from "./stop-list-shared";
+import { useLiveAnnounce } from "../use-live-announce";
 
 export interface BarProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Track height in px. Defaults to 12 to match `<ColorPicker.Hue>`. */
@@ -58,6 +60,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   const [openStopId, setOpenStopId] = React.useState<string | null>(null);
   const ctx = useGradientPickerContext();
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const [liveText, announce] = useLiveAnnounce();
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   // Cleanup hook for an active drag's document-level listeners. Lets us tear
   // them down on unmount so a mid-drag remove of the Bar doesn't leave them
@@ -191,7 +194,20 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
         ctx.moveStop(id, fromDisplay(clamp01(displayed + step)));
       } else if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
+        // A gradient needs at least two stops; `removeStop` refuses below
+        // that. The StopList's mouse affordance conveys this by rendering
+        // its remove button `disabled` — the Bar handle has no such visual,
+        // so announce instead of failing silently.
+        if (ctx.stops.length <= 1) {
+          announce("Cannot remove the last stop");
+          return;
+        }
+        // Move focus to a neighboring handle *before* removal, mirroring
+        // StopList: the focused node is about to unmount, and without this
+        // focus falls to <body> and keyboard navigation is lost.
+        focusNeighborIn(wrapperRef.current, e.currentTarget, '[role="slider"]');
         ctx.removeStop(id);
+        announce("Stop removed");
       }
     };
 
@@ -257,6 +273,9 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
           </StopEditorPopover>
         );
       })}
+      <span aria-live="polite" className="sr-only">
+        {liveText}
+      </span>
     </div>
   );
 });

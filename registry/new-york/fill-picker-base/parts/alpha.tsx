@@ -25,6 +25,7 @@ export const Alpha = React.forwardRef<HTMLDivElement, AlphaProps>(function Alpha
 
   return (
     <Slider.Root
+      ref={ref}
       data-slot="color-picker-alpha"
       value={color.alpha * 100}
       onValueChange={(v) => setComponent("alpha", (v as number) / 100)}

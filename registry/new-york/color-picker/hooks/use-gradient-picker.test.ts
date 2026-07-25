@@ -370,3 +370,138 @@ describe("removeStop unknown id (2026-07-12 audit T-5)", () => {
     expect(result.current.stops).toEqual(before);
   });
 });
+
+// I-2 (2026-07-25 adversarial review): attachIds — behind the initial seed,
+// setGradient, and the controlled structural-mismatch sync — kept the caller's
+// array order, while formatGradient emits in array order and CSS requires
+// non-decreasing positions. An out-of-order (but type-legal) gradient emitted
+// CSS the browser silently clamps into a flat ramp.
+describe("stop ordering at the entry points", () => {
+  const scrambled: Gradient = {
+    ...DEFAULT_LINEAR,
+    stops: [
+      { position: 1, color: { l: 0.5, c: 0.2, h: 260, alpha: 1 } },
+      { position: 0.25, color: { l: 0.7, c: 0.2, h: 120, alpha: 1 } },
+      { position: 0, color: { l: 0.6, c: 0.2, h: 30, alpha: 1 } },
+    ],
+  };
+
+  const positions = (stops: readonly { position: number }[]) =>
+    stops.map((s) => s.position);
+
+  const isNonDecreasing = (xs: number[]) =>
+    xs.every((x, i) => i === 0 || xs[i - 1] <= x);
+
+  it("sorts an out-of-order defaultValue", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: scrambled }),
+    );
+    expect(positions(result.current.stops)).toEqual([0, 0.25, 1]);
+  });
+
+  it("sorts an out-of-order controlled value", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ value: scrambled }),
+    );
+    expect(positions(result.current.stops)).toEqual([0, 0.25, 1]);
+  });
+
+  it("sorts an out-of-order setGradient", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: DEFAULT_LINEAR }),
+    );
+    act(() => {
+      result.current.setGradient(scrambled);
+    });
+    expect(positions(result.current.stops)).toEqual([0, 0.25, 1]);
+  });
+
+  it("emits CSS whose stop percentages never decrease", () => {
+    const emitted: string[] = [];
+    const { result } = renderHook(() =>
+      useGradientPicker({
+        defaultValue: DEFAULT_LINEAR,
+        onValueChange: (_g, css) => emitted.push(css),
+      }),
+    );
+    act(() => {
+      result.current.setGradient(scrambled);
+    });
+    const css = emitted.at(-1)!;
+    const percents = [...css.matchAll(/(-?[\d.]+)%/g)].map((m) =>
+      Number(m[1]),
+    );
+    expect(percents.length).toBeGreaterThan(0);
+    expect(isNonDecreasing(percents)).toBe(true);
+  });
+
+  it("selects the lowest-positioned stop, not the array-first one", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: scrambled }),
+    );
+    expect(result.current.selectedStop?.position).toBe(0);
+  });
+
+  it("keeps ordering stable through a later color edit", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: scrambled }),
+    );
+    const midId = result.current.stops[1].id;
+    act(() => {
+      result.current.setStopColor(midId, { l: 0.4, c: 0.1, h: 200, alpha: 1 });
+    });
+    expect(positions(result.current.stops)).toEqual([0, 0.25, 1]);
+  });
+});
+
+// T-11 (2026-07-25 adversarial review): neither endpoint setter was ever
+// called, so the clamp01 guards and the atan2 angle recomputation were
+// unverified.
+describe("setLinearStart / setLinearEnd", () => {
+  it("clamps out-of-range coordinates into 0..1", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: DEFAULT_LINEAR }),
+    );
+    act(() => {
+      result.current.setLinearStart({ x: -3, y: 42 });
+      result.current.setLinearEnd({ x: 1.5, y: -0.2 });
+    });
+    const g = result.current.gradient as LinearGradient;
+    expect(g.start).toEqual({ x: 0, y: 1 });
+    expect(g.end).toEqual({ x: 1, y: 0 });
+  });
+
+  it("recomputes the angle from the endpoint direction", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: DEFAULT_LINEAR }),
+    );
+    act(() => {
+      // Straight down the box: CSS 0deg points up, so down is 180deg.
+      result.current.setLinearStart({ x: 0.5, y: 0 });
+      result.current.setLinearEnd({ x: 0.5, y: 1 });
+    });
+    expect((result.current.gradient as LinearGradient).angle).toBeCloseTo(180, 3);
+
+    act(() => {
+      // Left-to-right is 90deg.
+      result.current.setLinearStart({ x: 0, y: 0.5 });
+      result.current.setLinearEnd({ x: 1, y: 0.5 });
+    });
+    expect((result.current.gradient as LinearGradient).angle).toBeCloseTo(90, 3);
+  });
+
+  it("clears the positioned override when passed undefined", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({ defaultValue: DEFAULT_LINEAR }),
+    );
+    act(() => {
+      result.current.setLinearStart({ x: 0, y: 0 });
+      result.current.setLinearEnd({ x: 1, y: 1 });
+    });
+    expect((result.current.gradient as LinearGradient).start).toBeDefined();
+    act(() => {
+      result.current.setLinearStart(undefined);
+    });
+    expect((result.current.gradient as LinearGradient).start).toBeUndefined();
+  });
+});

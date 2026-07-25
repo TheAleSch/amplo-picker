@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useColorPicker } from "./use-color-picker";
+import type { OklchColor } from "../lib/types";
 
 describe("useColorPicker", () => {
   it("initializes from defaultValue string", () => {
@@ -217,5 +218,123 @@ describe("setFormat gamut clamp (2026-07-12 audit T-2)", () => {
     const before = result.current.color;
     act(() => result.current.setFormat("rgb"));
     expect(result.current.color).toEqual(before);
+  });
+});
+
+// T-2/T-3 (2026-07-25 adversarial review): the `isControlledStringInput` gate
+// on hue substitution was only ever tested from the string-controlled side,
+// and the HUE_EPS achromatic threshold was never probed at its boundary.
+// Dropping the gate — which would silently revert explicit hue writes on
+// achromatic colors — kept the whole suite green.
+describe("hue substitution is gated to string-controlled input", () => {
+  it("honours an explicit hue write on an uncontrolled achromatic color", () => {
+    const { result } = renderHook(() =>
+      // Exactly achromatic: c === 0, so isAchromatic() is true and the
+      // remembered hue would win if the gate were dropped.
+      useColorPicker({ defaultValue: { l: 0.5, c: 0, h: 0, alpha: 1 } }),
+    );
+    act(() => result.current.setComponent("h", 200));
+    expect(result.current.color.h).toBe(200);
+  });
+
+  it("honours an explicit hue write on uncontrolled black and white", () => {
+    for (const l of [0, 1]) {
+      const { result } = renderHook(() =>
+        useColorPicker({ defaultValue: { l, c: 0, h: 0, alpha: 1 } }),
+      );
+      act(() => result.current.setComponent("h", 137));
+      expect(result.current.color.h).toBe(137);
+    }
+  });
+
+  it("honours an explicit hue write on an object-controlled achromatic color", () => {
+    let current = { l: 0.5, c: 0, h: 0, alpha: 1 };
+    const { result, rerender } = renderHook(() =>
+      useColorPicker({
+        value: current,
+        onValueChange: (c) => {
+          current = c;
+        },
+      }),
+    );
+    act(() => result.current.setComponent("h", 200));
+    rerender();
+    expect(result.current.color.h).toBe(200);
+  });
+
+  it("still restores the remembered hue for a string-controlled achromatic value", () => {
+    // The behavior the gate exists to protect — kept green alongside the
+    // cases above so a fix to one can't silently undo the other.
+    const { result, rerender } = renderHook(
+      ({ value }: { value: string }) => useColorPicker({ value }),
+      { initialProps: { value: "oklch(0.6 0.2 275)" } },
+    );
+    expect(result.current.color.h).toBeCloseTo(275, 0);
+    rerender({ value: "#000" });
+    expect(result.current.color.h).toBeCloseTo(275, 0);
+  });
+});
+
+describe("achromatic threshold (HUE_EPS) boundary", () => {
+  // HUE_EPS is 1e-4 with inclusive comparisons (`<=` / `>=`). It is observable
+  // through whether `lastGoodHueRef` updates: an achromatic color must NOT
+  // overwrite the remembered hue. So drive an intermediate color that sits
+  // exactly at the threshold, then land on a hue-less string (hex gray) and
+  // read back which hue was restored.
+  const REMEMBERED = 275;
+  const INTERMEDIATE_HUE = 10;
+
+  const hueAfterPassingThrough = (intermediate: OklchColor) => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: string | OklchColor }) => useColorPicker({ value }),
+      {
+        initialProps: {
+          value: { l: 0.6, c: 0.2, h: REMEMBERED, alpha: 1 } as
+            | string
+            | OklchColor,
+        },
+      },
+    );
+    rerender({ value: intermediate });
+    // Hex gray parses with no hue, so the substitution path runs and reveals
+    // whichever hue the ref is currently holding.
+    rerender({ value: "#808080" });
+    return result.current.color.h;
+  };
+
+  it("treats chroma exactly at the epsilon as achromatic", () => {
+    expect(
+      hueAfterPassingThrough({
+        l: 0.5,
+        c: 1e-4,
+        h: INTERMEDIATE_HUE,
+        alpha: 1,
+      }),
+    ).toBeCloseTo(REMEMBERED, 0);
+  });
+
+  it("treats lightness at either epsilon edge as achromatic", () => {
+    expect(
+      hueAfterPassingThrough({ l: 1e-4, c: 0.2, h: INTERMEDIATE_HUE, alpha: 1 }),
+    ).toBeCloseTo(REMEMBERED, 0);
+    expect(
+      hueAfterPassingThrough({
+        l: 1 - 1e-4,
+        c: 0.2,
+        h: INTERMEDIATE_HUE,
+        alpha: 1,
+      }),
+    ).toBeCloseTo(REMEMBERED, 0);
+  });
+
+  it("treats chroma above the epsilon as chromatic, updating the remembered hue", () => {
+    expect(
+      hueAfterPassingThrough({
+        l: 0.5,
+        c: 0.01,
+        h: INTERMEDIATE_HUE,
+        alpha: 1,
+      }),
+    ).toBeCloseTo(INTERMEDIATE_HUE, 0);
   });
 });

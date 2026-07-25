@@ -3,13 +3,8 @@
 import * as React from "react";
 import { Slider } from "@base-ui/react/slider";
 import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
-import {
-  findMaxChroma,
-  gamutFromFormat,
-  hslHue,
-  hsbHue,
-} from "@/registry/new-york/color-picker/lib/color";
-import { setColorChannel } from "@/registry/new-york/color-picker/lib/channels";
+import { hslHue, hsbHue } from "@/registry/new-york/color-picker/lib/color";
+import { setHueFromSlider } from "@/registry/new-york/color-picker/lib/channels";
 import { cn } from "@/lib/utils";
 
 // `defaultValue` is omitted because Base UI's Slider.Root types it as a number
@@ -39,28 +34,17 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
 ) {
   const { color, format, setColor } = useColorPickerContext();
 
-  const usesFormatHue = format === "hsl" || format === "hsb";
   const displayedHue = React.useMemo(() => {
     if (format === "hsl") return hslHue(color);
     if (format === "hsb") return hsbHue(color);
     return color.h;
   }, [format, color]);
 
+  // Chroma rescaling and the HSL/HSB write path live in `setHueFromSlider`
+  // so this and the classic variant share one implementation.
   const commitHue = React.useCallback(
-    (newH: number) => {
-      const wrapped = ((newH % 360) + 360) % 360;
-      if (usesFormatHue) {
-        setColor(setColorChannel(color, format, "h", wrapped));
-        return;
-      }
-      const gamut = gamutFromFormat(format);
-      const oldMaxC = findMaxChroma(color.l, color.h, gamut);
-      const newMaxC = findMaxChroma(color.l, wrapped, gamut);
-      const saturation = oldMaxC > 1e-6 ? color.c / oldMaxC : 0;
-      const nextC = saturation * newMaxC;
-      setColor({ ...color, h: wrapped, c: nextC });
-    },
-    [color, format, setColor, usesFormatHue],
+    (newH: number) => setColor(setHueFromSlider(color, newH, format)),
+    [color, format, setColor],
   );
 
   const isVertical = orientation === "vertical";
@@ -73,6 +57,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
 
   return (
     <Slider.Root
+      ref={ref}
       data-slot="color-picker-hue"
       value={displayedHue}
       onValueChange={(v) => commitHue(v as number)}

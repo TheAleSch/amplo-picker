@@ -15,10 +15,15 @@ export const CssInput = React.forwardRef<
   React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
   const [draft, setDraft] = React.useState(() => formatGradient(ctx.gradient));
   const [invalid, setInvalid] = React.useState(false);
+  // "The user has typed since the last sync/commit." Distinct from "the draft
+  // differs from the current gradient": an external update while the field is
+  // merely *focused* also makes those differ, and treating that as an edit is
+  // what let a stale draft silently overwrite the newer value on blur.
+  const [dirty, setDirty] = React.useState(false);
 
   // Adjust state during render rather than via useEffect — same pattern as the
-  // color `CssInput`, `HexField`, and `ChannelField`. Re-sync the draft only
-  // when the input isn't focused so we don't clobber an in-progress edit.
+  // color `CssInput`, `HexField`, and `ChannelField`. Re-sync the draft unless
+  // there is an actual in-progress edit to clobber.
   const [prevGradient, setPrevGradient] = React.useState(ctx.gradient);
   if (ctx.gradient !== prevGradient) {
     setPrevGradient(ctx.gradient);
@@ -27,17 +32,26 @@ export const CssInput = React.forwardRef<
       typeof document !== "undefined" &&
       inputEl !== null &&
       document.activeElement === inputEl;
-    if (!focused) {
+    if (!focused || !dirty) {
       setDraft(formatGradient(ctx.gradient));
       setInvalid(false);
+      setDirty(false);
     }
   }
 
   const commit = () => {
+    // Nothing typed — the draft is just a mirror of the current gradient, so
+    // committing it would at best be a no-op and at worst re-assert a value
+    // that an external update has since replaced.
+    if (!dirty) {
+      setInvalid(false);
+      return;
+    }
     const parsed = parseGradient(draft);
     if (parsed) {
       ctx.setGradient(parsed);
       setInvalid(false);
+      setDirty(false);
     } else {
       setInvalid(true);
     }
@@ -55,7 +69,10 @@ export const CssInput = React.forwardRef<
       <FieldInput
         ref={inputRef}
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setDirty(true);
+        }}
         onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === "Enter") commit();

@@ -90,25 +90,6 @@ export function isValidColor(input: string): boolean {
   return parseColor(input) !== null;
 }
 
-/** Convert canonical OKLCH back to a culori Color in the requested mode. */
-function toCulori(c: OklchColor, mode: "oklch" | "rgb" | "p3" | "oklab" | "hsl" | "hsv") {
-  const base = { mode: "oklch" as const, l: c.l, c: c.c, h: c.h, alpha: c.alpha };
-  switch (mode) {
-    case "oklch":
-      return base;
-    case "rgb":
-      return toRgb(base);
-    case "p3":
-      return toP3(base);
-    case "oklab":
-      return toOklab(base);
-    case "hsl":
-      return toHsl(base);
-    case "hsv":
-      return toHsv(base);
-  }
-}
-
 /**
  * Serialize a canonical OKLCH color to a CSS string in the chosen format.
  * For sRGB-targeted formats (hex/rgb/hsl/hsb) the color is gamut-mapped to sRGB first.

@@ -244,6 +244,15 @@ export function useGradientPicker(
       // who keeps their stops in insertion order rather than position order
       // fails the match on *every* update and gets fresh ids each time —
       // which orphans `selectedStopId` and any per-stop color format.
+      //
+      // Known limitation: stops are re-paired to ids by index, so two stops
+      // sharing a position are disambiguated only by array order. A
+      // controlled consumer that swaps two coincident-position stops keeps
+      // the ids in place and moves the colors between them. There is no way
+      // to do better without identity on the public `GradientStop` type,
+      // which has no `id` field — this is long-standing behavior, unchanged
+      // by the sort. `stop identity with duplicate positions` in the tests
+      // pins it.
       const incoming = [...value.stops].sort(
         (a, b) => a.position - b.position,
       );

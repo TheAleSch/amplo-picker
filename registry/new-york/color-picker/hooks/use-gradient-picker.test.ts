@@ -588,3 +588,65 @@ describe("controlled sync keeps stop identity stable", () => {
     expect(result.current.stops.map((s) => s.position)).toEqual([0.2, 0.7]);
   });
 });
+
+// R3-1 (2026-07-25 adversarial review, round 3): documents — rather than
+// asserts as desirable — how stops sharing a position behave on a controlled
+// reorder. `GradientStop` carries no id, so index is the only disambiguator
+// and the colors move between the existing ids. Verified identical on the
+// pre-review baseline (d2cba69~1), so this is long-standing behavior, not a
+// consequence of sorting stops on entry. Fixing it properly would mean adding
+// identity to the public stop type — a breaking change.
+describe("stop identity with duplicate positions", () => {
+  const gray = { l: 0.9, c: 0, h: 0, alpha: 1 };
+  const warm = { l: 0.6, c: 0.2, h: 30, alpha: 1 };
+  const cool = { l: 0.5, c: 0.2, h: 260, alpha: 1 };
+
+  const at = (stops: LinearGradient["stops"]): LinearGradient => ({
+    ...DEFAULT_LINEAR,
+    stops,
+  });
+
+  it("keeps ids by index when two coincident stops are swapped", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      {
+        initialProps: {
+          value: at([
+            { position: 0, color: gray },
+            { position: 0.5, color: warm },
+            { position: 0.5, color: cool },
+          ]) as Gradient,
+        },
+      },
+    );
+    const ids = result.current.stops.map((s) => s.id);
+
+    rerender({
+      value: at([
+        { position: 0, color: gray },
+        { position: 0.5, color: cool },
+        { position: 0.5, color: warm },
+      ]) as Gradient,
+    });
+
+    // Ids are stable…
+    expect(result.current.stops.map((s) => s.id)).toEqual(ids);
+    // …and the colors moved between them, following array order.
+    expect(result.current.stops[1].color.h).toBeCloseTo(cool.h, 0);
+    expect(result.current.stops[2].color.h).toBeCloseTo(warm.h, 0);
+  });
+
+  it("does not drop or duplicate a stop when positions collide", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({
+        value: at([
+          { position: 0.5, color: warm },
+          { position: 0.5, color: cool },
+          { position: 0.5, color: gray },
+        ]) as Gradient,
+      }),
+    );
+    expect(result.current.stops).toHaveLength(3);
+    expect(new Set(result.current.stops.map((s) => s.id)).size).toBe(3);
+  });
+});

@@ -662,17 +662,15 @@ export default function PlaygroundPage() {
             })}
           </div>
           )}
-          {/* Fixed-height stage. The picker changes height constantly while
-              you use it — adding gradient stops, switching tabs — and a stage
-              that tracked it resized the whole page under the cursor. The
-              inner min-h-full flex keeps short content centered while taller
-              content grows downward and scrolls inside the stage; centering
-              directly on a scroll container would clip the overflowing top. */}
+          {/* min-height, not a fixed height: the picker is genuinely taller
+              in some configurations (a long stop list, the fill tabs), and a
+              capped stage either scrolled or cut it off. The page-wide resize
+              this was meant to stop turned out to be a width problem — see
+              the w-full note on <main>. */}
           <div
-            className="h-110 overflow-y-auto rounded-xl border border-border p-8"
+            className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
             style={{ background: previewBg }}
           >
-            <div className="flex min-h-full items-center justify-center">
             <div
               style={
                 containerMaxWidth !== undefined
@@ -946,7 +944,6 @@ export default function PlaygroundPage() {
                   </FP.Pane>
                 </FP.Root>
               )}
-            </div>
             </div>
           </div>
 

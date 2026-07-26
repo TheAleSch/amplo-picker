@@ -104,6 +104,33 @@ describe("GradientPicker.Bar", () => {
     expect(screen.getAllByRole("slider")).toHaveLength(before.length - 1);
   });
 
+  it("focuses a stop added by clicking the track, so Delete removes it", () => {
+    // The click lands on the track, which isn't focusable — the new stop
+    // would be selected but unreachable from the keyboard.
+    render(
+      <Root defaultValue={DEFAULT_LINEAR}>
+        <Bar />
+      </Root>,
+    );
+    const before = screen.getAllByRole("slider").length;
+    const track = document.querySelector<HTMLElement>(
+      '[data-slot="gradient-bar"] > div',
+    )!;
+    act(() => {
+      fireEvent.pointerDown(track, { pointerId: 1, clientX: 200, clientY: 8, buttons: 1 });
+    });
+    const added = screen.getAllByRole("slider");
+    expect(added).toHaveLength(before + 1);
+    const active = document.activeElement as HTMLElement;
+    expect(added).toContain(active);
+    expect(active.getAttribute("aria-valuenow")).toBe("50");
+
+    act(() => {
+      fireEvent.keyDown(active, { key: "Delete" });
+    });
+    expect(screen.getAllByRole("slider")).toHaveLength(before);
+  });
+
   it("the selected handle has aria-current=true", () => {
     render(
       <Root defaultValue={DEFAULT_LINEAR}>

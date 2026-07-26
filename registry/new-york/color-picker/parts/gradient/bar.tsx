@@ -99,6 +99,26 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     [],
   );
 
+  // A stop added by clicking the track becomes the selected stop, but the
+  // click landed on the track — which isn't focusable — so focus stays on
+  // <body> and the new stop can't be nudged or deleted from the keyboard.
+  // Its handle doesn't exist until the next render, hence the deferral.
+  const pendingFocusIdRef = React.useRef<string | null>(null);
+  React.useLayoutEffect(() => {
+    const id = pendingFocusIdRef.current;
+    if (!id) return;
+    pendingFocusIdRef.current = null;
+    // Matched by walking the handles rather than an attribute selector:
+    // stop ids can come from the consumer now, so they aren't guaranteed
+    // to be selector-safe.
+    const handles = wrapperRef.current?.querySelectorAll<HTMLElement>(
+      '[role="slider"]',
+    );
+    handles?.forEach((h) => {
+      if (h.dataset.stopId === id) h.focus();
+    });
+  });
+
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.target !== trackRef.current) return; // handles handle their own drag
     const displayed = displayedPositionFromEvent(e.clientX);
@@ -108,7 +128,10 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     // of stacking on the first/last stop. Plain mode is unaffected —
     // fromDisplay is the identity and `displayed` is already 0..1.
     const authored = fromDisplay(displayed);
-    ctx.addStop(authored, sampleStopsAt(ctx.stops, authored));
+    pendingFocusIdRef.current = ctx.addStop(
+      authored,
+      sampleStopsAt(ctx.stops, authored),
+    );
   };
 
   const startStopDrag = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
@@ -240,6 +263,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
         const handle = (
           <div
             role="slider"
+            data-stop-id={s.id}
             aria-label={`Stop at ${displayedPct}%`}
             aria-valuemin={0}
             aria-valuemax={100}

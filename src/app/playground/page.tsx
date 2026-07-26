@@ -515,7 +515,12 @@ export default function PlaygroundPage() {
   const CPg = CP;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12">
+    // w-full is load-bearing: the layout wraps pages in a column flexbox, and
+    // a flex item with auto cross-axis margins (mx-auto) doesn't stretch — it
+    // shrink-wraps to max-content. That made the whole page width track the
+    // longest line in the generated-CSS code block, so adding a gradient stop
+    // widened everything. Explicit width, then max-w-6xl caps it.
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-12">
       <header className="flex flex-col gap-2">
         <Link
           href="/"

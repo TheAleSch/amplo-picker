@@ -29,10 +29,13 @@ export interface GradientStop {
    * through any reorder. Ids must be unique within the gradient; duplicates
    * are ignored and fall back to a generated id.
    *
-   * Purely opt-in — omit it and behavior is unchanged. Note the picker does
-   * not echo ids back through `onValueChange`, so this helps consumers that
-   * own their stop objects (e.g. rows from a store), not ones that simply
-   * store whatever the picker last emitted.
+   * Purely opt-in. Omit it and nothing changes — the picker reconciles by
+   * position exactly as before and never adds an `id` to what it emits.
+   *
+   * Once you do supply ids, they round-trip: `onValueChange` echoes them back
+   * (including on stops added inside the picker), so the ordinary
+   * `onValueChange={g => setG(g)}` pattern keeps identity instead of losing
+   * the tags on the first update.
    */
   id?: string;
 }

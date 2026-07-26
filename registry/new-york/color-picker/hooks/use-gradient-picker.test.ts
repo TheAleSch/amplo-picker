@@ -780,3 +780,129 @@ describe("controlled stop identity via GradientStop.id", () => {
     expect(result.current.stops.map((s) => s.id)).toEqual(before);
   });
 });
+
+// The round-trip that makes ids actually useful: the picker echoes ids back
+// through onValueChange, so the ordinary `onValueChange={g => setG(g)}` pattern
+// keeps identity instead of losing the tags on the first update and silently
+// falling back to position matching.
+describe("stop ids round-trip through onValueChange", () => {
+  const warm = { l: 0.6, c: 0.2, h: 30, alpha: 1 };
+  const cool = { l: 0.5, c: 0.2, h: 260, alpha: 1 };
+
+  const tagged: Gradient = {
+    ...DEFAULT_LINEAR,
+    stops: [
+      { id: "warm", position: 0, color: warm },
+      { id: "cool", position: 1, color: cool },
+    ],
+  } as Gradient;
+
+  it("emits ids when the caller opted in", () => {
+    const seen: Gradient[] = [];
+    const { result } = renderHook(() =>
+      useGradientPicker({ value: tagged, onValueChange: (g) => seen.push(g) }),
+    );
+    act(() => {
+      result.current.setStopColor("warm", { ...warm, h: 90 });
+    });
+    expect(seen).toHaveLength(1);
+    expect(seen[0].stops.map((s) => s.id)).toEqual(["warm", "cool"]);
+  });
+
+  it("omits ids entirely when the caller never opted in", () => {
+    const seen: Gradient[] = [];
+    const { result } = renderHook(() =>
+      useGradientPicker({
+        defaultValue: DEFAULT_LINEAR,
+        onValueChange: (g) => seen.push(g),
+      }),
+    );
+    act(() => {
+      result.current.setStopColor(result.current.stops[0].id, {
+        ...warm,
+        h: 90,
+      });
+    });
+    expect(seen).toHaveLength(1);
+    for (const s of seen[0].stops) {
+      expect(s).not.toHaveProperty("id");
+    }
+  });
+
+  it("tags stops added inside the picker so the set never goes half-tagged", () => {
+    const seen: Gradient[] = [];
+    const { result } = renderHook(() =>
+      useGradientPicker({ value: tagged, onValueChange: (g) => seen.push(g) }),
+    );
+    act(() => {
+      result.current.addStop(0.5, { l: 0.7, c: 0.1, h: 150, alpha: 1 });
+    });
+    const emitted = seen.at(-1)!;
+    expect(emitted.stops).toHaveLength(3);
+    for (const s of emitted.stops) expect(typeof s.id).toBe("string");
+    expect(new Set(emitted.stops.map((s) => s.id)).size).toBe(3);
+  });
+
+  it("survives a full store-what-was-emitted cycle", () => {
+    // The pattern the echo exists for: whatever the picker emits becomes the
+    // next `value`. Identity must hold across repeated cycles.
+    let current: Gradient = tagged;
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) =>
+        useGradientPicker({
+          value,
+          onValueChange: (g) => {
+            current = g;
+          },
+        }),
+      { initialProps: { value: current } },
+    );
+
+    for (const hue of [90, 200, 310]) {
+      act(() => {
+        result.current.setStopColor("warm", { ...warm, h: hue });
+      });
+      rerender({ value: current });
+      expect(result.current.stops.map((s) => s.id)).toEqual(["warm", "cool"]);
+      expect(
+        result.current.stops.find((s) => s.id === "warm")!.color.h,
+      ).toBeCloseTo(hue, 0);
+    }
+  });
+
+  it("keeps identity through a reorder after a store-what-was-emitted cycle", () => {
+    let current: Gradient = {
+      ...DEFAULT_LINEAR,
+      stops: [
+        { id: "warm", position: 0.5, color: warm },
+        { id: "cool", position: 0.5, color: cool },
+      ],
+    } as Gradient;
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) =>
+        useGradientPicker({
+          value,
+          onValueChange: (g) => {
+            current = g;
+          },
+        }),
+      { initialProps: { value: current } },
+    );
+    act(() => {
+      result.current.selectStop("cool");
+    });
+    act(() => {
+      result.current.setStopColor("cool", { ...cool, h: 300 });
+    });
+    rerender({ value: current });
+
+    // Now reorder the stored (id-bearing) stops, as an external edit would.
+    rerender({
+      value: { ...current, stops: [...current.stops].reverse() } as Gradient,
+    });
+    expect(result.current.selectedStopId).toBe("cool");
+    expect(
+      result.current.stops.find((s) => s.id === "cool")!.color.h,
+    ).toBeCloseTo(300, 0);
+  });
+});

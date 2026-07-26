@@ -591,11 +591,11 @@ describe("controlled sync keeps stop identity stable", () => {
 
 // R3-1 (2026-07-25 adversarial review, round 3): documents — rather than
 // asserts as desirable — how stops sharing a position behave on a controlled
-// reorder. `GradientStop` carries no id, so index is the only disambiguator
-// and the colors move between the existing ids. Verified identical on the
-// pre-review baseline (d2cba69~1), so this is long-standing behavior, not a
-// consequence of sorting stops on entry. Fixing it properly would mean adding
-// identity to the public stop type — a breaking change.
+// reorder *when the consumer supplies no ids*. Index is then the only
+// disambiguator, so the colors move between the existing ids. Verified
+// identical on the pre-review baseline (d2cba69~1), so this is long-standing
+// behavior, not a consequence of sorting stops on entry. The opt-in fix is
+// `GradientStop.id` — see "controlled stop identity" below.
 describe("stop identity with duplicate positions", () => {
   const gray = { l: 0.9, c: 0, h: 0, alpha: 1 };
   const warm = { l: 0.6, c: 0.2, h: 30, alpha: 1 };
@@ -648,5 +648,135 @@ describe("stop identity with duplicate positions", () => {
     );
     expect(result.current.stops).toHaveLength(3);
     expect(new Set(result.current.stops.map((s) => s.id)).size).toBe(3);
+  });
+});
+
+// Opt-in stop identity: `GradientStop.id` lets a controlled consumer tell the
+// picker which stop is which, so reconciliation follows identity instead of
+// position+index. This closes R3-1 above — the duplicate-position reorder that
+// index pairing cannot describe.
+describe("controlled stop identity via GradientStop.id", () => {
+  const warm = { l: 0.6, c: 0.2, h: 30, alpha: 1 };
+  const cool = { l: 0.5, c: 0.2, h: 260, alpha: 1 };
+  const gray = { l: 0.9, c: 0, h: 0, alpha: 1 };
+
+  const withIds = (
+    stops: Array<{ id: string; position: number; color: typeof warm }>,
+  ): Gradient => ({ ...DEFAULT_LINEAR, stops }) as Gradient;
+
+  it("adopts consumer ids instead of generating its own", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({
+        value: withIds([
+          { id: "a", position: 0, color: warm },
+          { id: "b", position: 1, color: cool },
+        ]),
+      }),
+    );
+    expect(result.current.stops.map((s) => s.id)).toEqual(["a", "b"]);
+  });
+
+  it("follows the right stop through a duplicate-position reorder", () => {
+    const first = withIds([
+      { id: "top", position: 0, color: gray },
+      { id: "warm", position: 0.5, color: warm },
+      { id: "cool", position: 0.5, color: cool },
+    ]);
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: first } },
+    );
+
+    // Swap the two coincident stops in the consumer's array.
+    rerender({
+      value: withIds([
+        { id: "top", position: 0, color: gray },
+        { id: "cool", position: 0.5, color: cool },
+        { id: "warm", position: 0.5, color: warm },
+      ]),
+    });
+
+    // Each id still carries its own color — the defect R3-1 documents for the
+    // id-less path, where the colors swap between ids instead.
+    const byId = Object.fromEntries(
+      result.current.stops.map((s) => [s.id, Math.round(s.color.h)]),
+    );
+    expect(byId.warm).toBeCloseTo(30, 0);
+    expect(byId.cool).toBeCloseTo(260, 0);
+  });
+
+  it("keeps selection and per-stop format attached to the same stop across a reorder", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      {
+        initialProps: {
+          value: withIds([
+            { id: "warm", position: 0.5, color: warm },
+            { id: "cool", position: 0.5, color: cool },
+          ]),
+        },
+      },
+    );
+    act(() => {
+      result.current.selectStop("cool");
+      result.current.setStopColorFormat("cool", "hsl");
+    });
+
+    rerender({
+      value: withIds([
+        { id: "cool", position: 0.5, color: cool },
+        { id: "warm", position: 0.5, color: warm },
+      ]),
+    });
+
+    expect(result.current.selectedStopId).toBe("cool");
+    expect(result.current.selectedStop?.color.h).toBeCloseTo(260, 0);
+    expect(result.current.getStopColorFormat("cool")).toBe("hsl");
+  });
+
+  it("falls back to a generated id when consumer ids collide", () => {
+    const { result } = renderHook(() =>
+      useGradientPicker({
+        value: withIds([
+          { id: "dup", position: 0, color: warm },
+          { id: "dup", position: 1, color: cool },
+        ]),
+      }),
+    );
+    const ids = result.current.stops.map((s) => s.id);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids[0]).toBe("dup");
+  });
+
+  it("re-keys when the incoming id set is genuinely different", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      {
+        initialProps: {
+          value: withIds([
+            { id: "a", position: 0, color: warm },
+            { id: "b", position: 1, color: cool },
+          ]),
+        },
+      },
+    );
+    rerender({
+      value: withIds([
+        { id: "x", position: 0, color: warm },
+        { id: "y", position: 1, color: cool },
+      ]),
+    });
+    expect(result.current.stops.map((s) => s.id)).toEqual(["x", "y"]);
+  });
+
+  it("leaves id-less gradients on the existing position+index path", () => {
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: DEFAULT_LINEAR } },
+    );
+    const before = result.current.stops.map((s) => s.id);
+    const edited: LinearGradient = { ...DEFAULT_LINEAR, interp: "oklab" };
+    rerender({ value: edited });
+    expect(result.current.stops.map((s) => s.id)).toEqual(before);
   });
 });

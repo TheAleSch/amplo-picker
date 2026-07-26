@@ -1701,7 +1701,13 @@ interface GradientStop {
   color: OklchColor;                // { l, c, h, alpha }, unbounded
   position: number;                 // 0..1
   hint?: number;                    // CSS midpoint hint, 0..1
-}`;
+  id?: string;                      // opt-in stable identity (controlled mode)
+}
+
+// Without \`id\`, a controlled picker reconciles your \`value\` by position and
+// array index — which can't tell two stops sharing a position apart. Give each
+// stop a stable id and selection, per-stop format, and colors follow the right
+// stop through any reorder. Ids must be unique within the gradient.`;
 
 const GRADIENT_OUTPUT_CSS_CODE = `import { GradientPicker, formatGradient } from "amplo-color-picker";
 

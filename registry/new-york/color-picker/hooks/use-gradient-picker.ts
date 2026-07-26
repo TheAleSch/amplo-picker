@@ -47,11 +47,19 @@ function attachIds(g: Gradient): InternalState {
   // did not. `gradient.stops` is never read for stop data (toPublicGradient
   // always rebuilds it from `stops`), so sorting the id-bearing array is
   // sufficient.
+  const used = new Set<string>();
   return {
     gradient: g,
     stops: [...g.stops]
       .sort((a, b) => a.position - b.position)
-      .map((s) => ({ ...s, id: nextId() })),
+      .map((s) => {
+        // Honor a consumer-supplied id so controlled reconciliation can match
+        // on identity. Duplicates would defeat the point (and could collide
+        // with a generated id), so anything already taken falls back.
+        const id = s.id && !used.has(s.id) ? s.id : nextId();
+        used.add(id);
+        return { ...s, id };
+      }),
   };
 }
 
@@ -245,25 +253,40 @@ export function useGradientPicker(
       // fails the match on *every* update and gets fresh ids each time —
       // which orphans `selectedStopId` and any per-stop color format.
       //
-      // Known limitation: stops are re-paired to ids by index, so two stops
-      // sharing a position are disambiguated only by array order. A
-      // controlled consumer that swaps two coincident-position stops keeps
-      // the ids in place and moves the colors between them. There is no way
-      // to do better without identity on the public `GradientStop` type,
-      // which has no `id` field — this is long-standing behavior, unchanged
-      // by the sort. `stop identity with duplicate positions` in the tests
-      // pins it.
+      // Without ids, stops are re-paired by index, so two sharing a position
+      // are disambiguated only by array order: swap two coincident stops and
+      // the ids stay put while the colors move between them. That is
+      // long-standing behavior (unchanged by the sort) and is pinned by the
+      // `stop identity with duplicate positions` tests. Consumers who need
+      // exactness opt into `GradientStop.id` and take the identity path
+      // below.
       const incoming = [...value.stops].sort(
         (a, b) => a.position - b.position,
       );
-      const structuralMatch =
-        prev.gradient.type === value.type &&
-        prev.stops.length === incoming.length &&
-        prev.stops.every((s, i) => s.position === incoming[i].position);
+      // Identity path: when every incoming stop carries an id and that set is
+      // exactly what we hold, pair on the id. This is the only way to follow
+      // stops through a reorder that position+index cannot describe — two
+      // stops sharing a position, most obviously.
+      const prevIds = new Set(prev.stops.map((s) => s.id));
+      const sameLength = prev.stops.length === incoming.length;
+      // Ids, when supplied, are authoritative: a changed id set means the
+      // consumer is describing different stops, even if the positions happen
+      // to line up. Falling back to the position path there would ignore the
+      // identity the consumer just handed us.
+      const allHaveIds = incoming.length > 0 && incoming.every((s) => !!s.id);
+      const byId =
+        allHaveIds && sameLength && incoming.every((s) => prevIds.has(s.id!));
+      const sameShape = allHaveIds
+        ? byId
+        : sameLength &&
+          prev.stops.every((s, i) => s.position === incoming[i].position);
+      const structuralMatch = prev.gradient.type === value.type && sameShape;
       const next: InternalState = structuralMatch
         ? {
             gradient: value,
-            stops: prev.stops.map((s, i) => ({ ...incoming[i], id: s.id })),
+            stops: byId
+              ? incoming.map((s) => ({ ...s, id: s.id as string }))
+              : prev.stops.map((s, i) => ({ ...incoming[i], id: s.id })),
           }
         : attachIds(value);
       if (!structuralMatch) {

@@ -38,14 +38,54 @@ interface InternalState {
 // ---- Helpers ---------------------------------------------------------------
 
 function attachIds(g: Gradient): InternalState {
+  // Sort on entry. `formatStops` emits stops in array order and CSS requires
+  // non-decreasing positions, so an out-of-order (but perfectly type-legal)
+  // stop array arriving via `defaultValue`, a controlled `value`, or
+  // `setGradient` would emit CSS the browser silently clamps into a flat
+  // ramp. The mutating setters (addStop / moveStop / reverseStops) already
+  // route through `sortByPosition` for exactly this reason — the entry points
+  // did not. `gradient.stops` is never read for stop data (toPublicGradient
+  // always rebuilds it from `stops`), so sorting the id-bearing array is
+  // sufficient.
+  const used = new Set<string>();
   return {
     gradient: g,
-    stops: g.stops.map((s) => ({ ...s, id: nextId() })),
+    stops: [...g.stops]
+      .sort((a, b) => a.position - b.position)
+      .map((s) => {
+        // Honor a consumer-supplied id so controlled reconciliation can match
+        // on identity. Duplicates would defeat the point (and could collide
+        // with a generated id), so anything already taken falls back.
+        const id = s.id && !used.has(s.id) ? s.id : nextId();
+        used.add(id);
+        return { ...s, id };
+      }),
   };
 }
 
-function toPublicGradient(s: InternalState): Gradient {
-  const stops: GradientStop[] = s.stops.map(({ id: _id, ...rest }) => rest);
+/**
+ * True when the caller is tracking stops by id — i.e. every stop of the
+ * gradient they handed us carries one. Partial id sets don't count: the
+ * identity match is all-or-nothing, so half-tagged stops would silently fall
+ * back to position matching anyway.
+ */
+function hasStopIds(g: Gradient): boolean {
+  return g.stops.length > 0 && g.stops.every((s) => !!s.id);
+}
+
+/**
+ * `withIds` echoes ids back out. Off by default so a caller who never opted
+ * into `GradientStop.id` keeps receiving exactly the object shape they always
+ * have. Once they *have* opted in, stripping ids would defeat the feature for
+ * the common `onValueChange={g => setG(g)}` pattern: the stored gradient would
+ * come back untagged on the next render and fall straight back to position
+ * matching. Stops added inside the picker are echoed too — a half-tagged set
+ * is the same as none.
+ */
+function toPublicGradient(s: InternalState, withIds: boolean): Gradient {
+  const stops: GradientStop[] = withIds
+    ? s.stops.map((stop) => ({ ...stop }))
+    : s.stops.map(({ id: _id, ...rest }) => rest);
   return { ...s.gradient, stops } as Gradient;
 }
 
@@ -179,6 +219,15 @@ export function useGradientPicker(
   const [internal, setInternal] = React.useState<InternalState>(() =>
     attachIds(value ?? defaultValue ?? DEFAULT_LINEAR),
   );
+
+  // Whether the caller opted into id tracking. Seeded from whatever gradient
+  // we started with and re-derived whenever they hand us a new one wholesale;
+  // it has to be a ref rather than derived state because the emit path inside
+  // `apply` needs it for mutations (addStop, moveStop, …) that happen between
+  // controlled syncs.
+  const idTrackedRef = React.useRef(
+    hasStopIds(value ?? defaultValue ?? DEFAULT_LINEAR),
+  );
   const [selectedStopId, setSelectedStopId] = React.useState<string>(
     () => internal.stops[0]?.id ?? "",
   );
@@ -227,14 +276,52 @@ export function useGradientPicker(
     setPrevControlledValue(value);
     if (value !== lastEmittedRef.current) {
       const prev = stateRef.current;
-      const structuralMatch =
-        prev.gradient.type === value.type &&
-        prev.stops.length === value.stops.length &&
-        prev.stops.every((s, i) => s.position === value.stops[i].position);
+      // `prev.stops` is always position-sorted (attachIds and every mutating
+      // setter sort), so the incoming array must be sorted the same way
+      // before the element-wise compare. Without this, a controlled consumer
+      // who keeps their stops in insertion order rather than position order
+      // fails the match on *every* update and gets fresh ids each time —
+      // which orphans `selectedStopId` and any per-stop color format.
+      //
+      // Without ids, stops are re-paired by index, so two sharing a position
+      // are disambiguated only by array order: swap two coincident stops and
+      // the ids stay put while the colors move between them. That is
+      // long-standing behavior (unchanged by the sort) and is pinned by the
+      // `stop identity with duplicate positions` tests. Consumers who need
+      // exactness opt into `GradientStop.id` and take the identity path
+      // below.
+      const incoming = [...value.stops].sort(
+        (a, b) => a.position - b.position,
+      );
+      // Identity path: when every incoming stop carries an id and that set is
+      // exactly what we hold, pair on the id. This is the only way to follow
+      // stops through a reorder that position+index cannot describe — two
+      // stops sharing a position, most obviously.
+      const prevIds = new Set(prev.stops.map((s) => s.id));
+      const sameLength = prev.stops.length === incoming.length;
+      // Ids, when supplied, are authoritative: a changed id set means the
+      // consumer is describing different stops, even if the positions happen
+      // to line up. Falling back to the position path there would ignore the
+      // identity the consumer just handed us.
+      const allHaveIds = incoming.length > 0 && incoming.every((s) => !!s.id);
+      // Duplicated ids can't identify anything — treat them as un-tagged
+      // rather than aliasing two stops onto one id.
+      const uniqueIds =
+        allHaveIds && new Set(incoming.map((s) => s.id)).size === incoming.length;
+      const byId =
+        uniqueIds && sameLength && incoming.every((s) => prevIds.has(s.id!));
+      const sameShape = uniqueIds
+        ? byId
+        : sameLength &&
+          prev.stops.every((s, i) => s.position === incoming[i].position);
+      idTrackedRef.current = uniqueIds;
+      const structuralMatch = prev.gradient.type === value.type && sameShape;
       const next: InternalState = structuralMatch
         ? {
             gradient: value,
-            stops: prev.stops.map((s, i) => ({ ...value.stops[i], id: s.id })),
+            stops: byId
+              ? incoming.map((s) => ({ ...s, id: s.id as string }))
+              : prev.stops.map((s, i) => ({ ...incoming[i], id: s.id })),
           }
         : attachIds(value);
       if (!structuralMatch) {
@@ -256,7 +343,7 @@ export function useGradientPicker(
       if (next === null || next === prev) return;
       stateRef.current = next;
       setInternal(next);
-      const clean = toPublicGradient(next);
+      const clean = toPublicGradient(next, idTrackedRef.current);
       lastEmittedRef.current = clean;
       onValueChangeRef.current?.(clean, formatGradient(clean));
     },
@@ -271,6 +358,7 @@ export function useGradientPicker(
       // user is handing us a brand-new gradient, not toggling the current one.
       radiiStashRef.current = undefined;
       radiusPxStashRef.current = undefined;
+      idTrackedRef.current = hasStopIds(next);
       apply(() => attachIds(next));
       setSelectedStopId((prev) => stateRef.current.stops[0]?.id ?? prev);
     },
@@ -539,7 +627,10 @@ export function useGradientPicker(
 
   // ---- Stop setters --------------------------------------------------------
 
-  const selectStop = React.useCallback((id: string) => setSelectedStopId(id), []);
+  const selectStop = React.useCallback(
+    (id: string) => setSelectedStopId(id),
+    [setSelectedStopId],
+  );
 
   const addStop = React.useCallback(
     (position: number, color?: OklchColor): string => {
@@ -555,7 +646,7 @@ export function useGradientPicker(
       setSelectedStopId(id);
       return id;
     },
-    [apply],
+    [apply, setSelectedStopId],
   );
 
   const removeStop = React.useCallback(
@@ -571,7 +662,7 @@ export function useGradientPicker(
       });
       if (nextSelId !== null) setSelectedStopId(nextSelId);
     },
-    [apply],
+    [apply, setSelectedStopId],
   );
 
   const moveStop = React.useCallback(
@@ -645,7 +736,10 @@ export function useGradientPicker(
     [internal.stops, selectedStopId],
   );
 
-  const cleanGradient = React.useMemo(() => toPublicGradient(internal), [internal]);
+  const cleanGradient = React.useMemo(
+    () => toPublicGradient(internal, idTrackedRef.current),
+    [internal],
+  );
 
   return {
     gradient: cleanGradient,

@@ -515,7 +515,12 @@ export default function PlaygroundPage() {
   const CPg = CP;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12">
+    // w-full is load-bearing: the layout wraps pages in a column flexbox, and
+    // a flex item with auto cross-axis margins (mx-auto) doesn't stretch — it
+    // shrink-wraps to max-content. That made the whole page width track the
+    // longest line in the generated-CSS code block, so adding a gradient stop
+    // widened everything. Explicit width, then max-w-6xl caps it.
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-12">
       <header className="flex flex-col gap-2">
         <Link
           href="/"
@@ -657,6 +662,11 @@ export default function PlaygroundPage() {
             })}
           </div>
           )}
+          {/* min-height, not a fixed height: the picker is genuinely taller
+              in some configurations (a long stop list, the fill tabs), and a
+              capped stage either scrolled or cut it off. The page-wide resize
+              this was meant to stop turned out to be a width problem — see
+              the w-full note on <main>. */}
           <div
             className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
             style={{ background: previewBg }}
@@ -665,11 +675,9 @@ export default function PlaygroundPage() {
               style={
                 containerMaxWidth !== undefined
                   ? { width: "100%", maxWidth: containerMaxWidth }
-                  : {
-                      width: "fit-content",
-                      minWidth: DEFAULT_MAX_WIDTH,
-                      maxWidth: "100%",
-                    }
+                  : // Fixed rather than fit-content: content-driven width made
+                    // the picker jump sideways as labels and readouts changed.
+                    { width: DEFAULT_MAX_WIDTH, maxWidth: "100%" }
               }
             >
               {fillMode === "color" && (

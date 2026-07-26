@@ -2,13 +2,8 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
-import {
-  findMaxChroma,
-  gamutFromFormat,
-  hslHue,
-  hsbHue,
-} from "../lib/color";
-import { setColorChannel } from "../lib/channels";
+import { hslHue, hsbHue } from "../lib/color";
+import { setHueFromSlider } from "../lib/channels";
 import { cn } from "@/lib/utils";
 
 export interface HueProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onKeyDown"> {
@@ -26,7 +21,6 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   // (red is OKLCH ~29° / HSL 0°), so an OKLCH-driven slider feels broken to
   // users editing in HSL/HSB. For formats without a hue channel (hex, rgb,
   // p3, oklab) we fall back to OKLCH hue.
-  const usesFormatHue = format === "hsl" || format === "hsb";
   const displayedHue = React.useMemo(() => {
     if (format === "hsl") return hslHue(color);
     if (format === "hsb") return hsbHue(color);
@@ -35,32 +29,11 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement);
 
-  // When the hue changes, max chroma at (L, H, gamut) changes too. Preserving
-  // absolute chroma would push the color out of the active gamut as the user
-  // scrolls into a more constrained hue (e.g. green has less max chroma than
-  // red in P3). Preserve "saturation" — the bead's X position in the area —
-  // by rescaling chroma to the new hue's max. The bead stays put; the badge
-  // stays green.
+  // Chroma rescaling and the HSL/HSB write path live in `setHueFromSlider`
+  // so this and the Base UI variant share one implementation.
   const commitHue = React.useCallback(
-    (newH: number) => {
-      const wrapped = ((newH % 360) + 360) % 360;
-      // HSL/HSB: write hue through the active format so the channel input's
-      // H value matches the slider exactly (no OKLCH↔HSL hue drift).
-      if (usesFormatHue) {
-        setColor(setColorChannel(color, format, "h", wrapped));
-        return;
-      }
-      // OKLCH path: rescale chroma to preserve "saturation" — the bead's X
-      // position in the area — as max chroma at (L, H, gamut) shifts with
-      // hue (e.g. green has less max chroma than red in P3).
-      const gamut = gamutFromFormat(format);
-      const oldMaxC = findMaxChroma(color.l, color.h, gamut);
-      const newMaxC = findMaxChroma(color.l, wrapped, gamut);
-      const saturation = oldMaxC > 1e-6 ? color.c / oldMaxC : 0;
-      const nextC = saturation * newMaxC;
-      setColor({ ...color, h: wrapped, c: nextC });
-    },
-    [color, format, setColor, usesFormatHue],
+    (newH: number) => setColor(setHueFromSlider(color, newH, format)),
+    [color, format, setColor],
   );
 
   const moveTo = (clientCoord: number) => {

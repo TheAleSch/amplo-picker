@@ -1,6 +1,6 @@
 import { converter, type Color } from "culori";
 import type { ColorFormat, OklchColor } from "./types";
-import { toGamut } from "./color";
+import { findMaxChroma, gamutFromFormat, toGamut } from "./color";
 
 const toOklch = converter("oklch");
 const toRgb = converter("rgb");
@@ -214,6 +214,38 @@ export function setColorChannel(
       return fromCulori(next, color.alpha, color.h);
     }
   }
+}
+
+/**
+ * Next color for a hue-slider commit. Shared by both `<ColorPicker.Hue>`
+ * variants (classic and Base UI) so the two can't drift apart.
+ *
+ * Two paths:
+ *   - HSL/HSB — write the hue through the active format so the channel
+ *     input's H matches the slider exactly (no OKLCH↔HSL hue drift).
+ *   - everything else — rescale chroma to preserve "saturation", i.e. the
+ *     color's chroma as a fraction of the max chroma available at
+ *     (l, hue, gamut). Max chroma moves with hue (green has far less than
+ *     red in P3), so preserving *absolute* chroma would walk the color out
+ *     of the active gamut as the user scrolls. Preserving the ratio keeps
+ *     the area bead's X position — and the gamut badge — put.
+ *
+ * `newHue` may be any real number; it is wrapped into [0, 360).
+ */
+export function setHueFromSlider(
+  color: OklchColor,
+  newHue: number,
+  format: ColorFormat,
+): OklchColor {
+  const wrapped = wrap(newHue, 360);
+  if (format === "hsl" || format === "hsb") {
+    return setColorChannel(color, format, "h", wrapped);
+  }
+  const gamut = gamutFromFormat(format);
+  const oldMaxC = findMaxChroma(color.l, color.h, gamut);
+  const newMaxC = findMaxChroma(color.l, wrapped, gamut);
+  const saturation = oldMaxC > 1e-6 ? color.c / oldMaxC : 0;
+  return { ...color, h: wrapped, c: saturation * newMaxC };
 }
 
 const ACHROMATIC_EPS = 1e-4;

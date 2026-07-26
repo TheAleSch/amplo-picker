@@ -67,7 +67,22 @@ interface Manifest {
   items: RegistryItem[];
 }
 
-function main() {
+/**
+ * The build itself, parameterized on its paths so it can run against a
+ * fixture tree under test. `main()` is the thin production binding.
+ *
+ * Set `quiet` to suppress the per-file progress log (tests only).
+ */
+export function buildRegistry(opts: {
+  root: string;
+  manifest: string;
+  outDir: string;
+  quiet?: boolean;
+}) {
+  const { root: ROOT, manifest: MANIFEST, outDir: OUT_DIR, quiet } = opts;
+  const log = (msg: string) => {
+    if (!quiet) console.log(msg);
+  };
   const manifest: Manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -102,9 +117,9 @@ function main() {
     if (item.name === "fill-picker") {
       const aliasPath = path.join(OUT_DIR, "fill-picker-base.json");
       fs.writeFileSync(aliasPath, JSON.stringify(out, null, 2) + "\n");
-      console.log(`✓ wrote public/r/fill-picker-base.json (legacy alias of fill-picker)`);
+      log(`✓ wrote public/r/fill-picker-base.json (legacy alias of fill-picker)`);
     }
-    console.log(`✓ wrote ${path.relative(ROOT, outPath)} (${out.files.length} files)`);
+    log(`✓ wrote ${path.relative(ROOT, outPath)} (${out.files.length} files)`);
   }
 
   const registryPath = path.join(OUT_DIR, "registry.json");
@@ -135,11 +150,15 @@ function main() {
       2,
     ) + "\n",
   );
-  console.log(`✓ wrote ${path.relative(ROOT, registryPath)}`);
+  log(`✓ wrote ${path.relative(ROOT, registryPath)}`);
+}
+
+function main() {
+  buildRegistry({ root: ROOT, manifest: MANIFEST, outDir: OUT_DIR });
 }
 
 // Only run when executed directly (pnpm registry:build), not when the
-// containment helpers are imported by tests.
+// build function / containment helpers are imported by tests.
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href

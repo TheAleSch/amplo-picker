@@ -16,6 +16,28 @@ export interface GradientStop {
   position: number;
   /** Optional CSS midpoint hint, 0..1. */
   hint?: number;
+  /**
+   * Optional stable identity, honored in **controlled** mode only.
+   *
+   * Without it the picker reconciles an incoming `value` against its own
+   * state by position and array index, which cannot tell two stops sharing a
+   * position apart — reorder them externally and the colors swap between the
+   * existing internal ids while the selection and per-stop format stay put.
+   *
+   * Supply an id per stop and reconciliation matches on identity instead, so
+   * selection, per-stop color format, and colors all follow the right stop
+   * through any reorder. Ids must be unique within the gradient; duplicates
+   * are ignored and fall back to a generated id.
+   *
+   * Purely opt-in. Omit it and nothing changes — the picker reconciles by
+   * position exactly as before and never adds an `id` to what it emits.
+   *
+   * Once you do supply ids, they round-trip: `onValueChange` echoes them back
+   * (including on stops added inside the picker), so the ordinary
+   * `onValueChange={g => setG(g)}` pattern keeps identity instead of losing
+   * the tags on the first update.
+   */
+  id?: string;
 }
 
 export interface LinearGradient {

@@ -6,7 +6,7 @@ import { useColorPickerContext } from "../context";
 import { formatColor, parseColor } from "../lib/color";
 import type { OklchColor } from "../lib/types";
 import { cn } from "@/lib/utils";
-import { CHECKERBOARD_SM } from "../lib/constants";
+import { CHECKERBOARD_SM, SAMPLE_EDGE } from "../lib/constants";
 import {
   DEFAULT_SWATCH_PRESETS,
   isSameSwatchColor,
@@ -91,10 +91,11 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
             onFocus={() => setFocusIdx(i)}
             onClick={() => setColor(p)}
             className={cn(
-              // before/after pseudo-padding: keep the 20px visual chip but give the
+              // before pseudo-padding: keep the 20px visual chip but give the
               // button a 28px hit area (WCAG 2.5.8 target size).
-              "relative size-5 cursor-pointer rounded-sm border border-border outline-none motion-safe:transition-transform",
+              "relative size-5 cursor-pointer rounded-sm outline-none motion-safe:transition-transform",
               "before:absolute before:-inset-1 before:content-['']",
+              SAMPLE_EDGE,
               "focus-visible:ring-2 focus-visible:ring-ring motion-safe:hover:scale-110",
               active && "ring-2 ring-ring",
             )}
@@ -102,10 +103,9 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           >
             <span
               aria-hidden
-              // Inner radius = outer minus the 1px border; reusing the outer
-              // radius (rounded-[inherit]) curves too early and leaves dark
-              // notches at the corners.
-              className="absolute inset-0 rounded-[calc(var(--radius-sm)-1px)]"
+              // No border to inset against any more, so the fill matches the
+              // tile's own radius exactly.
+              className="absolute inset-0 rounded-[inherit]"
               style={{ background: p }}
             />
           </button>

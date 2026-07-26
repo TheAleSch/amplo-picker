@@ -168,7 +168,7 @@
       "type": "registry:ui",
       "title": "Amplo Color Picker (Radix)",
       "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "categories": [
         "color",
         "input",
@@ -316,7 +316,7 @@
       "type": "registry:ui",
       "title": "Amplo Gradient Picker",
       "description": "Composable gradient picker (linear / radial / conic) built on the Amplo color picker. CSS Color 4 interpolation, per-stop format state, keyboard-accessible angle/position pads.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "categories": [
         "color",
         "input",
@@ -500,7 +500,7 @@
       "type": "registry:ui",
       "title": "Amplo Fill Picker",
       "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "categories": [
         "color",
         "input",

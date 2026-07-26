@@ -13,6 +13,8 @@ import {
 } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 import { StopEditorPopover } from "./stop-editor-popover";
+import { focusNeighborIn } from "./stop-list-shared";
+import { useLiveAnnounce } from "../use-live-announce";
 
 export interface BarProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Track height in px. Defaults to 12 to match `<ColorPicker.Hue>`. */
@@ -58,6 +60,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   const [openStopId, setOpenStopId] = React.useState<string | null>(null);
   const ctx = useGradientPickerContext();
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const [liveText, announce] = useLiveAnnounce();
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   // Cleanup hook for an active drag's document-level listeners. Lets us tear
   // them down on unmount so a mid-drag remove of the Bar doesn't leave them
@@ -96,8 +99,34 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     [],
   );
 
+  // A stop added by clicking the track becomes the selected stop, but the
+  // click landed on the track — which isn't focusable — so focus stays on
+  // <body> and the new stop can't be nudged or deleted from the keyboard.
+  // Its handle doesn't exist until the next render, hence the deferral.
+  const pendingFocusIdRef = React.useRef<string | null>(null);
+  React.useLayoutEffect(() => {
+    const id = pendingFocusIdRef.current;
+    if (!id) return;
+    pendingFocusIdRef.current = null;
+    // Matched by walking the handles rather than an attribute selector:
+    // stop ids can come from the consumer now, so they aren't guaranteed
+    // to be selector-safe.
+    const handles = wrapperRef.current?.querySelectorAll<HTMLElement>(
+      '[role="slider"]',
+    );
+    handles?.forEach((h) => {
+      if (h.dataset.stopId === id) h.focus();
+    });
+  });
+
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.target !== trackRef.current) return; // handles handle their own drag
+    // Canceling pointerdown suppresses the compatibility mousedown, and with
+    // it the browser's default focus handling. Without this the layout effect
+    // below focuses the new handle and the browser immediately takes it back
+    // — clicking a non-focusable element blurs to <body> — so the stop you
+    // just placed still wouldn't take Delete or the arrow keys.
+    e.preventDefault();
     const displayed = displayedPositionFromEvent(e.clientX);
     // No clamp on the authored value: on a positioned linear, clicks outside
     // the projected [start, end] segment extrapolate (< 0 / > 1 are legal
@@ -105,12 +134,21 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
     // of stacking on the first/last stop. Plain mode is unaffected —
     // fromDisplay is the identity and `displayed` is already 0..1.
     const authored = fromDisplay(displayed);
-    ctx.addStop(authored, sampleStopsAt(ctx.stops, authored));
+    pendingFocusIdRef.current = ctx.addStop(
+      authored,
+      sampleStopsAt(ctx.stops, authored),
+    );
   };
 
   const startStopDrag = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    // preventDefault keeps the browser from starting a text selection or a
+    // native drag mid-gesture, but it also suppresses the focus a pointerdown
+    // would normally give the handle. Focus it explicitly: without this a
+    // clicked stop looks selected yet keyboard keys (nudge, Delete) go to
+    // <body> and do nothing.
     e.preventDefault();
+    e.currentTarget.focus();
     ctx.selectStop(id);
 
     // Listen on document, not the handle DOM node. moveStop reorders the
@@ -191,7 +229,20 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
         ctx.moveStop(id, fromDisplay(clamp01(displayed + step)));
       } else if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
+        // A gradient needs at least two stops; `removeStop` refuses below
+        // that. The StopList's mouse affordance conveys this by rendering
+        // its remove button `disabled` — the Bar handle has no such visual,
+        // so announce instead of failing silently.
+        if (ctx.stops.length <= 1) {
+          announce("Cannot remove the last stop");
+          return;
+        }
+        // Move focus to a neighboring handle *before* removal, mirroring
+        // StopList: the focused node is about to unmount, and without this
+        // focus falls to <body> and keyboard navigation is lost.
+        focusNeighborIn(wrapperRef.current, e.currentTarget, '[role="slider"]');
         ctx.removeStop(id);
+        announce("Stop removed");
       }
     };
 
@@ -218,6 +269,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
         const handle = (
           <div
             role="slider"
+            data-stop-id={s.id}
             aria-label={`Stop at ${displayedPct}%`}
             aria-valuemin={0}
             aria-valuemax={100}
@@ -257,6 +309,9 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
           </StopEditorPopover>
         );
       })}
+      <span aria-live="polite" className="sr-only">
+        {liveText}
+      </span>
     </div>
   );
 });

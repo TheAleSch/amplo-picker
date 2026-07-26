@@ -363,6 +363,42 @@ import {
 } from "@/components/ui/fill-picker/color-picker";
 \`\`\`
 
+## API: Types
+
+Every type the picker exports. Type your own state against these rather than re-declaring the shapes.
+
+\`\`\`tsx
+interface OklchColor {
+  l: number;      // 0..1 perceptual lightness
+  c: number;      // chroma, unbounded above (not clamped to a display gamut)
+  h: number;      // 0..360 degrees
+  alpha: number;  // 0..1
+}
+
+type ColorFormat = "hex" | "rgb" | "hsl" | "hsb" | "oklch" | "oklab" | "p3";
+type Gamut = "srgb" | "p3" | "rec2020";
+
+interface GamutInfo { inSrgb: boolean; inP3: boolean; inRec2020: boolean }
+
+interface ContrastResult {
+  wcag: number;   // WCAG 2.1 ratio, 1..21
+  wcagLevel: { aaNormal: boolean; aaLarge: boolean; aaaNormal: boolean; aaaLarge: boolean };
+  apca: number;   // APCA Lc, signed: negative = light text on dark
+}
+
+type GradientType = "linear" | "radial" | "conic";
+type GradientInterp = "oklch" | "oklab" | "srgb" | "hsl" | "hsl-longer";
+type RadialSizeKeyword =
+  | "closest-side" | "closest-corner" | "farthest-side" | "farthest-corner";
+
+// What <FillPicker> emits
+type ColorFill    = { kind: "color";    color: OklchColor };
+type GradientFill = { kind: "gradient"; gradient: Gradient };
+type Fill = ColorFill | GradientFill;
+\`\`\`
+
+The \`Gradient\` union itself is under "Output: state shape" below.
+
 ## Gradient picker
 
 \`GradientPicker\` is a separate compound namespace that builds on top of the color picker. Install \`gradient-picker.json\` (pulls the color picker automatically).
@@ -394,6 +430,7 @@ type GradientStop = {
   position: number;            // 0..1 along the bar
   color: OklchColor;
   hint?: number;               // 0..1 midpoint (data layer present; UI deferred)
+  id?: string;                 // opt-in stable identity — see note below
 };
 type LinearGradient = {
   type: "linear";
@@ -425,6 +462,18 @@ type ConicGradient = {
 };
 type Gradient = LinearGradient | RadialGradient | ConicGradient;
 \`\`\`
+
+#### Stop identity (\`GradientStop.id\`, optional)
+
+In **controlled** mode the picker reconciles an incoming \`value\` against its own state by stop position and array index. That cannot distinguish two stops sharing the same position: reorder them externally and the colors move between stops while the selected stop and per-stop color format stay pointing at the old ones.
+
+Give each stop a stable \`id\` and reconciliation matches on identity instead, so selection, per-stop format, and colors all follow the right stop through any reorder. Rules:
+
+- Ids must be unique within a gradient; duplicates are ignored and fall back to a generated id.
+- All-or-nothing per gradient — a half-tagged stop array is treated as untagged.
+- Don't derive the id from position or array index; that reintroduces the ambiguity.
+- Ids round-trip: \`onValueChange\` echoes them back, including on stops added inside the picker, so \`onValueChange={(g) => setGradient(g)}\` is enough to persist them.
+- Fully opt-in. Omit \`id\` and behavior is unchanged, and no \`id\` key appears in anything the picker emits.
 
 \`\`\`tsx
 import { formatGradient, parseGradient } from "@/components/ui/fill-picker/gradient-picker";

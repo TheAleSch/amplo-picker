@@ -80,6 +80,7 @@ const TOC = [
   ["api-gradient-parts", "API: Gradient parts"],
   ["api-hook", "API: useColorPicker hook"],
   ["api-utils", "API: Color utilities"],
+  ["api-types", "API: Types"],
   ["color-spaces", "Color spaces"],
   ["accessibility", "Accessibility"],
 ] as const;
@@ -708,6 +709,24 @@ export function FullDocs({ variant }: { variant: Variant }) {
           <H2 id="api-utils">API: Color utilities</H2>
           <p>Exported from the same module:</p>
           <CodeBlock code={adapt(UTILS_CODE)} />
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <H2 id="api-types">API: Types</H2>
+          <p>
+            Every type the picker exports, in one place. All are exported from
+            the same barrel as the components, so you can type your own state
+            against them rather than re-declaring shapes. The gradient union
+            itself is broken out under{" "}
+            <a
+              href="#gradient-output"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Output: state shape + CSS
+            </a>
+            .
+          </p>
+          <CodeBlock code={adapt(CORE_TYPES_CODE)} />
         </section>
 
         <section className="flex flex-col gap-4">
@@ -1664,13 +1683,58 @@ const GRADIENT_SHAPE_RADIAL_ELLIPSE_CODE = `<GradientPicker.Root>
   </div>
 </GradientPicker.Root>`;
 
+const CORE_TYPES_CODE = `// ---- Color ----------------------------------------------------------------
+
+/** Canonical state. Every format is a lossless projection of this. */
+interface OklchColor {
+  l: number;      // 0..1 perceptual lightness
+  c: number;      // chroma, unbounded above (not clamped to a display gamut)
+  h: number;      // 0..360 degrees
+  alpha: number;  // 0..1
+}
+
+type ColorFormat =
+  | "hex" | "rgb" | "hsl" | "hsb"   // sRGB-targeted, gamut-mapped on output
+  | "oklch" | "oklab"               // unbounded, lossless
+  | "p3";                           // color(display-p3 …)
+
+type Gamut = "srgb" | "p3" | "rec2020";
+
+interface GamutInfo {
+  inSrgb: boolean;
+  inP3: boolean;
+  inRec2020: boolean;
+}
+
+interface ContrastResult {
+  wcag: number;        // WCAG 2.1 ratio, 1..21
+  wcagLevel: { aaNormal: boolean; aaLarge: boolean; aaaNormal: boolean; aaaLarge: boolean };
+  apca: number;        // APCA Lc, signed: negative = light text on dark
+}
+
+// ---- Gradient ---------------------------------------------------------------
+
+type GradientType = "linear" | "radial" | "conic";
+
+type GradientInterp = "oklch" | "oklab" | "srgb" | "hsl" | "hsl-longer";
+
+type RadialSizeKeyword =
+  | "closest-side" | "closest-corner"
+  | "farthest-side" | "farthest-corner";
+
+// ---- Fill (what <FillPicker> emits) -----------------------------------------
+
+type ColorFill    = { kind: "color";    color: OklchColor };
+type GradientFill = { kind: "gradient"; gradient: Gradient };
+type Fill = ColorFill | GradientFill;`;
+
 const GRADIENT_OUTPUT_TYPE_CODE = `type Gradient = LinearGradient | RadialGradient | ConicGradient;
 
 interface LinearGradient {
   type: "linear";
   angle: number;                    // 0..360, 0 = up
   stops: GradientStop[];
-  interp: "oklch" | "oklab" | "srgb" | "hsl" | "hsl-longer";
+  interp: GradientInterp;
   repeating?: boolean;
   start?: { x: number; y: number }; // optional positioned line, 0..1
   end?:   { x: number; y: number };
@@ -1680,7 +1744,7 @@ interface RadialGradient {
   type: "radial";
   shape: "circle" | "ellipse";
   center: { x: number; y: number }; // 0..1
-  size: "closest-side" | "closest-corner" | "farthest-side" | "farthest-corner";
+  size: RadialSizeKeyword;
   stops: GradientStop[];
   interp: GradientInterp;
   repeating?: boolean;
@@ -1701,7 +1765,17 @@ interface GradientStop {
   color: OklchColor;                // { l, c, h, alpha }, unbounded
   position: number;                 // 0..1
   hint?: number;                    // CSS midpoint hint, 0..1
-}`;
+  id?: string;                      // opt-in stable identity (controlled mode)
+}
+
+// Without \`id\`, a controlled picker reconciles your \`value\` by position and
+// array index — which can't tell two stops sharing a position apart. Give each
+// stop a stable id and selection, per-stop format, and colors follow the right
+// stop through any reorder. Ids must be unique within the gradient.
+//
+// Ids round-trip: once you supply them, onValueChange echoes them back (new
+// stops included), so \`onValueChange={g => setG(g)}\` keeps identity. Omit
+// them and nothing changes — no \`id\` ever appears in what the picker emits.`;
 
 const GRADIENT_OUTPUT_CSS_CODE = `import { GradientPicker, formatGradient } from "amplo-color-picker";
 

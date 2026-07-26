@@ -32,6 +32,7 @@ export const Lightness = React.forwardRef<HTMLDivElement, LightnessProps>(functi
 
   return (
     <Slider.Root
+      ref={ref}
       data-slot="color-picker-lightness"
       value={color.l * 100}
       onValueChange={(v) => setComponent("l", (v as number) / 100)}

@@ -9,6 +9,7 @@ import {
   parseGradient,
   type Gradient,
 } from "../../lib/gradient";
+import { SAMPLE_EDGE } from "../../lib/constants";
 
 export const BUILTIN_GRADIENT_PRESETS: string[] = [
   "linear-gradient(in oklch 90deg, oklch(0.9 0.15 60) 0%, oklch(0.6 0.2 30) 100%)",
@@ -56,7 +57,11 @@ export const Presets = React.forwardRef<HTMLDivElement, PresetsProps>(
             key={css}
             type="button"
             onClick={() => ctx.setGradient(gradient)}
-            className="size-8 rounded-md border border-border outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring hover:scale-110"
+            className={cn(
+              "relative size-8 cursor-pointer rounded-md outline-none transition-shadow",
+              SAMPLE_EDGE,
+              "focus-visible:ring-2 focus-visible:ring-ring hover:scale-110",
+            )}
             style={{ background: formatGradient(gradient) }}
             aria-label="Apply gradient preset"
           />

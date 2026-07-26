@@ -4,7 +4,7 @@ import * as React from "react";
 import { useColorPickerContext } from "../context";
 import { formatColor } from "../lib/color";
 import { cn } from "@/lib/utils";
-import { CHECKERBOARD_LG } from "../lib/constants";
+import { CHECKERBOARD_LG, SAMPLE_EDGE } from "../lib/constants";
 
 export interface PreviewProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -22,7 +22,8 @@ export const Preview = React.forwardRef<HTMLDivElement, PreviewProps>(function P
       role="img"
       aria-label="Color preview over background"
       className={cn(
-        "relative size-10 shrink-0 overflow-hidden rounded-md border border-border",
+        "relative size-10 shrink-0 overflow-hidden rounded-md",
+        SAMPLE_EDGE,
         className,
       )}
       style={{

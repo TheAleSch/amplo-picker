@@ -8,7 +8,10 @@ import { useColorPickerContext } from "@/registry/new-york/color-picker/context"
 import { formatColor, parseColor } from "@/registry/new-york/color-picker/lib/color";
 import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
 import { cn } from "@/lib/utils";
-import { CHECKERBOARD_SM as CHECKERBOARD } from "@/registry/new-york/color-picker/lib/constants";
+import {
+  CHECKERBOARD_SM as CHECKERBOARD,
+  SAMPLE_EDGE,
+} from "@/registry/new-york/color-picker/lib/constants";
 import {
   DEFAULT_SWATCH_PRESETS,
   isSameSwatchColor,
@@ -72,10 +75,11 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
             value={p}
             aria-label={p}
             className={cn(
-              // before/after pseudo-padding: 20px visual chip, 28px hit area
+              // before pseudo-padding: 20px visual chip, 28px hit area
               // (WCAG 2.5.8). No overflow-hidden — it would clip the inset.
-              "relative size-5 cursor-pointer rounded-sm border border-border outline-none transition-transform",
+              "relative size-5 cursor-pointer rounded-sm outline-none transition-transform",
               "before:absolute before:-inset-1 before:content-['']",
+              SAMPLE_EDGE,
               "focus-visible:ring-2 focus-visible:ring-ring hover:scale-110",
               "data-[checked]:ring-2 data-[checked]:ring-ring",
             )}
@@ -83,10 +87,9 @@ export const Swatches = React.forwardRef<HTMLDivElement, SwatchesProps>(function
           >
             <span
               aria-hidden
-              // Inner radius = outer minus the 1px border; reusing the outer
-              // radius (rounded-[inherit]) curves too early and leaves dark
-              // notches at the corners.
-              className="absolute inset-0 rounded-[calc(var(--radius-sm)-1px)]"
+              // No border to inset against any more, so the fill matches the
+              // tile's own radius exactly.
+              className="absolute inset-0 rounded-[inherit]"
               style={{ background: p }}
             />
           </Radio.Root>

@@ -80,6 +80,30 @@ describe("GradientPicker.Bar", () => {
     expect(handle.getAttribute("aria-valuenow")).toBe("50");
   });
 
+  it("focuses a clicked handle so Delete removes that stop", () => {
+    // pointerDown calls preventDefault (to block text selection / native
+    // drag), which also suppresses the focus the click would otherwise
+    // give the handle. Without an explicit focus() the stop looks selected
+    // but every key goes to <body>.
+    render(
+      <Root defaultValue={DEFAULT_LINEAR}>
+        <Bar />
+      </Root>,
+    );
+    const before = screen.getAllByRole("slider");
+    const handle = before[0];
+    act(() => {
+      fireEvent.pointerDown(handle, { pointerId: 1, clientX: 8, clientY: 8, buttons: 1 });
+      fireEvent.pointerUp(document, { pointerId: 1, clientX: 8, clientY: 8 });
+    });
+    expect(document.activeElement).toBe(handle);
+
+    act(() => {
+      fireEvent.keyDown(document.activeElement!, { key: "Delete" });
+    });
+    expect(screen.getAllByRole("slider")).toHaveLength(before.length - 1);
+  });
+
   it("the selected handle has aria-current=true", () => {
     render(
       <Root defaultValue={DEFAULT_LINEAR}>

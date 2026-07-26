@@ -113,7 +113,13 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
 
   const startStopDrag = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    // preventDefault keeps the browser from starting a text selection or a
+    // native drag mid-gesture, but it also suppresses the focus a pointerdown
+    // would normally give the handle. Focus it explicitly: without this a
+    // clicked stop looks selected yet keyboard keys (nudge, Delete) go to
+    // <body> and do nothing.
     e.preventDefault();
+    e.currentTarget.focus();
     ctx.selectStop(id);
 
     // Listen on document, not the handle DOM node. moveStop reorders the

@@ -329,6 +329,18 @@ export function GodRayCanvas({
   const onFrameStatsRef = React.useRef(onFrameStats);
   onFrameStatsRef.current = onFrameStats;
 
+  // Mark geometry drives two plain uniforms and allocates nothing, so it
+  // rides the same per-frame ref as the tunables. Keeping it out of the
+  // effect deps matters: the hero measures these from the DOM, and any
+  // layout nudge (adding a gradient stop grows the stop list) used to
+  // re-run the effect — tearing down every GL resource and flashing the
+  // canvas black for a frame or two while it rebuilt.
+  const geomRef = React.useRef({ markCenterFraction, markWidthFraction });
+  geomRef.current = { markCenterFraction, markWidthFraction };
+  // Set once GL is live. Under `prefers-reduced-motion` there is no loop to
+  // pick up a geometry change, so the effect below repaints the one frame.
+  const renderFrameRef = React.useRef<(() => void) | null>(null);
+
   React.useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
@@ -509,11 +521,16 @@ export function GodRayCanvas({
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, mask);
       gl.uniform1i(uPaintMask, 0);
-      gl.uniform2f(uPaintCenter, markCenterFraction.x, 1 - markCenterFraction.y);
+      const geom = geomRef.current;
+      gl.uniform2f(
+        uPaintCenter,
+        geom.markCenterFraction.x,
+        1 - geom.markCenterFraction.y,
+      );
       gl.uniform2f(
         uPaintScale,
-        markWidthFraction,
-        (markWidthFraction * aspect) / markAspect,
+        geom.markWidthFraction,
+        (geom.markWidthFraction * aspect) / markAspect,
       );
       gl.uniform1f(uPaintTime, t);
       gl.uniform1f(uPaintAspect, aspect);
@@ -675,6 +692,8 @@ export function GodRayCanvas({
       raf = 0;
     };
 
+    renderFrameRef.current = renderFrame;
+
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     resize();
@@ -689,6 +708,7 @@ export function GodRayCanvas({
     startLoop();
 
     return () => {
+      renderFrameRef.current = null;
       stopLoop();
       ro.disconnect();
       io.disconnect();
@@ -712,7 +732,13 @@ export function GodRayCanvas({
       gl.deleteFramebuffer(fboA);
       gl.deleteFramebuffer(fboB);
     };
-  }, [markCenterFraction.x, markCenterFraction.y, markWidthFraction, bloomDivisor]);
+  }, [bloomDivisor]);
+
+  // Animated builds redraw on the next frame anyway; this is only load-bearing
+  // for the static, reduced-motion frame.
+  React.useEffect(() => {
+    renderFrameRef.current?.();
+  }, [markCenterFraction.x, markCenterFraction.y, markWidthFraction]);
 
   return (
     <canvas

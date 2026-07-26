@@ -121,6 +121,12 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
 
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.target !== trackRef.current) return; // handles handle their own drag
+    // Canceling pointerdown suppresses the compatibility mousedown, and with
+    // it the browser's default focus handling. Without this the layout effect
+    // below focuses the new handle and the browser immediately takes it back
+    // — clicking a non-focusable element blurs to <body> — so the stop you
+    // just placed still wouldn't take Delete or the arrow keys.
+    e.preventDefault();
     const displayed = displayedPositionFromEvent(e.clientX);
     // No clamp on the authored value: on a positioned linear, clicks outside
     // the projected [start, end] segment extrapolate (< 0 / > 1 are legal

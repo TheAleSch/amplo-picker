@@ -657,19 +657,24 @@ export default function PlaygroundPage() {
             })}
           </div>
           )}
+          {/* Fixed-height stage. The picker changes height constantly while
+              you use it — adding gradient stops, switching tabs — and a stage
+              that tracked it resized the whole page under the cursor. The
+              inner min-h-full flex keeps short content centered while taller
+              content grows downward and scrolls inside the stage; centering
+              directly on a scroll container would clip the overflowing top. */}
           <div
-            className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
+            className="h-110 overflow-y-auto rounded-xl border border-border p-8"
             style={{ background: previewBg }}
           >
+            <div className="flex min-h-full items-center justify-center">
             <div
               style={
                 containerMaxWidth !== undefined
                   ? { width: "100%", maxWidth: containerMaxWidth }
-                  : {
-                      width: "fit-content",
-                      minWidth: DEFAULT_MAX_WIDTH,
-                      maxWidth: "100%",
-                    }
+                  : // Fixed rather than fit-content: content-driven width made
+                    // the picker jump sideways as labels and readouts changed.
+                    { width: DEFAULT_MAX_WIDTH, maxWidth: "100%" }
               }
             >
               {fillMode === "color" && (
@@ -936,6 +941,7 @@ export default function PlaygroundPage() {
                   </FP.Pane>
                 </FP.Root>
               )}
+            </div>
             </div>
           </div>
 

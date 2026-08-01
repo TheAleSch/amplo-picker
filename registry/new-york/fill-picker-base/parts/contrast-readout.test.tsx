@@ -8,7 +8,7 @@ import { ContrastReadout } from "./contrast-readout";
 // the accessible name or the cycle announcement behavior. (Popup opening/
 // positioning is deliberately not asserted — happy-dom can't exercise
 // Base UI's hover/portal machinery reliably.)
-describe("fill-picker-base ContrastReadout (multi-metric)", () => {
+describe("fill-picker-base ContrastReadout", () => {
   const ui = (
     <Root defaultValue="#000000" backgroundColor="#ffffff">
       <ContrastReadout metrics={["wcag", "apca"]} />

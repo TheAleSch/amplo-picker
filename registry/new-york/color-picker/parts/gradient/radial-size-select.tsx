@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -10,12 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { RadialSizeKeyword } from "../../lib/gradient";
 import { RADIAL_SIZE_OPTIONS } from "../../lib/gradient-options";
@@ -35,70 +28,33 @@ export const RadialSizeSelect = React.forwardRef<
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type !== "radial") return null;
   return (
-    <TooltipProvider>
-      <Select
-        value={ctx.gradient.size}
-        onValueChange={(v) => ctx.setRadialSize(v as RadialSizeKeyword)}
+    <Select
+      value={ctx.gradient.size}
+      onValueChange={(v) => ctx.setRadialSize(v as RadialSizeKeyword)}
+    >
+      <SelectTrigger
+        ref={ref}
+        data-slot="gradient-radial-size-select"
+        aria-label="Radial size"
+        size="sm"
+        className={cn(
+          "w-full font-mono text-xs tracking-wide",
+          triggerClassName,
+          className,
+        )}
       >
-        <SelectTrigger
-          ref={ref}
-          data-slot="gradient-radial-size-select"
-          aria-label="Radial size"
-          size="sm"
-          className={cn(
-            "w-full font-mono text-xs tracking-wide",
-            triggerClassName,
-            className,
-          )}
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="font-mono text-xs tracking-wide">
-          {SIZE_OPTIONS.map((opt) => (
-            <RowWithInfo
-              key={opt.value}
-              value={opt.value}
-              description={opt.description}
-            />
-          ))}
-        </SelectContent>
-      </Select>
-    </TooltipProvider>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="font-mono text-xs tracking-wide">
+        {/* Bare-string children so both Select dialects derive the trigger label
+            (Radix mirrors ItemText; the Base wrapper walks children). Descriptions
+            ride on title= — an in-item tooltip subtree would pollute both. */}
+        {SIZE_OPTIONS.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value} title={opt.description}>
+            {opt.value}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 });
-
-function RowWithInfo({
-  value,
-  description,
-}: {
-  value: string;
-  description: string;
-}) {
-  return (
-    <SelectItem value={value} className="pr-8">
-      <span className="flex w-full items-center gap-2">
-        <span className="flex-1">{value}</span>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {/* Span (not button) so Select still owns the click for
-                row selection — the icon is just a hover affordance. */}
-            <span
-              role="img"
-              aria-label={`About ${value}`}
-              className="inline-flex shrink-0 cursor-help text-muted-foreground hover:text-foreground"
-            >
-              <Info className="size-3" aria-hidden />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent
-            side="right"
-            align="center"
-            className="max-w-[220px] text-[11px] normal-case tracking-normal"
-          >
-            {description}
-          </TooltipContent>
-        </Tooltip>
-      </span>
-    </SelectItem>
-  );
-}

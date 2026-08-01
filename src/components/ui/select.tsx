@@ -16,8 +16,9 @@ import { cn } from "@/lib/utils"
  *
  * Callers whose item label isn't a bare string child of `<SelectItem>`
  * (e.g. an item row with a trailing icon/tooltip) can still pass an
- * explicit `items` prop to `<Select>` to override this — see
- * `registry/new-york/color-picker/parts/gradient/interp-switcher.tsx`.
+ * explicit `items` prop to `<Select>` to override this. Note that the
+ * escape hatch is Base-UI-only: registry components that must stay
+ * portable to a pure-Radix shadcn install keep bare-string item labels.
  */
 function collectSelectItemLabels(
   node: React.ReactNode,

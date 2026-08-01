@@ -46,7 +46,7 @@ export const GamutBadge = React.forwardRef<HTMLDivElement, GamutBadgeProps>(func
         />
         <Tooltip.Portal>
           <Tooltip.Positioner side="top" align="center" sideOffset={4} className="z-50">
-            <Tooltip.Popup className="z-50 w-fit rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">
+            <Tooltip.Popup className="z-50 w-fit rounded-md bg-foreground px-3 py-1.5 text-xs text-background">
               Color in {label} color space
             </Tooltip.Popup>
           </Tooltip.Positioner>

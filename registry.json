@@ -64,6 +64,16 @@
           "target": "components/ui/fill-picker-base/parts/swatches.tsx"
         },
         {
+          "path": "registry/new-york/fill-picker-base/parts/gamut-badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gamut-badge.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/contrast-readout.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/contrast-readout.tsx"
+        },
+        {
           "path": "registry/new-york/fill-picker-base/color-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker-base/color-picker.tsx"
@@ -290,9 +300,19 @@
           "target": "components/ui/fill-picker/parts/gamut-badge.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gamut-badge-shared.ts",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gamut-badge-shared.ts"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/contrast-readout.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/contrast-readout.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/contrast-readout-shared.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/contrast-readout-shared.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/preview.tsx",

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { SelectItem } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { useColorPickerContext } from "../context";
 import type { ColorFormat } from "../lib/types";
 import { FieldSelect } from "./field";
@@ -27,8 +28,12 @@ export const FormatSwitcher = React.forwardRef<
       onValueChange={(v) => setFormat(v as ColorFormat)}
       className="w-full uppercase"
       wrapperProps={{
+        // w-full basis so the trigger's w-full has something to fill —
+        // without it the inline-flex wrapper sizes to the selected value
+        // and the control resizes per format (parity with the Base UI
+        // variant's FormatSwitcher).
+        className: cn("w-full", className),
         "data-slot": "color-picker-format-switcher",
-        className,
       }}
     >
       {formats.map((f) => (

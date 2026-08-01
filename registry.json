@@ -7,6 +7,7 @@
       "name": "color-picker",
       "type": "registry:ui",
       "title": "Amplo Color Picker",
+      "version": "1.3.0",
       "description": "OKLCH-native, Display-P3-aware color picker built on Base UI primitives — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, Swatches on RadioGroup. Pulls the shared OKLCH engine and pointer-driven parts (Area, Chroma, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput) as a registry dependency.",
       "categories": [
         "color",
@@ -64,6 +65,16 @@
           "target": "components/ui/fill-picker-base/parts/swatches.tsx"
         },
         {
+          "path": "registry/new-york/fill-picker-base/parts/gamut-badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/gamut-badge.tsx"
+        },
+        {
+          "path": "registry/new-york/fill-picker-base/parts/contrast-readout.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker-base/parts/contrast-readout.tsx"
+        },
+        {
           "path": "registry/new-york/fill-picker-base/color-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker-base/color-picker.tsx"
@@ -74,6 +85,7 @@
       "name": "gradient-picker",
       "type": "registry:ui",
       "title": "Amplo Gradient Picker",
+      "version": "1.3.0",
       "description": "Linear / radial / conic gradient editing on Base UI primitives — TypeSwitcher/InterpSwitcher/RadialSizeSelect on Select, ReverseStops and the StopList editor as semantic buttons with a self-contained popover. Pulls the color picker plus the shared gradient engine (Bar, Area, Overlay, pads, Presets, CssInput) as registry dependencies.",
       "categories": [
         "color",
@@ -138,6 +150,7 @@
       "name": "fill-picker",
       "type": "registry:ui",
       "title": "Amplo Fill Picker",
+      "version": "1.3.0",
       "description": "Color + gradient + the solid/gradient mode switcher (FillPicker.Root/Tabs/Tab/Pane) — the \"give me everything\" entry point, Base UI variant. Pulls the Base UI color and gradient pickers plus the shared fill switcher parts as registry dependencies.",
       "categories": [
         "color",
@@ -168,7 +181,7 @@
       "type": "registry:ui",
       "title": "Amplo Color Picker (Radix)",
       "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "categories": [
         "color",
         "input",
@@ -290,9 +303,19 @@
           "target": "components/ui/fill-picker/parts/gamut-badge.tsx"
         },
         {
+          "path": "registry/new-york/color-picker/parts/gamut-badge-shared.ts",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/gamut-badge-shared.ts"
+        },
+        {
           "path": "registry/new-york/color-picker/parts/contrast-readout.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/contrast-readout.tsx"
+        },
+        {
+          "path": "registry/new-york/color-picker/parts/contrast-readout-shared.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/contrast-readout-shared.tsx"
         },
         {
           "path": "registry/new-york/color-picker/parts/preview.tsx",
@@ -316,7 +339,7 @@
       "type": "registry:ui",
       "title": "Amplo Gradient Picker",
       "description": "Composable gradient picker (linear / radial / conic) built on the Amplo color picker. CSS Color 4 interpolation, per-stop format state, keyboard-accessible angle/position pads.",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "categories": [
         "color",
         "input",
@@ -500,7 +523,7 @@
       "type": "registry:ui",
       "title": "Amplo Fill Picker",
       "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "categories": [
         "color",
         "input",

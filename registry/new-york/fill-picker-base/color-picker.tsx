@@ -8,8 +8,10 @@
 //   - FormatSwitcher        → Select
 //   - ChannelInput          → NumberField (per channel)
 //   - Swatches              → RadioGroup + Radio
+//   - GamutBadge, ContrastReadout → own @base-ui/react/tooltip shells
+//     (shared logic in color-picker/parts/*-shared)
 //
-// Everything else (Root/context, Area canvas, Chroma, GamutBadge, ContrastReadout,
+// Everything else (Root/context, Area canvas, Chroma,
 // Preview, EyeDropper, CssInput) is identical to the original; importing
 // from the same source means engine fixes propagate to both variants for
 // free.
@@ -18,8 +20,6 @@ import { Root } from "@/registry/new-york/color-picker/parts/root";
 import { Area } from "@/registry/new-york/color-picker/parts/area";
 import { Chroma } from "@/registry/new-york/color-picker/parts/chroma";
 import { CssInput } from "@/registry/new-york/color-picker/parts/css-input";
-import { GamutBadge } from "@/registry/new-york/color-picker/parts/gamut-badge";
-import { ContrastReadout } from "@/registry/new-york/color-picker/parts/contrast-readout";
 import { Preview } from "@/registry/new-york/color-picker/parts/preview";
 import { EyeDropper } from "@/registry/new-york/color-picker/parts/eye-dropper";
 
@@ -29,6 +29,8 @@ import { Alpha } from "./parts/alpha";
 import { FormatSwitcher } from "./parts/format-switcher";
 import { ChannelInput } from "./parts/channel-input";
 import { Swatches } from "./parts/swatches";
+import { GamutBadge } from "./parts/gamut-badge";
+import { ContrastReadout } from "./parts/contrast-readout";
 
 export type {
   ColorFormat,

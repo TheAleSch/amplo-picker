@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -10,26 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { GradientInterp } from "../../lib/gradient";
 import { GRADIENT_INTERP_OPTIONS } from "../../lib/gradient-options";
 
 const OPTIONS = GRADIENT_INTERP_OPTIONS;
-
-// `<SelectItem>` here is wrapped in `RowWithInfo`, not a direct child of
-// `<SelectContent>`, so `<Select>`'s automatic value→label extraction
-// (which only sees literal `<SelectItem>` elements) can't find these labels.
-// Pass the map explicitly — same pattern the Base UI-first
-// `fill-picker-base/parts/gradient/interp-switcher.tsx` uses.
-const INTERP_ITEMS = Object.fromEntries(
-  OPTIONS.map((o) => [o.value, o.label]),
-) as Record<GradientInterp, string>;
 
 export interface InterpSwitcherProps {
   className?: string;
@@ -50,72 +34,33 @@ export const InterpSwitcher = React.forwardRef<
 >(function InterpSwitcher({ className, triggerClassName }, ref) {
   const ctx = useGradientPickerContext();
   return (
-    <TooltipProvider delayDuration={150}>
-      <Select
-        items={INTERP_ITEMS}
-        value={ctx.gradient.interp}
-        onValueChange={(v) => ctx.setInterp(v as GradientInterp)}
+    <Select
+      value={ctx.gradient.interp}
+      onValueChange={(v) => ctx.setInterp(v as GradientInterp)}
+    >
+      <SelectTrigger
+        ref={ref}
+        data-slot="gradient-interp-switcher"
+        aria-label="Interpolation space"
+        size="sm"
+        className={cn(
+          "w-full font-mono text-xs tracking-wide",
+          triggerClassName,
+          className,
+        )}
       >
-        <SelectTrigger
-          ref={ref}
-          data-slot="gradient-interp-switcher"
-          aria-label="Interpolation space"
-          size="sm"
-          className={cn(
-            "w-full font-mono text-xs tracking-wide",
-            triggerClassName,
-            className,
-          )}
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="font-mono text-xs tracking-wide">
-          {OPTIONS.map((opt) => (
-            <RowWithInfo
-              key={opt.value}
-              value={opt.value}
-              label={opt.label}
-              description={opt.description}
-            />
-          ))}
-        </SelectContent>
-      </Select>
-    </TooltipProvider>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="font-mono text-xs tracking-wide">
+        {/* Bare-string children so both Select dialects derive the trigger label
+            (Radix mirrors ItemText; the Base wrapper walks children). Descriptions
+            ride on title= — an in-item tooltip subtree would pollute both. */}
+        {OPTIONS.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value} title={opt.description}>
+            {opt.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 });
-
-function RowWithInfo({
-  value,
-  label,
-  description,
-}: {
-  value: string;
-  label: string;
-  description: string;
-}) {
-  return (
-    <SelectItem value={value} className="pr-8">
-      <span className="flex w-full items-center gap-2">
-        <span className="flex-1">{label}</span>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span
-              role="img"
-              aria-label={`About ${label}`}
-              className="inline-flex shrink-0 cursor-help text-muted-foreground hover:text-foreground"
-            >
-              <Info className="size-3" aria-hidden />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent
-            side="right"
-            align="center"
-            className="max-w-[220px] text-[11px] normal-case tracking-normal"
-          >
-            {description}
-          </TooltipContent>
-        </Tooltip>
-      </span>
-    </SelectItem>
-  );
-}

@@ -24,8 +24,9 @@ export const GamutBadge = React.forwardRef<HTMLDivElement, GamutBadgeProps>(func
   const { gamut } = useColorPickerContext();
   const label = gamutLabel(gamut);
 
+  // delay=0: parity with the Radix shells, which inherit the shadcn wrapper default (0). Base UI's own default is 600.
   return (
-    <Tooltip.Provider delay={150}>
+    <Tooltip.Provider delay={0}>
       <Tooltip.Root>
         <Tooltip.Trigger
           render={

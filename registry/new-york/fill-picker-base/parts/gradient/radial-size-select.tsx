@@ -24,8 +24,9 @@ export const RadialSizeSelect = React.forwardRef<
 >(function RadialSizeSelect({ className, triggerClassName }, ref) {
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type !== "radial") return null;
+  // delay=0: parity with the Radix shells, which inherit the shadcn wrapper default (0). Base UI's own default is 600.
   return (
-    <Tooltip.Provider delay={150}>
+    <Tooltip.Provider delay={0}>
       <FieldSelect
         ref={ref}
         aria-label="Radial size"

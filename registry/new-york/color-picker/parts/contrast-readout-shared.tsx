@@ -53,6 +53,10 @@ export function useContrastReadout({
   ContrastReadoutProps,
   "metrics" | "defaultMetric" | "showLabel" | "showValue" | "showBadges"
 >) {
+  // Empty metrics would leave activeMetric undefined and silently render
+  // the APCA branch — treat [] as "not provided".
+  if (metrics.length === 0) metrics = DEFAULT_METRICS;
+
   const { contrast, color, background } = useColorPickerContext();
   const fgCss = formatColor(color, "p3");
   const bgCss = formatColor(background, "p3");

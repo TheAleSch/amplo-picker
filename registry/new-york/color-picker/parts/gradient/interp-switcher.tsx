@@ -50,7 +50,7 @@ export const InterpSwitcher = React.forwardRef<
 >(function InterpSwitcher({ className, triggerClassName }, ref) {
   const ctx = useGradientPickerContext();
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider>
       <Select
         items={INTERP_ITEMS}
         value={ctx.gradient.interp}

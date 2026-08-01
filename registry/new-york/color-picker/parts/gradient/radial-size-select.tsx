@@ -35,7 +35,7 @@ export const RadialSizeSelect = React.forwardRef<
   const ctx = useGradientPickerContext();
   if (ctx.gradient.type !== "radial") return null;
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider>
       <Select
         value={ctx.gradient.size}
         onValueChange={(v) => ctx.setRadialSize(v as RadialSizeKeyword)}

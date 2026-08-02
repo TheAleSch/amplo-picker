@@ -81,8 +81,8 @@ The **Base UI** variant rebuilds the interactive parts (Hue/Lightness/Alpha slid
 
 | Path | What |
 |------|------|
-| [`registry/new-york/fill-picker-base`](./registry/new-york/fill-picker-base) | The **Base UI variant** — the default. Rebuilds the interactive parts on Base UI primitives; imports the shared engine and presentational parts from `color-picker/`. |
-| [`registry/new-york/color-picker`](./registry/new-york/color-picker) | The shared **OKLCH engine** plus the original Radix-backed parts. Bundled into the registry artifact and consumed by both variants. |
+| [`registry/new-york/ui/fill-picker-base`](./registry/new-york/ui/fill-picker-base) | The **Base UI variant** — the default. Rebuilds the interactive parts on Base UI primitives; imports the shared engine and presentational parts from `fill-picker/`. |
+| [`registry/new-york/ui/fill-picker`](./registry/new-york/ui/fill-picker) | The shared **OKLCH engine** plus the original Radix-backed parts. Bundled into the registry artifact and consumed by both variants. |
 | [`src`](./src) | The Next.js site at [amplo.ale.design](https://amplo.ale.design) — landing demo, docs, and playground. Not shipped to consumers. |
 | [`registry.json`](./registry.json) | Source of truth for what ships. A part missing here isn't installed, however importable it is in the demo site. |
 

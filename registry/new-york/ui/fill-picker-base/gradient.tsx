@@ -76,6 +76,24 @@ export type {
   GradientPickerState,
 } from "@/registry/new-york/ui/fill-picker/hooks/use-gradient-picker";
 
+// The gradient context surface, re-exported so the barrel is a complete
+// entry point for anyone composing custom gradient parts (a part needs
+// `useGradientPickerContext` to read state, and `GradientStopEditor*` to
+// fill the stop-editor slot). This also keeps the barrel self-consistent
+// with how the shadcn CLI rewrites installed imports: its import-fixup pass
+// resolves an aliased specifier by file BASENAME and prefers a `.tsx`
+// candidate over a `.ts` one, so `.../fill-picker/contexts/gradient.ts`
+// gets redirected to this file (`fill-picker-base/gradient.tsx`) in a
+// consumer project. Export-from specifiers are exempt from that pass, so
+// the re-exports below stay pointed at the real module.
+export {
+  GradientPickerContext,
+  GradientStopEditorContext,
+  useGradientPickerContext,
+  useGradientStopEditor,
+} from "@/registry/new-york/ui/fill-picker/contexts/gradient";
+export type { GradientStopEditorRenderer } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
+
 export { ColorPickerBase };
 
 /**

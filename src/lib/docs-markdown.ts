@@ -88,6 +88,8 @@ pnpm dlx shadcn@latest add ${FILL_PICKER_URL}
 
 The shadcn CLI drops the Base UI parts into \`components/ui/fill-picker-base/\` (with the shared engine under \`components/ui/fill-picker/\`) and installs \`@base-ui/react\`, \`culori\` + \`@types/culori\`, \`lucide-react\`, and \`class-variance-authority\` as dependencies. Requires Tailwind v4, React 19, and **shadcn CLI 4.7.0 or newer** — install targets resolve through your \`components.json\` aliases, which older CLIs can't resolve. \`pnpm dlx shadcn@latest\` (as above) always satisfies that.
 
+**Upgrading from a pre-2.0.0 install:** re-run the same add command with \`--overwrite\` (shadcn CLI 4.7.0+). Install paths now resolve through your \`components.json\` aliases, so files may land somewhere new — treat the freshly written set as canonical. Base UI projects can afterwards delete leftover Radix-dialect files that 2.0.0 no longer ships (the old \`components/ui/fill-picker/{color-picker,gradient-picker,fill-picker}.tsx\` barrels and the Radix-only \`parts/\` files; the release notes list them) and repoint any imports of those barrels to the \`fill-picker-base/\` ones.
+
 Every code block below uses the **Base UI** import paths, since that is what \`${FILL_PICKER_URL}\` installs: \`@/components/ui/fill-picker-base/fill\` (everything), \`@/components/ui/fill-picker-base/color-picker\`, \`@/components/ui/fill-picker-base/gradient\`. If you installed a \`-radix\` item instead, the exports are identical but live under \`@/components/ui/fill-picker/fill-picker\`, \`@/components/ui/fill-picker/color-picker\`, and \`@/components/ui/fill-picker/gradient-picker\` — swap the import path and every snippet works unchanged. A Base UI install does **not** ship those Radix barrels, and a Radix install does not ship the \`fill-picker-base/\` ones.
 
 ## Usage
@@ -570,8 +572,27 @@ When you author a P3-or-wider color and the user's display can't render it, the 
 MIT.
 `;
 
-/** Curated prompt for the "Copy for AI" button. Designed to paste into Claude/Cursor/ChatGPT. */
-export const AI_PROMPT = `I'm integrating Amplo Fill Picker — an OKLCH-native, Display-P3-aware color / fill picker for shadcn — into my Next.js + Tailwind v4 app.
+/**
+ * Curated prompt for the "Copy for AI" button. Designed to paste into Claude/Cursor/ChatGPT.
+ *
+ * `composition` is the snippet the user actually built in the playground. Passing it turns
+ * the prompt from "here are the docs, good luck" into "here is my exact composition, start
+ * from it" — which is the whole point of having tuned the knobs. Without it the agent
+ * re-derives a generic example and silently drops every choice the user just made.
+ */
+export function buildAiPrompt(composition?: string): string {
+  const setup = composition?.trim()
+    ? `
+This is the exact composition I configured in the playground — start from it rather than a
+blank slate, and preserve the parts and props I chose unless they conflict with my task:
+
+\`\`\`tsx
+${composition.trim()}
+\`\`\`
+`
+    : "";
+
+  return `I'm integrating Amplo Fill Picker — an OKLCH-native, Display-P3-aware color / fill picker for shadcn — into my Next.js + Tailwind v4 app.
 
 Read the full reference here before answering: ${SITE_URL}/llms-full.txt
 
@@ -583,7 +604,12 @@ Key constraints:
 - There is no default \`<ColorPicker />\` / \`<GradientPicker />\` / \`<FillPicker />\` component; consumers compose each \`Root\` with the parts they need.
 - Canonical state is \`OklchColor { l, c, h, alpha }\` — pass an object as \`value\` for lossless control. \`onValueChange(color, formatted, formats)\` always provides every format pre-serialized.
 - Install with: \`pnpm dlx shadcn@latest add ${FILL_PICKER_URL}\` for the full bundle (color + gradient + switcher), or \`${COLOR_PICKER_URL}\` if you only need solid color. Needs shadcn CLI 4.7.0 or newer. Those are the Base UI items: the rebuilt shells land in \`components/ui/fill-picker-base/\` and the shared OKLCH engine in \`components/ui/fill-picker/\`, so import from \`@/components/ui/fill-picker-base/fill\` (or \`.../color-picker\`, \`.../gradient\`). The Radix / shadcn-classic variants are the separate \`-radix\` items (e.g. \`${FILL_PICKER_RADIX_URL}\`) and import from \`@/components/ui/fill-picker/fill-picker\`.
-
+- If the project ALREADY has an earlier install of this picker (look for \`components/ui/fill-picker/\` or \`fill-picker-base/\`): upgrade by re-running the same add command with \`--overwrite\` (shadcn CLI 4.7.0+). Version 2.0.0 resolves install paths through the project's own \`components.json\` aliases, so files may land somewhere new — treat the freshly written set as canonical. Afterwards, in Base UI projects, delete leftover Radix-dialect files that 2.0.0 no longer ships: the old \`components/ui/fill-picker/{color-picker,gradient-picker,fill-picker}.tsx\` barrels, \`parts/{format-switcher,channel-input,swatches,hue,lightness,alpha,gamut-badge,contrast-readout}.tsx\`, and \`parts/gradient/{type-switcher,interp-switcher,radial-size-select,stop-editor-popover}.tsx\` — then repoint any imports of those barrels to \`@/components/ui/fill-picker-base/fill\` / \`.../color-picker\` / \`.../gradient\`. Do not hand-edit files inside \`components/ui/fill-picker*/\` to fix upgrade issues; re-run the add command instead.
+${setup}
 My task:
 [describe what you want to build]
 `;
+}
+
+/** The composition-free prompt, for surfaces with nothing to attach (hero, docs). */
+export const AI_PROMPT = buildAiPrompt();

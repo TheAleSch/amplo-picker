@@ -22,6 +22,7 @@ import type {
   OklchColor,
 } from "@/registry/new-york/ui/fill-picker/lib/types";
 import { CodeBlock } from "@/components/code-block";
+import { CopyForAi } from "@/components/copy-for-ai";
 import { cn } from "@/lib/utils";
 
 const ALL_FORMATS: ColorFormat[] = [
@@ -500,6 +501,16 @@ export default function PlaygroundPage() {
     ],
   );
 
+  // The snippet for whichever tab is showing. Single source of truth: it feeds both the
+  // CodeBlock and the "Copy for AI" prompt, so the two can't drift into disagreeing about
+  // what the user built.
+  const activeSnippet = React.useMemo(() => {
+    if (fillMode === "color") return code;
+    if (fillMode === "gradient")
+      return `${buildGradientSnippet(gradientParts, uiVariant)}\n\n/* Output CSS */\n${gradientCss}`;
+    return `${buildFillSnippet(gradientParts)}\n\n/* Output CSS */\n${fillCss}`;
+  }, [fillMode, code, gradientParts, uiVariant, gradientCss, fillCss]);
+
   // Both variants expose the identical namespace; the Base UI objects are
   // structurally compatible with the Radix ones (verified), so the casts
   // are safe. The toggle drives all three demos: Solid, Gradient, Fill.
@@ -580,33 +591,6 @@ export default function PlaygroundPage() {
               );
             })}
           </div>
-            <div
-              role="tablist"
-              aria-label="Component variant"
-              className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-muted p-1"
-            >
-              {(["base", "radix"] as const).map((v) => {
-                const isActive = uiVariant === v;
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setUiVariant(v)}
-                    className={cn(
-                      "rounded-md px-3 py-1 text-sm font-medium outline-none transition-colors",
-                      "focus-visible:ring-2 focus-visible:ring-ring",
-                      isActive
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {v === "base" ? "Base UI" : "Radix UI"}
-                  </button>
-                );
-              })}
-            </div>
           {fillMode === "color" && (
           <div className="flex flex-wrap items-center gap-1.5">
             {VARIANTS.map((v) => {
@@ -668,9 +652,36 @@ export default function PlaygroundPage() {
               this was meant to stop turned out to be a width problem — see
               the w-full note on <main>. */}
           <div
-            className="flex min-h-110 items-center justify-center rounded-xl border border-border p-8"
+            className="relative flex min-h-110 items-center justify-center rounded-xl border border-border p-8 pt-16"
             style={{ background: previewBg }}
           >
+            <div
+              role="tablist"
+              aria-label="Component variant"
+              className="absolute top-4 left-4 z-10 inline-flex items-center gap-1 rounded-md bg-muted p-1"
+            >
+              {(["base", "radix"] as const).map((v) => {
+                const isActive = uiVariant === v;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setUiVariant(v)}
+                    className={cn(
+                      "rounded-sm px-3 py-1 text-xs font-medium outline-none transition-colors",
+                      "focus-visible:ring-2 focus-visible:ring-ring",
+                      isActive
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {v === "base" ? "Base UI" : "Radix UI"}
+                  </button>
+                );
+              })}
+            </div>
             <div
               style={
                 containerMaxWidth !== undefined
@@ -947,17 +958,11 @@ export default function PlaygroundPage() {
             </div>
           </div>
 
-          {fillMode === "color" ? (
-            <CodeBlock code={code} />
-          ) : fillMode === "gradient" ? (
-            <CodeBlock
-              code={`${buildGradientSnippet(gradientParts, uiVariant)}\n\n/* Output CSS */\n${gradientCss}`}
-            />
-          ) : (
-            <CodeBlock
-              code={`${buildFillSnippet(gradientParts)}\n\n/* Output CSS */\n${fillCss}`}
-            />
-          )}
+          <CodeBlock code={activeSnippet} />
+          {/* Same string the CodeBlock shows, handed to the agent verbatim — copying
+              "for AI" from the playground has to carry what the user just composed,
+              or every knob they turned is thrown away at the prompt boundary. */}
+          <CopyForAi composition={activeSnippet} />
         </div>
 
         {fillMode === "color" && (

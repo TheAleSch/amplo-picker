@@ -1,0 +1,48 @@
+"use client";
+
+import * as React from "react";
+import { useGradientPickerContext } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
+import type { GradientType } from "@/registry/new-york/ui/fill-picker/lib/gradient";
+import { FieldSelect, FieldSelectItem } from "./field";
+import { GRADIENT_TYPE_OPTIONS } from "@/registry/new-york/ui/fill-picker/lib/gradient-options";
+
+const TYPES = GRADIENT_TYPE_OPTIONS;
+
+const TYPE_ITEMS = Object.fromEntries(
+  TYPES.map((t) => [t.value, t.label]),
+) as Record<GradientType, string>;
+
+/**
+ * Base UI port of `<GradientPicker.TypeSwitcher>`. Bound to `gradient.type`.
+ * Built on `<FieldSelect>` (Base UI `Select` under the hood) so it shares
+ * its border, focus ring, font, and chevron with every other dropdown in
+ * the Base UI picker.
+ *
+ * Width is intrinsic (not `w-full`) so it can sit next to icon buttons
+ * like `<GradientPickerBase.ReverseStops>` without stretching the row.
+ */
+export const TypeSwitcher = React.forwardRef<
+  HTMLButtonElement,
+  { className?: string }
+>(function TypeSwitcher({ className }, ref) {
+  const ctx = useGradientPickerContext();
+  return (
+    <FieldSelect
+      ref={ref}
+      aria-label="Gradient type"
+      value={ctx.gradient.type}
+      onValueChange={(v) => ctx.setType(v as GradientType)}
+      items={TYPE_ITEMS}
+      wrapperProps={{
+        "data-slot": "gradient-type-switcher",
+        className,
+      }}
+    >
+      {TYPES.map((t) => (
+        <FieldSelectItem key={t.value} value={t.value}>
+          {t.label}
+        </FieldSelectItem>
+      ))}
+    </FieldSelect>
+  );
+});

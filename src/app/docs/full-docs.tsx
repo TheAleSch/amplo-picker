@@ -2,20 +2,20 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
-import { parseColor } from "@/registry/new-york/color-picker/lib/color";
-import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
+import { ColorPicker } from "@/registry/new-york/ui/fill-picker/color-picker";
+import { parseColor } from "@/registry/new-york/ui/fill-picker/lib/color";
+import type { OklchColor } from "@/registry/new-york/ui/fill-picker/lib/types";
 import {
   GradientPicker,
   FillPicker,
   DEFAULT_LINEAR,
   formatGradient,
-} from "@/registry/new-york/color-picker/fill-picker";
-import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
+} from "@/registry/new-york/ui/fill-picker/fill-picker";
+import { useGradientPickerContext } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
 import type {
   Gradient,
   Fill,
-} from "@/registry/new-york/color-picker/fill-picker";
+} from "@/registry/new-york/ui/fill-picker/fill-picker";
 import {
   Popover,
   PopoverContent,
@@ -30,7 +30,7 @@ import {
   ColorPickerBase,
   FillPickerBase,
   GradientPickerBase,
-} from "@/registry/new-york/fill-picker-base/fill";
+} from "@/registry/new-york/ui/fill-picker-base/fill";
 
 export type Variant = "base" | "radix";
 
@@ -59,6 +59,7 @@ function usePickers(): Pickers {
 const SNIPPET_PATH_SWAPS: [string, string][] = [
   ["@/components/ui/fill-picker/fill-picker", "@/components/ui/fill-picker-base/fill"],
   ["@/components/ui/fill-picker/color-picker", "@/components/ui/fill-picker-base/color-picker"],
+  ["@/components/ui/fill-picker/gradient-picker", "@/components/ui/fill-picker-base/gradient"],
 ];
 
 const TOC = [
@@ -239,6 +240,12 @@ export function FullDocs({ variant }: { variant: Variant }) {
               />
             </>
           )}
+          <p className="text-sm text-muted-foreground">
+            Installs need shadcn CLI 4.7.0 or newer — files land relative to
+            your <Code>components.json</Code> aliases, which older CLIs
+            can&apos;t resolve. Running <Code>npx shadcn@latest</Code> (as the
+            commands above do) always satisfies that.
+          </p>
           <p className="text-sm text-muted-foreground">
             Both variants share one OKLCH engine, so behavior and fixes stay
             in lockstep. Use the toggle above to switch between the Base UI

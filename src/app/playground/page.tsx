@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ColorPicker } from "@/registry/new-york/color-picker/color-picker";
+import { ColorPicker } from "@/registry/new-york/ui/fill-picker/color-picker";
 import {
   GradientPicker,
   FillPicker,
@@ -12,15 +12,15 @@ import {
   BUILTIN_GRADIENT_PRESETS,
   type Gradient,
   type Fill,
-} from "@/registry/new-york/color-picker/fill-picker";
-import { ColorPickerBase } from "@/registry/new-york/fill-picker-base/color-picker";
-import { GradientPickerBase } from "@/registry/new-york/fill-picker-base/gradient";
-import { FillPickerBase } from "@/registry/new-york/fill-picker-base/fill";
-import { parseColor, formatColor } from "@/registry/new-york/color-picker/lib/color";
+} from "@/registry/new-york/ui/fill-picker/fill-picker";
+import { ColorPickerBase } from "@/registry/new-york/ui/fill-picker-base/color-picker";
+import { GradientPickerBase } from "@/registry/new-york/ui/fill-picker-base/gradient";
+import { FillPickerBase } from "@/registry/new-york/ui/fill-picker-base/fill";
+import { parseColor, formatColor } from "@/registry/new-york/ui/fill-picker/lib/color";
 import type {
   ColorFormat,
   OklchColor,
-} from "@/registry/new-york/color-picker/lib/types";
+} from "@/registry/new-york/ui/fill-picker/lib/types";
 import { CodeBlock } from "@/components/code-block";
 import { cn } from "@/lib/utils";
 

@@ -12,7 +12,7 @@ Package manager is **pnpm**.
 - `pnpm typecheck` — `tsc --noEmit` (TS is `noEmit`-only; no separate build step).
 - `pnpm test` — Vitest, single run.
 - `pnpm test:watch` — Vitest watch mode.
-- Single test file: `pnpm vitest run registry/new-york/color-picker/lib/color.test.ts`
+- Single test file: `pnpm vitest run registry/new-york/ui/fill-picker/lib/color.test.ts`
 - Single test by name: `pnpm vitest run -t "parses hex"`
 - `pnpm registry:build` — runs `scripts/build-registry.ts` (via `tsx`). Reads `registry.json`, inlines each referenced file, and emits `public/r/<item>.json` (per-item bundle with file content) + `public/r/registry.json` (catalog index, file metadata only — schema: `https://ui.shadcn.com/schema/registry.json`). **Outputs in `public/r/*.json` are gitignored** — they are produced as a build artifact for deployment.
 
@@ -21,8 +21,10 @@ Package manager is **pnpm**.
 This is a **shadcn-style component registry** wrapped in a Next.js demo site. There are two source roots that should not be confused:
 
 - `src/` — the demo/docs Next.js app (App Router). `src/app/page.tsx` is the landing demo, `src/app/docs/page.tsx` the docs page, `src/app/docs/base/page.tsx` the Base UI variant demo, `src/lib/utils.ts` holds `cn`. This code is **not** shipped to consumers.
-- `registry/new-york/color-picker/` — the **original (Radix/shadcn-classic) component source** that consumers install. Everything in here is bundled by `pnpm registry:build` into a single JSON artifact and pulled via `npx shadcn@latest add https://<host>/r/color-picker.json`. The `new-york` segment is the shadcn style identifier.
-- `registry/new-york/fill-picker-base/` — the **Base UI variant** (the main version going forward). It rebuilds only the parts that benefit from Base UI primitives — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, Swatches on RadioGroup, and GamutBadge/ContrastReadout as Base UI Tooltip shells whose tooltip-agnostic logic is shared from `color-picker/parts/*-shared` — and **imports the engine and all other parts from `color-picker/` via path aliases — never copy `lib/`, `hooks/`, or `context` into this tree**. Ships through the `color-picker`, `gradient-picker`, and `fill-picker` registry items; the base `color-picker` item lists `color-picker-radix` as a registryDependency so the shared engine resolves via the CLI.
+- `registry/new-york/ui/fill-picker/` — the **shared source tree**: the dialect-agnostic engine (`lib/`, `hooks/`, `contexts/`, and every part with no dialect-divergent primitive) *plus* the Radix/shadcn-classic shells. Item membership is manifest-level, not directory-level (D2): files from this one tree are split across the three `*-engine` items and the three `*-radix` items by `registry.json`. The `new-york` segment is the shadcn style identifier.
+- `registry/new-york/ui/fill-picker-base/` — the **Base UI variant** (the main version going forward). It rebuilds only the parts that benefit from Base UI primitives — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, Swatches on RadioGroup, and GamutBadge/ContrastReadout as Base UI Tooltip shells whose tooltip-agnostic logic is shared from `fill-picker/parts/*-shared` — and **imports the engine and all other parts from `fill-picker/` via path aliases — never copy `lib/`, `hooks/`, or `context` into this tree**. Ships through the `color-picker`, `gradient-picker`, and `fill-picker` registry items; each of those lists the matching **`*-engine`** item as a registryDependency (base `color-picker` → `color-picker-engine`), so the shared engine resolves via the CLI and **no Radix-dialect file is ever installed into a Base project** (D3).
+
+The nine registry items and their entry-point URLs: base `color-picker` / `gradient-picker` / `fill-picker` (plain names = Base UI), `*-radix` (classic), and `*-engine` (shared logic, pulled in automatically — consumers install the six named variants, never the engines directly).
 
 Path aliases (mirrored in `tsconfig.json` and `vitest.config.ts`):
 - `@/*` → `src/*`
@@ -32,7 +34,7 @@ The registry component imports `cn` from `@/lib/utils` — this aliasing works i
 
 ## Component architecture (the published part)
 
-Everything in `registry/new-york/color-picker/` follows a Radix-style compound API. The mental model:
+Everything in `registry/new-york/ui/fill-picker/` follows a Radix-style compound API. The mental model:
 
 1. **Canonical state is OKLCH.** `OklchColor { l, c, h, alpha }` (defined in `lib/types.ts`) is the single source of truth. Every conversion goes through this representation, so format toggles (hex / rgb / hsl / hsb / oklch / oklab / display-p3) are lossless round-trips.
 2. **`hooks/use-color-picker.ts`** is the headless engine. It owns controlled/uncontrolled state, format selection, derived gamut info, derived contrast (WCAG + APCA), and the component-mutation API (`setColor`, `setComponent`, `adjustComponent`, `setFormat`, `setFromString`).
@@ -53,17 +55,26 @@ Everything in `registry/new-york/color-picker/` follows a Radix-style compound A
 
 `registry.json` is the **source of truth** for what gets shipped. When adding or removing a part:
 
-1. Add the file under `registry/new-york/color-picker/...`.
-2. Add a corresponding entry under `items[0].files` in `registry.json` — both `path` (in-repo) and `target` (where it lands in the consumer project) are required.
-3. Run `pnpm registry:build` to regenerate `public/r/color-picker.json`.
+1. Add the file under `registry/new-york/ui/fill-picker/...` (or `fill-picker-base/...`).
+2. Add a corresponding entry under the relevant item's `files` in `registry.json` — only `path` (in-repo) and `type` are needed. **`target` is derived by `scripts/build-registry.ts`, not written by hand** (see below); spelling one out is a rare override for files that live outside the `registry/new-york/ui/` tree.
+3. Run `pnpm registry:build` to regenerate `public/r/<item>.json`.
 4. The site must be redeployed for consumers to see the change (the JSON is served from `public/r/`).
 
 Note: parts that exist in code but are missing from `registry.json` won't be installed by consumers even though they're importable in the demo site. If you add a file to `parts/` and want it shipped, the manifest entry is mandatory.
 
+### Derived install targets + the CLI version floor (D4)
+
+- **Targets are derived, in alias-NAME form.** `deriveTarget` maps `registry/new-york/ui/<rest>` → **`@ui/<rest>`**, so the CLI resolves the install location through the consumer's own `components.json` `aliases.ui` instead of a project-root + `src/` guess. This is what makes nonstandard layouts (e.g. Electron `src/renderer`) install correctly. The `@/…` form is **not** a valid target: the CLI's alias regex is `^@([^/]+)\/(.+)$` and requires an alias name between `@` and `/`, so `@/components/ui/…` is treated as a literal relative path and lands at `<cwd>/src/@/components/ui/…`.
+- **Consumers need shadcn CLI ≥ 4.7.0** for `@<alias>/<rest>` target resolution. `npx`/`pnpm dlx shadcn@latest` satisfies it; a pinned older CLI would install to `src/@/…`.
+- **`class-variance-authority` is declared on `color-picker-engine` and `gradient-picker-engine` on purpose.** Those items pull shadcn's own `button` / `toggle`, whose upstream registry items use `cva` but omit the package from their `dependencies`. Without our declaration a fresh consumer's `tsc` fails with `Cannot find module 'class-variance-authority'`. Do not "clean it up" as a redundant dep.
+- **Two build-time lints run inside `pnpm registry:build`** (`scripts/build-registry.ts`, tested in `scripts/build-registry.test.ts`):
+  - *Engine dialect-agnosticism* — `*-engine` items may only import `@/components/ui/{button,toggle,input}`, the wrappers whose API is stable across shadcn dialects.
+  - *Basename collisions* — the CLI's post-install import fixup re-points an **aliased** specifier by file basename with `.tsx` preferred over `.ts`, so a `.ts` module shadowed by a same-basename `.tsx` silently loses its aliased importers in consumer projects. Relative specifiers and `export … from` are exempt, as is a shadowing barrel that re-exports the requested symbols. Two live collisions exist today (`gradient`, `fill`) and are safe only because of those mitigations — the lint keeps them that way.
+
 ## Tests
 
 - Vitest with `happy-dom`, globals enabled, setup file `vitest.setup.ts` (loads `@testing-library/jest-dom`).
-- Tests live alongside source as `*.test.ts` (e.g., `registry/new-york/color-picker/lib/color.test.ts`, `hooks/use-color-picker.test.ts`).
+- Tests live alongside source as `*.test.ts` (e.g., `registry/new-york/ui/fill-picker/lib/color.test.ts`, `hooks/use-color-picker.test.ts`).
 - Vitest reuses the same `@/` and `@/registry/` aliases, so imports match production code.
 
 ## Stack notes

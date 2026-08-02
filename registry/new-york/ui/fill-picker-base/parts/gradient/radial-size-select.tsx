@@ -1,0 +1,94 @@
+"use client";
+
+import * as React from "react";
+import { Info } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Tooltip } from "@base-ui/react/tooltip";
+import { useGradientPickerContext } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
+import type { RadialSizeKeyword } from "@/registry/new-york/ui/fill-picker/lib/gradient";
+import { FieldSelect, FieldSelectItem } from "./field";
+import { RADIAL_SIZE_OPTIONS } from "@/registry/new-york/ui/fill-picker/lib/gradient-options";
+
+const SIZE_OPTIONS = RADIAL_SIZE_OPTIONS;
+
+export interface RadialSizeSelectProps {
+  className?: string;
+  /** Applied to the select trigger. */
+  triggerClassName?: string;
+}
+
+/** Base UI port of `<GradientPicker.RadialSizeSelect>`. */
+export const RadialSizeSelect = React.forwardRef<
+  HTMLButtonElement,
+  RadialSizeSelectProps
+>(function RadialSizeSelect({ className, triggerClassName }, ref) {
+  const ctx = useGradientPickerContext();
+  if (ctx.gradient.type !== "radial") return null;
+  // delay=0: parity with the Radix shells, which inherit the shadcn wrapper default (0). Base UI's own default is 600.
+  return (
+    <Tooltip.Provider delay={0}>
+      <FieldSelect
+        ref={ref}
+        aria-label="Radial size"
+        value={ctx.gradient.size}
+        onValueChange={(v) => ctx.setRadialSize(v as RadialSizeKeyword)}
+        wrapperProps={{ "data-slot": "gradient-radial-size-select", className: "w-full" }}
+        className={cn("w-full", triggerClassName, className)}
+      >
+        {SIZE_OPTIONS.map((opt) => (
+          <RowWithInfo key={opt.value} value={opt.value} description={opt.description} />
+        ))}
+      </FieldSelect>
+    </Tooltip.Provider>
+  );
+});
+
+function RowWithInfo({
+  value,
+  description,
+}: {
+  value: string;
+  description: string;
+}) {
+  return (
+    <FieldSelectItem value={value} className="pr-8">
+      <span className="flex w-full items-center gap-2">
+        <span className="flex-1">{value}</span>
+        <Tooltip.Root>
+          <Tooltip.Trigger
+            render={
+              // Span (not button) so Base UI Select still owns the click
+              // for row selection — the icon is just a hover affordance.
+              <span
+                role="img"
+                aria-label={`About ${value}`}
+                className="inline-flex shrink-0 cursor-help text-muted-foreground hover:text-foreground"
+              >
+                <Info className="size-3" aria-hidden />
+              </span>
+            }
+          />
+          <Tooltip.Portal>
+            {/* z-50 on the POSITIONER, not just the popup: the positioner is
+                the element that competes with the Select popup's z-50
+                positioner — with z-auto it renders behind the open menu. */}
+            <Tooltip.Positioner
+              side="right"
+              align="center"
+              sideOffset={4}
+              className="z-50"
+            >
+              <Tooltip.Popup
+                className={cn(
+                  "z-50 max-w-[220px] overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-[11px] normal-case tracking-normal text-background",
+                )}
+              >
+                {description}
+              </Tooltip.Popup>
+            </Tooltip.Positioner>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </span>
+    </FieldSelectItem>
+  );
+}

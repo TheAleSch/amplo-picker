@@ -13,15 +13,15 @@ import {
   GradientPicker,
   BUILTIN_GRADIENT_PRESETS,
   type Fill,
-} from "@/registry/new-york/color-picker/fill-picker";
+} from "@/registry/new-york/ui/fill-picker/fill-picker";
 import {
   ColorPickerBase,
   FillPickerBase,
   GradientPickerBase,
-} from "@/registry/new-york/fill-picker-base/fill";
-import { parseColor } from "@/registry/new-york/color-picker/lib/color";
-import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
-import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
+} from "@/registry/new-york/ui/fill-picker-base/fill";
+import { parseColor } from "@/registry/new-york/ui/fill-picker/lib/color";
+import type { OklchColor } from "@/registry/new-york/ui/fill-picker/lib/types";
+import { useGradientPickerContext } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
 import { cn } from "@/lib/utils";
 
 type Variant = "base" | "radix";

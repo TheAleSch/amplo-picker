@@ -43,6 +43,63 @@ export function resolveContained(root: string, rel: string): string {
   return real;
 }
 
+const UI_TREE_PREFIX = "registry/new-york/ui/";
+
+/**
+ * Once a source file lives under the ui tree (`registry/new-york/ui/<dir>/
+ * <rest>`), its consumer-side `target` is mechanically derivable — no need
+ * to spell it out per-file in registry.json. Paths outside that tree (e.g.
+ * the pre-restructure `color-picker/` source root) still require an
+ * explicit `target` in the manifest.
+ */
+export function deriveTarget(filePath: string): string {
+  if (!filePath.startsWith(UI_TREE_PREFIX)) {
+    throw new Error(
+      `cannot derive target: ${filePath} is not under the ui tree (${UI_TREE_PREFIX})`,
+    );
+  }
+  return `@/components/ui/${filePath.slice(UI_TREE_PREFIX.length)}`;
+}
+
+/**
+ * `*-engine` items are meant to stay dialect-agnostic (usable from both the
+ * Radix and Base UI trees), so they may only import the small set of UI
+ * primitives whose API is stable across dialects.
+ */
+export const ENGINE_UI_ALLOWLIST = ["button", "toggle", "input"];
+
+const PROD_BASE = "https://amplo.ale.design";
+
+/** Strip //, /* *​/ and JSX {/* *​/} comments so prose mentions don't trip the lint. */
+export function stripComments(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+/**
+ * Scan a single engine-item file's comment-stripped content for imports of
+ * non-allowlisted `@/components/ui/*` primitives. Returns one message per
+ * offending import (empty array when clean) rather than throwing directly,
+ * so callers can accumulate errors across an item's files and report them
+ * all together.
+ */
+export function lintEngineFile(
+  itemName: string,
+  filePath: string,
+  content: string,
+): string[] {
+  const errs: string[] = [];
+  for (const m of stripComments(content).matchAll(
+    /@\/components\/ui\/([a-z-]+)/g,
+  )) {
+    if (!ENGINE_UI_ALLOWLIST.includes(m[1])) {
+      errs.push(
+        `${itemName}: ${filePath} imports @/components/ui/${m[1]} (engine allowlist: ${ENGINE_UI_ALLOWLIST.join(", ")})`,
+      );
+    }
+  }
+  return errs;
+}
+
 interface RegistryFile {
   path: string;
   type: string;
@@ -78,16 +135,28 @@ export function buildRegistry(opts: {
   manifest: string;
   outDir: string;
   quiet?: boolean;
+  baseUrl?: string;
 }) {
-  const { root: ROOT, manifest: MANIFEST, outDir: OUT_DIR, quiet } = opts;
+  const {
+    root: ROOT,
+    manifest: MANIFEST,
+    outDir: OUT_DIR,
+    quiet,
+    baseUrl = process.env.REGISTRY_BASE_URL,
+  } = opts;
   const log = (msg: string) => {
     if (!quiet) console.log(msg);
   };
+  const rewriteBase = (deps: string[]) =>
+    baseUrl ? deps.map((d) => d.replaceAll(PROD_BASE, baseUrl)) : deps;
   const manifest: Manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
+  const engineLintErrors: string[] = [];
+
   for (const item of manifest.items) {
     assertSafeItemName(item.name);
+    const isEngine = item.name.endsWith("-engine");
     const out = {
       $schema: "https://ui.shadcn.com/schema/registry-item.json",
       name: item.name,
@@ -97,13 +166,16 @@ export function buildRegistry(opts: {
       version: item.version,
       categories: item.categories,
       dependencies: item.dependencies ?? [],
-      registryDependencies: item.registryDependencies ?? [],
+      registryDependencies: rewriteBase(item.registryDependencies ?? []),
       files: item.files.map((f) => {
         const content = fs.readFileSync(resolveContained(ROOT, f.path), "utf8");
+        if (isEngine) {
+          engineLintErrors.push(...lintEngineFile(item.name, f.path, content));
+        }
         return {
           path: f.path,
           type: f.type,
-          target: f.target,
+          target: f.target ?? deriveTarget(f.path),
           content,
         };
       }),
@@ -122,6 +194,12 @@ export function buildRegistry(opts: {
     log(`✓ wrote ${path.relative(ROOT, outPath)} (${out.files.length} files)`);
   }
 
+  if (engineLintErrors.length > 0) {
+    throw new Error(
+      `engine dialect-agnosticism lint failed:\n${engineLintErrors.join("\n")}`,
+    );
+  }
+
   const registryPath = path.join(OUT_DIR, "registry.json");
   fs.writeFileSync(
     registryPath,
@@ -138,11 +216,11 @@ export function buildRegistry(opts: {
           version: i.version,
           categories: i.categories,
           dependencies: i.dependencies ?? [],
-          registryDependencies: i.registryDependencies ?? [],
+          registryDependencies: rewriteBase(i.registryDependencies ?? []),
           files: i.files.map((f) => ({
             path: f.path,
             type: f.type,
-            target: f.target,
+            target: f.target ?? deriveTarget(f.path),
           })),
         })),
       },

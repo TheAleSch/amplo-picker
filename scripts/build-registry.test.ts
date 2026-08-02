@@ -7,6 +7,10 @@ import {
   assertSafeItemName,
   buildRegistry,
   resolveContained,
+  deriveTarget,
+  ENGINE_UI_ALLOWLIST,
+  stripComments,
+  lintEngineFile,
 } from "./build-registry";
 
 describe("assertSafeItemName — output containment (Sec-1)", () => {
@@ -90,7 +94,13 @@ describe("buildRegistry — emit (T-7)", () => {
       {
         name: "color-picker",
         type: "registry:ui",
-        files: [{ path: "parts/b.ts", type: "registry:lib" }],
+        files: [
+          {
+            path: "parts/b.ts",
+            type: "registry:lib",
+            target: "lib/b.ts",
+          },
+        ],
       },
     ],
   };
@@ -217,5 +227,311 @@ describe("buildRegistry — emit (T-7)", () => {
       }),
     ).toThrow(/safe filename/);
     fs.rmSync(bad, { recursive: true, force: true });
+  });
+});
+
+// D4: once source trees move to registry/new-york/ui/<dir>/..., manifest
+// entries no longer need an explicit `target` — it's mechanically derivable
+// from the path. `deriveTarget` is the pure mapping; the emit sites (bundle
+// + catalog) fall back to it via `f.target ?? deriveTarget(f.path)`.
+describe("deriveTarget — ui-tree path derivation (D4)", () => {
+  it("derives @/components/ui/<dir>/<rest> from registry/new-york/ui/<dir>/<rest>", () => {
+    expect(deriveTarget("registry/new-york/ui/button/button.tsx")).toBe(
+      "@/components/ui/button/button.tsx",
+    );
+    expect(
+      deriveTarget("registry/new-york/ui/color-picker/parts/root.tsx"),
+    ).toBe("@/components/ui/color-picker/parts/root.tsx");
+  });
+
+  it("throws for paths outside the ui tree", () => {
+    expect(() =>
+      deriveTarget("registry/new-york/color-picker/parts/root.tsx"),
+    ).toThrow(/ui tree/);
+    expect(() => deriveTarget("src/components/ui/button.tsx")).toThrow();
+  });
+});
+
+describe("buildRegistry — derived target emission (D4)", () => {
+  let root: string;
+  let outDir: string;
+
+  const manifest = {
+    name: "fixture-registry",
+    items: [
+      {
+        name: "button",
+        type: "registry:ui",
+        files: [
+          {
+            path: "registry/new-york/ui/button/button.tsx",
+            type: "registry:ui",
+            // no `target` — must be derived from `path`.
+          },
+        ],
+      },
+    ],
+  };
+
+  beforeAll(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "reg-derive-"));
+    outDir = path.join(root, "public", "r");
+    fs.mkdirSync(path.join(root, "registry", "new-york", "ui", "button"), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(root, "registry", "new-york", "ui", "button", "button.tsx"),
+      "export const Button = () => null;\n",
+    );
+    fs.writeFileSync(
+      path.join(root, "registry.json"),
+      JSON.stringify(manifest, null, 2),
+    );
+    buildRegistry({
+      root,
+      manifest: path.join(root, "registry.json"),
+      outDir,
+      quiet: true,
+    });
+  });
+
+  afterAll(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  const read = (name: string) =>
+    JSON.parse(fs.readFileSync(path.join(outDir, name), "utf8"));
+
+  it("derives the target in the per-item bundle when none is given", () => {
+    const bundle = read("button.json");
+    expect(bundle.files[0].target).toBe("@/components/ui/button/button.tsx");
+  });
+
+  it("derives the target in the public catalog index when none is given", () => {
+    const catalog = read("registry.json");
+    expect(catalog.items[0].files[0].target).toBe(
+      "@/components/ui/button/button.tsx",
+    );
+  });
+});
+
+// F3: `*-engine` items are meant to be dialect-agnostic — they may only
+// reference the small set of UI primitives that are stable across shadcn
+// dialects (Radix vs Base UI). A stray import of, say, `@/components/ui/
+// tooltip` from an engine file would silently couple the engine to one
+// dialect's tooltip API. Catch it at build time instead of at a consumer's
+// `tsc`.
+describe("lintEngineFile / stripComments — engine dialect-agnosticism lint (F3)", () => {
+  it("strips // and block comments without touching code", () => {
+    expect(stripComments("const x = 1; // trailing comment\n")).toBe(
+      "const x = 1; \n",
+    );
+    expect(stripComments("/* block */ const y = 2;")).toBe(" const y = 2;");
+    expect(stripComments('const url = "https://example.com";')).toBe(
+      'const url = "https://example.com";',
+    );
+  });
+
+  it("flags an import outside the allowlist", () => {
+    const errs = lintEngineFile(
+      "x-engine",
+      "parts/root.tsx",
+      'import { Tooltip } from "@/components/ui/tooltip";\n',
+    );
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toContain("x-engine");
+    expect(errs[0]).toContain("parts/root.tsx");
+    expect(errs[0]).toContain("tooltip");
+  });
+
+  it("passes when the same text only appears inside a comment", () => {
+    const errs = lintEngineFile(
+      "x-engine",
+      "parts/root.tsx",
+      '/* see @/components/ui/tooltip for context */\nexport const x = 1;\n',
+    );
+    expect(errs).toEqual([]);
+  });
+
+  it("passes for allowlisted imports (button)", () => {
+    const errs = lintEngineFile(
+      "x-engine",
+      "parts/root.tsx",
+      'import { Button } from "@/components/ui/button";\n',
+    );
+    expect(errs).toEqual([]);
+  });
+
+  it("allowlist is exactly button, toggle, input", () => {
+    expect(ENGINE_UI_ALLOWLIST).toEqual(["button", "toggle", "input"]);
+  });
+});
+
+describe("buildRegistry — engine lint enforcement (F3)", () => {
+  let root: string;
+
+  const writeFixture = (fileContent: string) => {
+    const r = fs.mkdtempSync(path.join(os.tmpdir(), "reg-engine-"));
+    fs.mkdirSync(path.join(r, "parts"), { recursive: true });
+    fs.writeFileSync(path.join(r, "parts", "root.tsx"), fileContent);
+    fs.writeFileSync(
+      path.join(r, "registry.json"),
+      JSON.stringify({
+        name: "fixture-registry",
+        items: [
+          {
+            name: "x-engine",
+            type: "registry:lib",
+            files: [
+              {
+                path: "parts/root.tsx",
+                type: "registry:lib",
+                target: "parts/root.tsx",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    return r;
+  };
+
+  afterAll(() => {
+    if (root) fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it("throws, naming the offending file, when an engine item imports a non-allowlisted ui component", () => {
+    root = writeFixture(
+      'import { Tooltip } from "@/components/ui/tooltip";\nexport const x = 1;\n',
+    );
+    expect(() =>
+      buildRegistry({
+        root,
+        manifest: path.join(root, "registry.json"),
+        outDir: path.join(root, "public", "r"),
+        quiet: true,
+      }),
+    ).toThrow(/parts\/root\.tsx/);
+  });
+
+  it("passes when the mention is inside a comment", () => {
+    root = writeFixture(
+      '/* import { Tooltip } from "@/components/ui/tooltip"; */\nexport const x = 1;\n',
+    );
+    expect(() =>
+      buildRegistry({
+        root,
+        manifest: path.join(root, "registry.json"),
+        outDir: path.join(root, "public", "r"),
+        quiet: true,
+      }),
+    ).not.toThrow();
+  });
+
+  it("passes for an allowlisted import (button)", () => {
+    root = writeFixture(
+      'import { Button } from "@/components/ui/button";\nexport const x = 1;\n',
+    );
+    expect(() =>
+      buildRegistry({
+        root,
+        manifest: path.join(root, "registry.json"),
+        outDir: path.join(root, "public", "r"),
+        quiet: true,
+      }),
+    ).not.toThrow();
+  });
+});
+
+// F4: the e2e CLI-install harness (Task 1) sets REGISTRY_BASE_URL to a local
+// static server before running the build, so registryDependencies pointing
+// at the production host resolve hermetically instead of hitting the real
+// deployed site.
+describe("buildRegistry — hermetic base-URL override (F4)", () => {
+  let root: string;
+  let outDir: string;
+
+  const manifest = {
+    name: "fixture-registry",
+    items: [
+      {
+        name: "x",
+        type: "registry:ui",
+        registryDependencies: [
+          "utils",
+          "https://amplo.ale.design/r/color-picker-radix.json",
+        ],
+        files: [
+          {
+            path: "parts/a.ts",
+            type: "registry:lib",
+            target: "parts/a.ts",
+          },
+        ],
+      },
+    ],
+  };
+
+  beforeAll(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "reg-baseurl-"));
+    outDir = path.join(root, "public", "r");
+    fs.mkdirSync(path.join(root, "parts"), { recursive: true });
+    fs.writeFileSync(path.join(root, "parts", "a.ts"), "export const a = 1;\n");
+    fs.writeFileSync(
+      path.join(root, "registry.json"),
+      JSON.stringify(manifest, null, 2),
+    );
+  });
+
+  afterAll(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  const read = (name: string) =>
+    JSON.parse(fs.readFileSync(path.join(outDir, name), "utf8"));
+
+  it("rewrites the production host to the override in the bundle", () => {
+    buildRegistry({
+      root,
+      manifest: path.join(root, "registry.json"),
+      outDir,
+      quiet: true,
+      baseUrl: "http://localhost:8998",
+    });
+    const bundle = read("x.json");
+    expect(bundle.registryDependencies).toEqual([
+      "utils",
+      "http://localhost:8998/r/color-picker-radix.json",
+    ]);
+  });
+
+  it("rewrites the production host to the override in the catalog", () => {
+    buildRegistry({
+      root,
+      manifest: path.join(root, "registry.json"),
+      outDir,
+      quiet: true,
+      baseUrl: "http://localhost:8998",
+    });
+    const catalog = read("registry.json");
+    expect(catalog.items[0].registryDependencies).toEqual([
+      "utils",
+      "http://localhost:8998/r/color-picker-radix.json",
+    ]);
+  });
+
+  it("leaves registryDependencies unchanged with no override", () => {
+    buildRegistry({
+      root,
+      manifest: path.join(root, "registry.json"),
+      outDir,
+      quiet: true,
+      baseUrl: undefined,
+    });
+    const bundle = read("x.json");
+    expect(bundle.registryDependencies).toEqual([
+      "utils",
+      "https://amplo.ale.design/r/color-picker-radix.json",
+    ]);
   });
 });

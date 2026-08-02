@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { useGradientPickerContext } from "../../contexts/gradient";
+import {
+  useGradientPickerContext,
+  useGradientStopEditor,
+} from "../../contexts/gradient";
 import {
   adjustStopsForEndpoints,
   formatGradient,
@@ -12,7 +15,6 @@ import {
   type LinearGradient,
 } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
-import { StopEditorPopover } from "./stop-editor-popover";
 import { focusNeighborIn } from "./stop-list-shared";
 import { useLiveAnnounce } from "../use-live-announce";
 
@@ -59,6 +61,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
   // when `editOnClick` is true.
   const [openStopId, setOpenStopId] = React.useState<string | null>(null);
   const ctx = useGradientPickerContext();
+  const stopEditor = useGradientStopEditor();
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const [liveText, announce] = useLiveAnnounce();
   const trackRef = React.useRef<HTMLDivElement | null>(null);
@@ -297,16 +300,21 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
             )}
           />
         );
-        if (!editOnClick) return <React.Fragment key={s.id}>{handle}</React.Fragment>;
+        // The editor is a slot, not an import: the Bar is shared by both
+        // variants, so the dialect-specific editor is injected by the barrel
+        // (see `GradientStopEditorRenderer`). Without one — or without
+        // `editOnClick` — the handle renders bare.
+        if (!editOnClick || !stopEditor)
+          return <React.Fragment key={s.id}>{handle}</React.Fragment>;
         return (
-          <StopEditorPopover
-            key={s.id}
-            stopId={s.id}
-            open={openStopId === s.id}
-            onOpenChange={(o) => setOpenStopId(o ? s.id : null)}
-          >
-            {handle}
-          </StopEditorPopover>
+          <React.Fragment key={s.id}>
+            {stopEditor({
+              stopId: s.id,
+              open: openStopId === s.id,
+              onOpenChange: (o) => setOpenStopId(o ? s.id : null),
+              children: handle,
+            })}
+          </React.Fragment>
         );
       })}
       <span aria-live="polite" className="sr-only">

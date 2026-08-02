@@ -10,16 +10,23 @@
 //   - StopList                                       → plain button (+
 //     the shared field shell); still uses the original StopEditorPopover
 //     (see stop-list.tsx for why)
+//   - the `<Bar editOnClick>` stop editor → ./parts/gradient/stop-editor,
+//     injected below through the Bar's `stopEditor` slot (the Bar itself
+//     imports no editor, so it stays dialect-free)
 //
 // Everything else (Root/context, Bar, Area, Overlay, ShapeSwitcher, the
-// pad/input/group parts, StopColor, StopEditorPopover, Presets, CssInput,
-// RepeatingToggle) is pure pointer/canvas logic or plain markup with zero
-// Radix dependency, so it's imported straight from the original — a single
-// source of truth for engine fixes.
+// pad/input/group parts, StopColor, Presets, CssInput, RepeatingToggle) is
+// pure pointer/canvas logic or plain markup with zero Radix dependency, so
+// it's imported straight from the original — a single source of truth for
+// engine fixes.
 
+import * as React from "react";
 import { ColorPickerBase } from "./color-picker";
 
-import { Root as GradientRoot } from "@/registry/new-york/ui/fill-picker/parts/gradient/root";
+import {
+  Root as EngineGradientRoot,
+  type RootProps as GradientRootProps,
+} from "@/registry/new-york/ui/fill-picker/parts/gradient/root";
 import { Bar } from "@/registry/new-york/ui/fill-picker/parts/gradient/bar";
 import { Area as GradientArea } from "@/registry/new-york/ui/fill-picker/parts/gradient/area";
 import { Overlay as GradientOverlay } from "@/registry/new-york/ui/fill-picker/parts/gradient/overlay";
@@ -42,6 +49,7 @@ import { ReverseStops } from "./parts/gradient/reverse-stops";
 import { StopList } from "./parts/gradient/stop-list";
 import { InterpSwitcher } from "./parts/gradient/interp-switcher";
 import { RadialSizeSelect } from "./parts/gradient/radial-size-select";
+import { stopEditorSlot } from "./parts/gradient/stop-editor";
 
 export type {
   Gradient,
@@ -68,6 +76,17 @@ export type {
 } from "@/registry/new-york/ui/fill-picker/hooks/use-gradient-picker";
 
 export { ColorPickerBase };
+
+/**
+ * The engine `Root` plus this variant's stop editor (Base UI Hue/Alpha/
+ * FormatSwitcher/ChannelInput inside the shared popover shell). The Bar
+ * imports no editor of its own — it renders whatever is injected here.
+ */
+const GradientRoot = React.forwardRef<HTMLDivElement, GradientRootProps>(
+  function Root({ stopEditor = stopEditorSlot, ...props }, ref) {
+    return <EngineGradientRoot ref={ref} stopEditor={stopEditor} {...props} />;
+  },
+);
 
 export const GradientPickerBase = {
   Root: GradientRoot,

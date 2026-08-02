@@ -1,18 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { StopPopover } from "./stop-popover";
-import { ColorPickerContext } from "../../context";
-import type { GradientStopEditorRenderer } from "../../contexts/gradient";
-import { useStopColorPickerState } from "./stop-editor-shared";
-import { Area as ColorArea } from "../area";
+import { StopPopover } from "@/registry/new-york/ui/fill-picker/parts/gradient/stop-popover";
+import { ColorPickerContext } from "@/registry/new-york/ui/fill-picker/context";
+import type { GradientStopEditorRenderer } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
+import { useStopColorPickerState } from "@/registry/new-york/ui/fill-picker/parts/gradient/stop-editor-shared";
+import { Area as ColorArea } from "@/registry/new-york/ui/fill-picker/parts/area";
+import { EyeDropper } from "@/registry/new-york/ui/fill-picker/parts/eye-dropper";
+
 import { Hue } from "../hue";
 import { Alpha } from "../alpha";
 import { ChannelInput } from "../channel-input";
 import { FormatSwitcher } from "../format-switcher";
-import { EyeDropper } from "../eye-dropper";
 
-export interface StopEditorPopoverProps {
+export interface StopEditorProps {
   /** Stop the popover edits — color + per-stop format are read/written via gradient context. */
   stopId: string;
   /**
@@ -28,17 +29,25 @@ export interface StopEditorPopoverProps {
 }
 
 /**
- * Shared color-editor popover used by `<GradientPicker.StopList>` rows and
- * by `<GradientPicker.Bar editOnClick>`. Mounts a `useColorPicker` bound
- * to the named stop and provides it via `ColorPickerContext` so the
- * standard `<ColorPicker.*>` parts work inside.
+ * Base UI variant of `<StopEditorPopover>`: same layout, same bound state
+ * (`useStopColorPickerState`, shared with the original so the memoization
+ * subtleties can't drift), but composed from this tree's Base UI parts —
+ * Hue/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField.
+ *
+ * Area and EyeDropper come from the engine unchanged: they're pointer/canvas
+ * logic and a plain shadcn Button, already shipped as-is by this variant's
+ * `color-picker.tsx`.
+ *
+ * The popover shell is the engine's `StopPopover` — already built directly on
+ * `@base-ui/react/popover` (anchor-without-trigger, z-50 positioner), so
+ * there's nothing Radix-flavoured to re-do.
  */
-export function StopEditorPopover({
+export function StopEditor({
   stopId,
   open,
   onOpenChange,
   children,
-}: StopEditorPopoverProps) {
+}: StopEditorProps) {
   const state = useStopColorPickerState(stopId);
   return (
     <StopPopover
@@ -65,10 +74,9 @@ export function StopEditorPopover({
 }
 
 /**
- * `<GradientPicker.Bar editOnClick>`'s stop-editor slot, filled with the
- * popover above. Injected as the default by the Radix/shadcn barrel
- * (`gradient-picker.tsx`, `fill-picker.tsx`); the Base UI variant injects its
- * own from `fill-picker-base/parts/gradient/stop-editor.tsx`.
+ * `<GradientPickerBase.Bar editOnClick>`'s stop-editor slot, filled with the
+ * editor above. Injected as the default by the Base UI barrels
+ * (`gradient.tsx`, `fill.tsx`).
  */
 export const stopEditorSlot: GradientStopEditorRenderer = ({
   children,
@@ -77,7 +85,5 @@ export const stopEditorSlot: GradientStopEditorRenderer = ({
   // The Bar always passes a single element (the stop handle) as `children`;
   // the slot type is widened to ReactNode only because it is React's own
   // children convention.
-  <StopEditorPopover {...props}>
-    {children as React.ReactElement}
-  </StopEditorPopover>
+  <StopEditor {...props}>{children as React.ReactElement}</StopEditor>
 );

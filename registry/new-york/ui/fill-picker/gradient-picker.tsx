@@ -6,7 +6,9 @@
 export * from "./color-picker";
 export { ColorPicker } from "./color-picker";
 
-import { Root as GradientRoot } from "./parts/gradient/root";
+import * as React from "react";
+import { Root as EngineGradientRoot, type RootProps as GradientRootProps } from "./parts/gradient/root";
+import { stopEditorSlot } from "./parts/gradient/stop-editor-popover";
 import { Bar } from "./parts/gradient/bar";
 import { Area as GradientArea } from "./parts/gradient/area";
 import { Overlay as GradientOverlay } from "./parts/gradient/overlay";
@@ -52,6 +54,18 @@ export type {
   UseGradientPickerProps,
   GradientPickerState,
 } from "./hooks/use-gradient-picker";
+
+/**
+ * The engine `Root` plus this variant's stop editor. `<Bar editOnClick>`
+ * renders whatever editor was injected here (the Bar itself imports none, so
+ * it can ship in a dialect-free item); the public API is unchanged — the
+ * `stopEditor` prop merely gains a default.
+ */
+const GradientRoot = React.forwardRef<HTMLDivElement, GradientRootProps>(
+  function Root({ stopEditor = stopEditorSlot, ...props }, ref) {
+    return <EngineGradientRoot ref={ref} stopEditor={stopEditor} {...props} />;
+  },
+);
 
 export const GradientPicker = {
   Root: GradientRoot,

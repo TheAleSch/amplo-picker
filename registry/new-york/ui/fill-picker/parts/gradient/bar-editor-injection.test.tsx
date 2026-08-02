@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { GradientPicker, FillPicker } from "../../fill-picker";
+import { Root as EngineRoot } from "./root";
+import { Bar } from "./bar";
 import {
   GradientPickerBase,
   FillPickerBase,
@@ -56,6 +58,41 @@ describe("stop-editor injection through the barrels", () => {
       <FillPicker.Root defaultValue={{ kind: "gradient", gradient: DEFAULT_LINEAR }}>
         <FillPicker.Pane mode="gradient">
           <GradientPicker.Bar editOnClick />
+        </FillPicker.Pane>
+      </FillPicker.Root>,
+    );
+    tapFirstHandle();
+    expect(await screen.findByLabelText("Color format")).toBeInTheDocument();
+  });
+
+  it("lets a consumer's stopEditor override the barrel default", () => {
+    render(
+      <GradientPicker.Root
+        defaultValue={DEFAULT_LINEAR}
+        stopEditor={({ stopId, children }) => (
+          <div data-testid={`custom-${stopId}`}>{children}</div>
+        )}
+      >
+        <GradientPicker.Bar editOnClick />
+      </GradientPicker.Root>,
+    );
+    tapFirstHandle();
+    expect(screen.getAllByTestId(/^custom-/)).toHaveLength(
+      DEFAULT_LINEAR.stops.length,
+    );
+    // The barrel's own editor must not also mount.
+    expect(screen.queryByLabelText("Color format")).not.toBeInTheDocument();
+  });
+
+  it("inherits the editor when a deep-imported engine Root omits stopEditor", async () => {
+    // The engine Root takes no default of its own; nested under a barrel that
+    // already injected one, omitting the prop must inherit rather than blank.
+    render(
+      <FillPicker.Root defaultValue={{ kind: "gradient", gradient: DEFAULT_LINEAR }}>
+        <FillPicker.Pane mode="gradient">
+          <EngineRoot defaultValue={DEFAULT_LINEAR}>
+            <Bar editOnClick />
+          </EngineRoot>
         </FillPicker.Pane>
       </FillPicker.Root>,
     );

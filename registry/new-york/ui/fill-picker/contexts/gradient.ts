@@ -17,6 +17,10 @@ export const GradientPickerContext =
  *
  * `children` is the stop handle: the renderer must render it (that's the
  * element the popover anchors to and the element the user drags).
+ *
+ * Called as a plain function inside the parts' stop `.map()`, not mounted as
+ * JSX — so it must *return* a component element and never call hooks itself,
+ * or the hook order breaks the moment a stop is added or removed.
  */
 export type GradientStopEditorRenderer = (props: {
   stopId: string;

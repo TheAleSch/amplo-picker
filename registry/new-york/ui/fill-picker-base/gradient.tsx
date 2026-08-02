@@ -8,11 +8,12 @@
 //   - TypeSwitcher, InterpSwitcher, RadialSizeSelect → Select
 //   - ReverseStops                                   → plain button
 //   - StopList                                       → plain button (+
-//     the shared field shell); still uses the original StopEditorPopover
-//     (see stop-list.tsx for why)
-//   - the `<Bar editOnClick>` stop editor → ./parts/gradient/stop-editor,
-//     injected below through the Bar's `stopEditor` slot (the Bar itself
-//     imports no editor, so it stays dialect-free)
+//     the shared field shell), re-exported from the original (see
+//     stop-list.tsx for why)
+//   - the per-stop color editor → ./parts/gradient/stop-editor, injected
+//     below through the `stopEditor` slot. Both `<Bar editOnClick>` and
+//     `<StopList>` rows read that slot instead of importing an editor, so
+//     they stay dialect-free and open *this* variant's editor here.
 //
 // Everything else (Root/context, Bar, Area, Overlay, ShapeSwitcher, the
 // pad/input/group parts, StopColor, Presets, CssInput, RepeatingToggle) is

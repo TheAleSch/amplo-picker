@@ -104,6 +104,161 @@ export function lintEngineFile(
   return errs;
 }
 
+/* ------------------------------------------------------------------ *
+ * Basename-collision lint (T8)
+ *
+ * The shadcn CLI runs a post-write import-fixup pass over every file it
+ * just installed (`Bc`/`Yc` in the 4.16 bundle — see
+ * `.superpowers/sdd/2026-08-01-registry-restructure/task-7-report.md` §1b
+ * for the disassembly). For each ALIASED import specifier it resolves an
+ * extension-less path, then picks a written file by matching the file
+ * BASENAME, sorting candidates by extension index (`.tsx` BEFORE `.ts`)
+ * and only then by whether the candidate shares the resolved directory
+ * prefix. So a `.ts` module whose basename collides with any `.tsx`
+ * module in the same registry silently loses its aliased importers to
+ * that `.tsx` in a consumer project — while everything stays green here,
+ * where TypeScript resolves the path honestly.
+ *
+ * Three exemptions are real, and this lint encodes exactly those:
+ *   1. Relative specifiers — the pass's `Cn` gate skips them.
+ *   2. `export … from` — the pass only walks import declarations.
+ *   3. A shadowing barrel that re-exports the shadowed module's symbols:
+ *      the redirect still happens, but it lands somewhere that has what
+ *      the importer asked for. This is the mitigation in use today for
+ *      `fill-picker-base/gradient.tsx`.
+ * ------------------------------------------------------------------ */
+
+export interface EmittedFile {
+  path: string;
+  content: string;
+}
+
+const TS_EXT = /\.tsx?$/;
+
+/** `registry/new-york/ui/x/lib/y.ts` → `@/registry/new-york/ui/x/lib/y` */
+function aliasSpecifierFor(filePath: string): string {
+  return `@/${filePath.replace(TS_EXT, "")}`;
+}
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Names an import declaration pulls out of `spec`. `named` holds the
+ * SOURCE names (left of `as`, which is what the redirect target must
+ * export); `unnamed` flags default/namespace forms, which only a
+ * `export * from` can cover.
+ */
+function importedBindings(
+  content: string,
+  spec: string,
+): { named: string[]; unnamed: string[] } {
+  const named: string[] = [];
+  const unnamed: string[] = [];
+  const re = new RegExp(
+    String.raw`(?:^|[\s;}])import\s+(?:type\s+)?([^;]*?)\s+from\s*["']${escapeRe(spec)}["']`,
+    "g",
+  );
+  for (const m of content.matchAll(re)) {
+    const clause = m[1];
+    if (/\*\s*as\s/.test(clause)) unnamed.push("namespace import");
+    // A default binding is any bare identifier sitting outside the braces.
+    const outsideBraces = clause.replace(/\{[^}]*\}/g, "").replace(/\*\s*as\s+[\w$]+/g, "");
+    if (/[\w$]/.test(outsideBraces)) unnamed.push("default import");
+    const braces = clause.match(/\{([^}]*)\}/);
+    if (braces) {
+      for (const raw of braces[1].split(",")) {
+        const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0].trim();
+        if (name) named.push(name);
+      }
+    }
+  }
+  return { named, unnamed };
+}
+
+/**
+ * Names `content` re-exports from `spec`, i.e. the names the module would
+ * expose to an importer that got redirected here. `"*"` means
+ * `export * from` — blanket coverage.
+ */
+function reexportedNames(content: string, spec: string): Set<string> {
+  const out = new Set<string>();
+  const re = new RegExp(
+    String.raw`(?:^|[\s;}])export\s+(?:type\s+)?(\*|\{[^}]*\})\s*from\s*["']${escapeRe(spec)}["']`,
+    "g",
+  );
+  for (const m of content.matchAll(re)) {
+    if (m[1] === "*") {
+      out.add("*");
+      continue;
+    }
+    for (const raw of m[1].slice(1, -1).split(",")) {
+      // `export { a as b }` exposes `b`; a redirected `import { b }` is
+      // what has to be satisfied, so keep the RIGHT side.
+      const parts = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/);
+      const name = (parts[1] ?? parts[0]).trim();
+      if (name) out.add(name);
+    }
+  }
+  return out;
+}
+
+/**
+ * Whole-manifest lint: across every emitted file, find basenames shared
+ * by a `.ts` and a `.tsx` module, then report each aliased import into
+ * the `.ts` side that the shadowing `.tsx` does not re-export.
+ */
+export function lintBasenameCollisions(files: EmittedFile[]): string[] {
+  const stripped = new Map(
+    files.map((f) => [f.path, stripComments(f.content)] as const),
+  );
+
+  const byBasename = new Map<string, string[]>();
+  for (const f of files) {
+    if (!TS_EXT.test(f.path)) continue;
+    const base = path.basename(f.path).replace(TS_EXT, "");
+    byBasename.set(base, [...(byBasename.get(base) ?? []), f.path]);
+  }
+
+  const errs: string[] = [];
+  for (const [base, paths] of byBasename) {
+    const tsPaths = paths.filter((p) => p.endsWith(".ts"));
+    const tsxPaths = paths.filter((p) => p.endsWith(".tsx"));
+    if (tsPaths.length === 0 || tsxPaths.length === 0) continue;
+
+    for (const tsPath of tsPaths) {
+      const spec = aliasSpecifierFor(tsPath);
+      // Conservative when several `.tsx` could win the sort: every one of
+      // them has to carry the symbols.
+      const coverage = tsxPaths.map((p) => ({
+        path: p,
+        names: reexportedNames(stripped.get(p) ?? "", spec),
+      }));
+      const coversAll = coverage.every((c) => c.names.has("*"));
+      const covers = (name: string) =>
+        coverage.every((c) => c.names.has("*") || c.names.has(name));
+
+      for (const f of files) {
+        const { named, unnamed } = importedBindings(
+          stripped.get(f.path) ?? "",
+          spec,
+        );
+        const missing = [
+          ...(coversAll ? [] : unnamed),
+          ...named.filter((n) => !covers(n)),
+        ];
+        if (missing.length === 0) continue;
+        errs.push(
+          `basename collision "${base}": ${f.path} aliases ${tsPath}, but the CLI's ` +
+            `import fixup redirects that to ${tsxPaths.join(" / ")} — which does not ` +
+            `re-export ${[...new Set(missing)].join(", ")}. Use a relative import, or ` +
+            `re-export the symbols from the shadowing barrel.`,
+        );
+      }
+    }
+  }
+  return errs;
+}
+
 interface RegistryFile {
   path: string;
   type: string;
@@ -157,6 +312,9 @@ export function buildRegistry(opts: {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   const engineLintErrors: string[] = [];
+  // Deduped across items — a file can ship in more than one item, and the
+  // basename-collision lint is a property of the whole emitted set.
+  const emitted = new Map<string, EmittedFile>();
 
   for (const item of manifest.items) {
     assertSafeItemName(item.name);
@@ -176,6 +334,7 @@ export function buildRegistry(opts: {
         if (isEngine) {
           engineLintErrors.push(...lintEngineFile(item.name, f.path, content));
         }
+        emitted.set(f.path, { path: f.path, content });
         return {
           path: f.path,
           type: f.type,
@@ -201,6 +360,13 @@ export function buildRegistry(opts: {
   if (engineLintErrors.length > 0) {
     throw new Error(
       `engine dialect-agnosticism lint failed:\n${engineLintErrors.join("\n")}`,
+    );
+  }
+
+  const collisionErrors = lintBasenameCollisions([...emitted.values()]);
+  if (collisionErrors.length > 0) {
+    throw new Error(
+      `registry basename-collision lint failed:\n${collisionErrors.join("\n")}`,
     );
   }
 

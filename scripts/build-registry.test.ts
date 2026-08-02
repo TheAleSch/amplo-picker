@@ -11,6 +11,7 @@ import {
   ENGINE_UI_ALLOWLIST,
   stripComments,
   lintEngineFile,
+  lintBasenameCollisions,
 } from "./build-registry";
 
 describe("assertSafeItemName — output containment (Sec-1)", () => {
@@ -540,5 +541,264 @@ describe("buildRegistry — hermetic base-URL override (F4)", () => {
       "utils",
       "https://amplo.ale.design/r/color-picker-radix.json",
     ]);
+  });
+});
+
+// T8: the shadcn CLI's post-install import-fixup pass (`Bc`/`Yc` in the 4.16
+// bundle) re-points an ALIASED import by file BASENAME, preferring a `.tsx`
+// candidate over a `.ts` one. So a `.ts` module whose basename collides with
+// some `.tsx` module in the same registry silently loses its aliased importers
+// to the `.tsx` in a consumer project. See task-7-report §1b for the
+// disassembly. Relative specifiers and `export … from` are exempt from that
+// pass, and a shadowing barrel that re-exports the shadowed module's symbols
+// makes the redirect benign — the lint encodes exactly those three exemptions.
+describe("lintBasenameCollisions — CLI import-fixup guard (T8)", () => {
+  const TS = "registry/new-york/ui/pkg/contexts/thing.ts";
+  const TSX = "registry/new-york/ui/pkg-base/thing.tsx";
+  const ALIAS = "@/registry/new-york/ui/pkg/contexts/thing";
+
+  it("passes when no .ts/.tsx basename collision exists", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: TS, content: "export const useThing = () => 1;\n" },
+        {
+          path: "registry/new-york/ui/pkg-base/other.tsx",
+          content: `import { useThing } from "${ALIAS}";\n`,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("does not flag a .tsx-vs-.tsx collision (the prefix tiebreak resolves it)", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: "registry/new-york/ui/pkg/parts/root.tsx", content: "" },
+        { path: TSX.replace("thing", "root"), content: "" },
+        {
+          path: "registry/new-york/ui/pkg-base/x.tsx",
+          content:
+            'import { Root } from "@/registry/new-york/ui/pkg/parts/root";\n',
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("flags an aliased import into the shadowed .ts module", () => {
+    const errs = lintBasenameCollisions([
+      { path: TS, content: "export const useThing = () => 1;\n" },
+      { path: TSX, content: "export const Thing = () => null;\n" },
+      {
+        path: "registry/new-york/ui/pkg-base/x.tsx",
+        content: `import { useThing } from "${ALIAS}";\n`,
+      },
+    ]);
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toContain("pkg-base/x.tsx");
+    expect(errs[0]).toContain(TS);
+    expect(errs[0]).toContain(TSX);
+    expect(errs[0]).toContain("useThing");
+  });
+
+  it("exempts relative importers (the CLI's fixup only walks aliased ones)", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: TS, content: "export const useThing = () => 1;\n" },
+        { path: TSX, content: "" },
+        {
+          path: "registry/new-york/ui/pkg/parts/x.tsx",
+          content: 'import { useThing } from "../../contexts/thing";\n',
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("exempts `export … from` specifiers", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: TS, content: "export const useThing = () => 1;\n" },
+        { path: TSX, content: "" },
+        {
+          path: "registry/new-york/ui/pkg-base/x.tsx",
+          content: `export { useThing } from "${ALIAS}";\n`,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("exempts a mention that only appears inside a comment", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: TS, content: "export const useThing = () => 1;\n" },
+        { path: TSX, content: "" },
+        {
+          path: "registry/new-york/ui/pkg-base/x.tsx",
+          content: `// import { useThing } from "${ALIAS}";\nexport const x = 1;\n`,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("exempts imports whose bindings the shadowing barrel re-exports", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: TS, content: "export const useThing = () => 1;\n" },
+        {
+          path: TSX,
+          content: `export { useThing } from "${ALIAS}";\nexport type { ThingRenderer } from "${ALIAS}";\n`,
+        },
+        {
+          path: "registry/new-york/ui/pkg-base/x.tsx",
+          content: `import { useThing } from "${ALIAS}";\nimport type { ThingRenderer } from "${ALIAS}";\n`,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("still flags the bindings a partial re-export misses", () => {
+    const errs = lintBasenameCollisions([
+      { path: TS, content: "export const useThing = () => 1;\n" },
+      { path: TSX, content: `export { useThing } from "${ALIAS}";\n` },
+      {
+        path: "registry/new-york/ui/pkg-base/x.tsx",
+        content: `import { useThing, ThingContext } from "${ALIAS}";\n`,
+      },
+    ]);
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toContain("ThingContext");
+    expect(errs[0]).not.toContain("useThing,");
+  });
+
+  it("treats `export * from` on the barrel as full coverage", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: TS, content: "export const useThing = () => 1;\n" },
+        { path: TSX, content: `export * from "${ALIAS}";\n` },
+        {
+          path: "registry/new-york/ui/pkg-base/x.tsx",
+          content: `import { useThing, Whatever } from "${ALIAS}";\n`,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("flags a default or namespace import even when the barrel re-exports names", () => {
+    const errs = lintBasenameCollisions([
+      { path: TS, content: "export default 1;\n" },
+      { path: TSX, content: `export { useThing } from "${ALIAS}";\n` },
+      {
+        path: "registry/new-york/ui/pkg-base/x.tsx",
+        content: `import * as thing from "${ALIAS}";\n`,
+      },
+    ]);
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/namespace|default/);
+  });
+
+  it("resolves `as` renames to the re-exported source name", () => {
+    expect(
+      lintBasenameCollisions([
+        { path: TS, content: "export const useThing = () => 1;\n" },
+        { path: TSX, content: `export { useThing } from "${ALIAS}";\n` },
+        {
+          path: "registry/new-york/ui/pkg-base/x.tsx",
+          content: `import { useThing as useIt } from "${ALIAS}";\n`,
+        },
+      ]),
+    ).toEqual([]);
+  });
+});
+
+describe("buildRegistry — basename-collision enforcement (T8)", () => {
+  const write = (files: { path: string; content: string }[]) => {
+    const r = fs.mkdtempSync(path.join(os.tmpdir(), "reg-collide-"));
+    for (const f of files) {
+      const abs = path.join(r, f.path);
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, f.content);
+    }
+    fs.writeFileSync(
+      path.join(r, "registry.json"),
+      JSON.stringify({
+        name: "fixture-registry",
+        items: [
+          {
+            name: "pkg",
+            type: "registry:ui",
+            files: files.map((f) => ({ path: f.path, type: "registry:ui" })),
+          },
+        ],
+      }),
+    );
+    return r;
+  };
+
+  const run = (root: string) =>
+    buildRegistry({
+      root,
+      manifest: path.join(root, "registry.json"),
+      outDir: path.join(root, "public", "r"),
+      quiet: true,
+    });
+
+  it("throws, naming both sides of the collision", () => {
+    const root = write([
+      {
+        path: "registry/new-york/ui/pkg/contexts/thing.ts",
+        content: "export const useThing = () => 1;\n",
+      },
+      { path: "registry/new-york/ui/pkg-base/thing.tsx", content: "" },
+      {
+        path: "registry/new-york/ui/pkg-base/x.tsx",
+        content:
+          'import { useThing } from "@/registry/new-york/ui/pkg/contexts/thing";\n',
+      },
+    ]);
+    expect(() => run(root)).toThrow(/basename collision/i);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it("passes when the barrel re-exports the shadowed symbols", () => {
+    const root = write([
+      {
+        path: "registry/new-york/ui/pkg/contexts/thing.ts",
+        content: "export const useThing = () => 1;\n",
+      },
+      {
+        path: "registry/new-york/ui/pkg-base/thing.tsx",
+        content:
+          'export { useThing } from "@/registry/new-york/ui/pkg/contexts/thing";\n',
+      },
+      {
+        path: "registry/new-york/ui/pkg-base/x.tsx",
+        content:
+          'import { useThing } from "@/registry/new-york/ui/pkg/contexts/thing";\n',
+      },
+    ]);
+    expect(() => run(root)).not.toThrow();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+});
+
+// Regression guard on the real shipped tree: `gradient` (contexts + lib `.ts`
+// shadowed by `fill-picker-base/gradient.tsx`) and `fill` (`contexts/fill.ts`
+// shadowed by `fill-picker-base/fill.tsx`) are live collisions today. They are
+// safe only because of the barrel re-export and relative-import exemptions —
+// this test fails the moment someone removes either mitigation.
+describe("the shipped registry is free of dangerous basename collisions (T8)", () => {
+  it("lints clean over every file in registry.json", () => {
+    const root = path.resolve(__dirname, "..");
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(root, "registry.json"), "utf8"),
+    ) as { items: { files: { path: string }[] }[] };
+    const seen = new Map<string, string>();
+    for (const item of manifest.items) {
+      for (const f of item.files) {
+        if (!seen.has(f.path)) {
+          seen.set(f.path, fs.readFileSync(path.join(root, f.path), "utf8"));
+        }
+      }
+    }
+    const files = [...seen].map(([p, content]) => ({ path: p, content }));
+    expect(lintBasenameCollisions(files)).toEqual([]);
   });
 });

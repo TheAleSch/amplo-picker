@@ -4,7 +4,10 @@ import * as React from "react";
 import { Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useGradientPickerContext } from "../../contexts/gradient";
+import {
+  useGradientPickerContext,
+  useGradientStopEditor,
+} from "../../contexts/gradient";
 import {
   projectStopPosition,
   reverseProjectStopPosition,
@@ -16,7 +19,6 @@ import {
   stopListKeyNav,
 } from "./stop-list-shared";
 import { formatColor, parseColor } from "../../lib/color";
-import { StopEditorPopover } from "./stop-editor-popover";
 import { CHECKERBOARD_SM } from "../../lib/constants";
 import {
   FieldInput,
@@ -42,9 +44,9 @@ export const StopList = React.forwardRef<HTMLDivElement, StopListProps>(
     ref,
   ) {
   const ctx = useGradientPickerContext();
-  // Each row mounts its own <StopEditorPopover> (bound to that row's stop)
-  // so opening any popover edits the right stop directly — no need for a
-  // list-wide ColorPicker context.
+  // Each row mounts its own copy of the injected stop editor (bound to that
+  // row's stop) so opening any popover edits the right stop directly — no
+  // need for a list-wide ColorPicker context.
   // Mirror the Bar's projection: when the gradient is a positioned linear,
   // show + edit the *visible* position so this list matches what the user
   // sees in the Area and Bar. Authored positions still live in 0..1 of the
@@ -118,6 +120,10 @@ function StopRow({
   formatted: string;
 }) {
   const ctx = useGradientPickerContext();
+  // Same slot the Bar uses: the editor's UI dialect ships per variant and is
+  // injected by the barrel, so this list stays importable from either tree
+  // without dragging one dialect's primitives in.
+  const stopEditor = useGradientStopEditor();
   const [open, setOpen] = React.useState(false);
   const [draft, setDraft] = React.useState(formatted);
   const focusedRef = React.useRef(false);
@@ -129,6 +135,22 @@ function StopRow({
     if (parsed) ctx.setStopColor(s.id, parsed);
     else setDraft(formatted);
   };
+  const swatch = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        ctx.selectStop(s.id);
+        setOpen((o) => !o);
+      }}
+      aria-label="Edit stop color"
+      style={{
+        backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD_SM}`,
+        backgroundSize: "auto, 6px 6px",
+      }}
+      className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
+    />
+  );
   return (
     <div
       role="option"
@@ -156,22 +178,14 @@ function StopRow({
         selected ? "border-foreground" : "border-border",
       )}
     >
-      <StopEditorPopover stopId={s.id} open={open} onOpenChange={setOpen}>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            ctx.selectStop(s.id);
-            setOpen((o) => !o);
-          }}
-          aria-label="Edit stop color"
-          style={{
-            backgroundImage: `linear-gradient(${formatColor(s.color, "oklch")}, ${formatColor(s.color, "oklch")}), ${CHECKERBOARD_SM}`,
-            backgroundSize: "auto, 6px 6px",
-          }}
-          className="size-7 shrink-0 rounded-xs border border-border outline-none transition-shadow hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
-        />
-      </StopEditorPopover>
+      {stopEditor
+        ? stopEditor({
+            stopId: s.id,
+            open,
+            onOpenChange: setOpen,
+            children: swatch,
+          })
+        : swatch}
       <FieldShell className="h-7 w-fit">
         <FieldInputGroup>
           <span className="sr-only">Stop position</span>

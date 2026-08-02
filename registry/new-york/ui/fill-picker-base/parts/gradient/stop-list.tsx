@@ -4,9 +4,9 @@
 //
 // The original StopList touches no Radix primitive: its rows are plain markup,
 // its keyboard/selection/insert logic already lives in the shared
-// `stop-list-shared` helpers, its editor is the variant-agnostic
-// `StopEditorPopover` (built on the self-contained Base UI `StopPopover`, not
-// the consumer's `@/components/ui/popover`), and the only field parts it uses
+// `stop-list-shared` helpers, its stop editor is a slot injected by whichever
+// barrel mounted the tree (`useGradientStopEditor` — so under this variant the
+// rows open ./stop-editor, the Base UI one), and the only field parts it uses
 // — FieldInput / FieldInputGroup / FieldShell / FieldSuffix — are re-exported
 // verbatim from the original by this variant's own `./field`. It never touches
 // `FieldSelect`, the one field part that genuinely differs between variants.

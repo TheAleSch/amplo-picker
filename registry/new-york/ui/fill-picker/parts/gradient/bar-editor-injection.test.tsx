@@ -25,9 +25,9 @@ function tapFirstHandle() {
   });
 }
 
-// D7: the Bar no longer imports an editor — each barrel injects its variant's
-// one. These guard that every public entry point still opens an editor on tap
-// (the two gradient Roots, and the two FillPicker Panes, which build the
+// D7: neither the Bar nor the StopList imports an editor — each barrel injects
+// its variant's one. These guard that every public entry point still opens an
+// editor (the two gradient Roots, and the two FillPicker Panes, which build the
 // gradient state themselves instead of going through GradientPicker.Root).
 describe("stop-editor injection through the barrels", () => {
   it("GradientPicker.Root (Radix) opens the stop editor on tap", async () => {
@@ -60,6 +60,27 @@ describe("stop-editor injection through the barrels", () => {
       </FillPicker.Root>,
     );
     tapFirstHandle();
+    expect(await screen.findByLabelText("Color format")).toBeInTheDocument();
+  });
+
+  it("GradientPicker.StopList (Radix) opens the stop editor from a row swatch", async () => {
+    render(
+      <GradientPicker.Root defaultValue={DEFAULT_LINEAR}>
+        <GradientPicker.StopList showAddStop={false} />
+      </GradientPicker.Root>,
+    );
+    expect(screen.queryByLabelText("Color format")).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByLabelText("Edit stop color")[0]);
+    expect(await screen.findByLabelText("Color format")).toBeInTheDocument();
+  });
+
+  it("GradientPickerBase.StopList opens the stop editor from a row swatch", async () => {
+    render(
+      <GradientPickerBase.Root defaultValue={DEFAULT_LINEAR}>
+        <GradientPickerBase.StopList showAddStop={false} />
+      </GradientPickerBase.Root>,
+    );
+    fireEvent.click(screen.getAllByLabelText("Edit stop color")[0]);
     expect(await screen.findByLabelText("Color format")).toBeInTheDocument();
   });
 

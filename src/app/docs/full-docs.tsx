@@ -59,6 +59,7 @@ function usePickers(): Pickers {
 const SNIPPET_PATH_SWAPS: [string, string][] = [
   ["@/components/ui/fill-picker/fill-picker", "@/components/ui/fill-picker-base/fill"],
   ["@/components/ui/fill-picker/color-picker", "@/components/ui/fill-picker-base/color-picker"],
+  ["@/components/ui/fill-picker/gradient-picker", "@/components/ui/fill-picker-base/gradient"],
 ];
 
 const TOC = [

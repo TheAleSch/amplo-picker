@@ -15,10 +15,10 @@ import {
   FieldDivider,
   FieldInput,
   FieldInputGroup,
-  FieldSelect,
   FieldShell,
   FieldSuffix,
 } from "./field";
+import { FieldSelect } from "./field-select";
 
 export interface ChannelInputProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {

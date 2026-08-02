@@ -248,6 +248,11 @@
           "target": "components/ui/fill-picker/parts/field.tsx"
         },
         {
+          "path": "registry/new-york/ui/fill-picker/parts/field-select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/fill-picker/parts/field-select.tsx"
+        },
+        {
           "path": "registry/new-york/ui/fill-picker/parts/area.tsx",
           "type": "registry:ui",
           "target": "components/ui/fill-picker/parts/area.tsx"

@@ -4,7 +4,7 @@ import * as React from "react";
 import { SelectItem } from "@/components/ui/select";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import type { GradientType } from "../../lib/gradient";
-import { FieldSelect } from "../field";
+import { FieldSelect } from "../field-select";
 import { GRADIENT_TYPE_OPTIONS } from "../../lib/gradient-options";
 
 const TYPES = GRADIENT_TYPE_OPTIONS;

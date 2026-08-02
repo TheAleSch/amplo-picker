@@ -5,7 +5,7 @@ import { SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useColorPickerContext } from "../context";
 import type { ColorFormat } from "../lib/types";
-import { FieldSelect } from "./field";
+import { FieldSelect } from "./field-select";
 
 export interface FormatSwitcherProps {
   /** Override the formats from <ColorPicker.Root formats={...} />. */

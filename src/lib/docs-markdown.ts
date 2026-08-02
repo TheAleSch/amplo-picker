@@ -86,7 +86,9 @@ pnpm dlx shadcn@latest add ${FILL_PICKER_URL}
 # or: yarn dlx shadcn@latest add ${FILL_PICKER_URL}
 \`\`\`
 
-The shadcn CLI drops the Base UI parts into \`components/ui/fill-picker-base/\` (with the shared engine under \`components/ui/fill-picker/\`) and installs \`@base-ui/react\`, \`culori\` + \`lucide-react\` as runtime dependencies. Requires Tailwind v4 and React 19. Import paths: \`@/components/ui/fill-picker-base/fill\` (Base UI, everything) or \`@/components/ui/fill-picker/fill-picker\` (Radix).
+The shadcn CLI drops the Base UI parts into \`components/ui/fill-picker-base/\` (with the shared engine under \`components/ui/fill-picker/\`) and installs \`@base-ui/react\`, \`culori\` + \`@types/culori\`, \`lucide-react\`, and \`class-variance-authority\` as dependencies. Requires Tailwind v4, React 19, and **shadcn CLI 4.7.0 or newer** — install targets resolve through your \`components.json\` aliases, which older CLIs can't resolve. \`pnpm dlx shadcn@latest\` (as above) always satisfies that.
+
+Every code block below uses the **Base UI** import paths, since that is what \`${FILL_PICKER_URL}\` installs: \`@/components/ui/fill-picker-base/fill\` (everything), \`@/components/ui/fill-picker-base/color-picker\`, \`@/components/ui/fill-picker-base/gradient\`. If you installed a \`-radix\` item instead, the exports are identical but live under \`@/components/ui/fill-picker/fill-picker\`, \`@/components/ui/fill-picker/color-picker\`, and \`@/components/ui/fill-picker/gradient-picker\` — swap the import path and every snippet works unchanged. A Base UI install does **not** ship those Radix barrels, and a Radix install does not ship the \`fill-picker-base/\` ones.
 
 ## Usage
 
@@ -94,7 +96,7 @@ OKLCH is the lossless source of truth. Pass an \`OklchColor\` object as \`value\
 
 \`\`\`tsx
 import * as React from "react";
-import { ColorPicker, parseColor } from "@/components/ui/fill-picker/color-picker";
+import { ColorPicker, parseColor } from "@/components/ui/fill-picker-base/color-picker";
 
 export function Example() {
   // Store the canonical OklchColor; derive any string output from \`formats\`.
@@ -123,7 +125,7 @@ export function Example() {
 "use client";
 
 import * as React from "react";
-import { ColorPicker, parseColor } from "@/components/ui/fill-picker/color-picker";
+import { ColorPicker, parseColor } from "@/components/ui/fill-picker-base/color-picker";
 
 export function ColorPickerDemo() {
   const [color, setColor] = React.useState(() => parseColor("oklch(0.7 0.18 30)")!);
@@ -360,7 +362,7 @@ import {
   contrast,      // (fg, bg) => { wcag, wcagLevel, apca }
   apcaContrast,  // (fg, bg) => Lc number
   isValidColor,  // (string) => boolean
-} from "@/components/ui/fill-picker/color-picker";
+} from "@/components/ui/fill-picker-base/color-picker";
 \`\`\`
 
 ## API: Types
@@ -404,7 +406,7 @@ The \`Gradient\` union itself is under "Output: state shape" below.
 \`GradientPicker\` is a separate compound namespace that builds on top of the color picker. Install \`gradient-picker.json\` (pulls the color picker automatically).
 
 \`\`\`tsx
-import { GradientPicker, DEFAULT_LINEAR, type Gradient } from "@/components/ui/fill-picker/gradient-picker";
+import { GradientPicker, DEFAULT_LINEAR, type Gradient } from "@/components/ui/fill-picker-base/gradient";
 
 export function GradientDemo() {
   const [gradient, setGradient] = React.useState<Gradient>(DEFAULT_LINEAR);
@@ -476,7 +478,7 @@ Give each stop a stable \`id\` and reconciliation matches on identity instead, s
 - Fully opt-in. Omit \`id\` and behavior is unchanged, and no \`id\` key appears in anything the picker emits.
 
 \`\`\`tsx
-import { formatGradient, parseGradient } from "@/components/ui/fill-picker/gradient-picker";
+import { formatGradient, parseGradient } from "@/components/ui/fill-picker-base/gradient";
 
 const css = formatGradient(gradient);   // "linear-gradient(0deg in oklch, oklch(...) 0%, oklch(...) 100%)"
 const back = parseGradient(css);        // Gradient | null
@@ -521,10 +523,10 @@ Setters enforce shape: \`setRadiusPx(...)\` implies \`shape: "circle"\`, \`setRa
 \`FillPicker\` adds a Solid/Gradient mode switcher on top. Install \`fill-picker.json\` (pulls both color-picker and gradient-picker).
 
 \`\`\`tsx
-import { FillPicker, GradientPicker, ColorPicker, type Fill } from "@/components/ui/fill-picker/fill-picker";
+import { FillPicker, GradientPicker, ColorPicker, type Fill } from "@/components/ui/fill-picker-base/fill";
 
 export function FillDemo() {
-  const [fill, setFill] = React.useState<Fill>({ type: "color", color: { l: 0.7, c: 0.18, h: 30, alpha: 1 } });
+  const [fill, setFill] = React.useState<Fill>({ kind: "color", color: { l: 0.7, c: 0.18, h: 30, alpha: 1 } });
   return (
     <FillPicker.Root value={fill} onValueChange={setFill}>
       <FillPicker.Tabs>
@@ -580,7 +582,7 @@ Key constraints:
   - \`FillPicker\` — color/gradient mode switcher (\`Root\`, \`Tabs\`, \`Tab\`, \`Pane\`).
 - There is no default \`<ColorPicker />\` / \`<GradientPicker />\` / \`<FillPicker />\` component; consumers compose each \`Root\` with the parts they need.
 - Canonical state is \`OklchColor { l, c, h, alpha }\` — pass an object as \`value\` for lossless control. \`onValueChange(color, formatted, formats)\` always provides every format pre-serialized.
-- Install with: \`pnpm dlx shadcn@latest add ${FILL_PICKER_URL}\` for the full bundle (color + gradient + switcher), or \`${COLOR_PICKER_URL}\` if you only need solid color. Files land in \`components/ui/fill-picker/\`.
+- Install with: \`pnpm dlx shadcn@latest add ${FILL_PICKER_URL}\` for the full bundle (color + gradient + switcher), or \`${COLOR_PICKER_URL}\` if you only need solid color. Needs shadcn CLI 4.7.0 or newer. Those are the Base UI items: the rebuilt shells land in \`components/ui/fill-picker-base/\` and the shared OKLCH engine in \`components/ui/fill-picker/\`, so import from \`@/components/ui/fill-picker-base/fill\` (or \`.../color-picker\`, \`.../gradient\`). The Radix / shadcn-classic variants are the separate \`-radix\` items (e.g. \`${FILL_PICKER_RADIX_URL}\`) and import from \`@/components/ui/fill-picker/fill-picker\`.
 
 My task:
 [describe what you want to build]

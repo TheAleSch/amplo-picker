@@ -19,8 +19,9 @@ export interface RootProps
   /**
    * Editor mounted around each `<Bar editOnClick>` stop handle. Each barrel
    * (`GradientPicker` / `GradientPickerBase`) injects its own variant's editor
-   * as the default; pass this to substitute your own. Omitted entirely — as
-   * when the engine `Root` is deep-imported — the Bar renders bare handles.
+   * as the default; pass this to substitute your own. Omitted, the editor is
+   * inherited from an enclosing provider — and with none (a deep-imported
+   * engine `Root`), the Bar renders bare handles.
    */
   stopEditor?: GradientStopEditorRenderer;
 }

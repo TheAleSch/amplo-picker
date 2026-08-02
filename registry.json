@@ -22,62 +22,48 @@
       ],
       "registryDependencies": [
         "utils",
-        "tooltip",
-        "button",
-        "input",
-        "popover",
-        "https://amplo.ale.design/r/color-picker-radix.json"
+        "https://amplo.ale.design/r/color-picker-engine.json"
       ],
       "files": [
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/hue.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/hue.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/lightness.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/lightness.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/alpha.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/alpha.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/format-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/format-switcher.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gradient/field.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/field.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/channel-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/channel-input.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/swatches.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/swatches.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gamut-badge.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gamut-badge.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/contrast-readout.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/contrast-readout.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/color-picker.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/color-picker.tsx"
+          "type": "registry:ui"
         }
       ]
     },
@@ -86,7 +72,7 @@
       "type": "registry:ui",
       "title": "Amplo Gradient Picker",
       "version": "1.3.0",
-      "description": "Linear / radial / conic gradient editing on Base UI primitives — TypeSwitcher/InterpSwitcher/RadialSizeSelect on Select, ReverseStops and the StopList editor as semantic buttons with a self-contained popover. Pulls the color picker plus the shared gradient engine (Bar, Area, Overlay, pads, Presets, CssInput) as registry dependencies.",
+      "description": "Linear / radial / conic gradient editing on Base UI primitives — TypeSwitcher/InterpSwitcher/RadialSizeSelect on Select, ReverseStops and the StopList editor as semantic buttons, and a StopEditor composed from this variant's own Hue/Alpha/FormatSwitcher/ChannelInput. Pulls the color picker plus the shared gradient engine (Bar, Area, Overlay, pads, Presets, CssInput, stop popover shell) as registry dependencies.",
       "categories": [
         "color",
         "input",
@@ -100,49 +86,41 @@
       ],
       "registryDependencies": [
         "utils",
-        "tooltip",
-        "button",
-        "input",
-        "select",
-        "toggle",
         "https://amplo.ale.design/r/color-picker.json",
-        "https://amplo.ale.design/r/gradient-picker-radix.json"
+        "https://amplo.ale.design/r/gradient-picker-engine.json"
       ],
       "files": [
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gradient/field.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/field.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gradient/type-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/type-switcher.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gradient/interp-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/interp-switcher.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gradient/radial-size-select.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/radial-size-select.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gradient/reverse-stops.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/reverse-stops.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/parts/gradient/stop-list.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/parts/gradient/stop-list.tsx"
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker-base/parts/gradient/stop-editor.tsx",
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker-base/gradient.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/gradient.tsx"
+          "type": "registry:ui"
         }
       ]
     },
@@ -166,13 +144,12 @@
       "registryDependencies": [
         "utils",
         "https://amplo.ale.design/r/gradient-picker.json",
-        "https://amplo.ale.design/r/fill-picker-radix.json"
+        "https://amplo.ale.design/r/fill-picker-engine.json"
       ],
       "files": [
         {
           "path": "registry/new-york/ui/fill-picker-base/fill.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker-base/fill.tsx"
+          "type": "registry:ui"
         }
       ]
     },
@@ -180,7 +157,7 @@
       "name": "color-picker-radix",
       "type": "registry:ui",
       "title": "Amplo Color Picker (Radix)",
-      "description": "OKLCH-native, Display-P3-aware composable color picker with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
+      "description": "Radix/shadcn-classic shells for the Amplo color picker — Hue, Lightness, Alpha, FormatSwitcher, ChannelInput, Swatches, GamutBadge and ContrastReadout built on shadcn's Select and Tooltip. The OKLCH engine, contexts and pointer-driven parts come from the shared color engine, pulled in as a registry dependency.",
       "version": "1.3.0",
       "categories": [
         "color",
@@ -194,156 +171,58 @@
       ],
       "registryDependencies": [
         "utils",
-        "tooltip",
-        "button",
-        "input",
-        "popover",
         "select",
-        "toggle"
+        "tooltip",
+        "https://amplo.ale.design/r/color-picker-engine.json"
       ],
       "files": [
         {
-          "path": "registry/new-york/ui/fill-picker/lib/types.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/lib/types.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/lib/color.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/lib/color.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/lib/swatch-presets.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/lib/swatch-presets.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/lib/constants.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/lib/constants.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/lib/channels.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/lib/channels.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/hooks/use-color-picker.ts",
-          "type": "registry:hook",
-          "target": "components/ui/fill-picker/hooks/use-color-picker.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/context.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/context.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/root.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/root.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/field.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/field.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/field-select.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/field-select.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/area.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/area.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/use-live-announce.ts",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/use-live-announce.ts"
-        },
-        {
           "path": "registry/new-york/ui/fill-picker/parts/hue.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/hue.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/lightness.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/lightness.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/chroma.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/chroma.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/alpha.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/alpha.tsx"
+          "type": "registry:ui"
         },
         {
-          "path": "registry/new-york/ui/fill-picker/parts/css-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/css-input.tsx"
+          "path": "registry/new-york/ui/fill-picker/parts/field-select.tsx",
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/format-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/format-switcher.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/channel-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/channel-input.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/swatches.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/swatches.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/gamut-badge.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gamut-badge.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gamut-badge-shared.ts",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gamut-badge-shared.ts"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/contrast-readout.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/contrast-readout.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/contrast-readout-shared.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/contrast-readout-shared.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/preview.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/preview.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/eye-dropper.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/eye-dropper.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/color-picker.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/color-picker.tsx"
+          "type": "registry:ui"
         }
       ]
     },
     {
       "name": "gradient-picker-radix",
       "type": "registry:ui",
-      "title": "Amplo Gradient Picker",
-      "description": "Composable gradient picker (linear / radial / conic) built on the Amplo color picker. CSS Color 4 interpolation, per-stop format state, keyboard-accessible angle/position pads.",
+      "title": "Amplo Gradient Picker (Radix)",
+      "description": "Radix/shadcn-classic shells for the Amplo gradient picker — TypeSwitcher, InterpSwitcher and RadialSizeSelect on shadcn's Select, plus the popover stop editor. Gradient parsing, contexts and the pointer-driven parts (Bar, Overlay, Area, StopList, angle/position pads, Presets) come from the shared gradient engine, pulled in as a registry dependency.",
       "version": "1.3.0",
       "categories": [
         "color",
@@ -358,176 +237,38 @@
       ],
       "registryDependencies": [
         "utils",
-        "tooltip",
-        "button",
-        "input",
         "select",
-        "toggle",
-        "https://amplo.ale.design/r/color-picker-radix.json"
+        "https://amplo.ale.design/r/color-picker-radix.json",
+        "https://amplo.ale.design/r/gradient-picker-engine.json"
       ],
       "files": [
         {
-          "path": "registry/new-york/ui/fill-picker/lib/gradient.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/lib/gradient.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/lib/gradient-options.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/lib/gradient-options.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/contexts/gradient.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/contexts/gradient.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/hooks/use-gradient-picker.ts",
-          "type": "registry:hook",
-          "target": "components/ui/fill-picker/hooks/use-gradient-picker.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/root.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/root.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/bar.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/bar.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/overlay.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/overlay.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/area.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/area.tsx"
-        },
-        {
           "path": "registry/new-york/ui/fill-picker/parts/gradient/type-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/type-switcher.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/reverse-stops.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/reverse-stops.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/repeating-toggle.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/repeating-toggle.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-list.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/stop-list.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-list-shared.ts",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/stop-list-shared.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/pointer-drag.ts",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/pointer-drag.ts"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-color.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/stop-color.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-popover.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/stop-popover.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-editor-popover.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/stop-editor-popover.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/gradient/interp-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/interp-switcher.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/presets.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/presets.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/css-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/css-input.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/position-pad.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/position-pad.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/position-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/position-input.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/position-group.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/position-group.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/angle-pad.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/angle-pad.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/angle-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/angle-input.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/angle-group.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/angle-group.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/shape-switcher.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/shape-switcher.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/radius-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/radius-input.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/ellipse-radii-input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/ellipse-radii-input.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/gradient/radial-size-select.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/gradient/radial-size-select.tsx"
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-editor-popover.tsx",
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/gradient-picker.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/gradient-picker.tsx"
+          "type": "registry:ui"
         }
       ]
     },
     {
       "name": "fill-picker-radix",
       "type": "registry:ui",
-      "title": "Amplo Fill Picker",
-      "description": "OKLCH-native, Display-P3-aware composable fill picker (color today; gradients, images, and video on the way) with WCAG/APCA contrast metrics, gamut detection, and full keyboard accessibility.",
+      "title": "Amplo Fill Picker (Radix)",
+      "description": "Radix/shadcn-classic entry point for the Amplo fill picker — the barrel that composes the Radix color and gradient pickers with the shared solid/gradient mode switcher (FillPicker.Root/Tabs/Tab/Pane), pulled in as registry dependencies.",
       "version": "1.3.0",
       "categories": [
         "color",
@@ -541,45 +282,278 @@
       ],
       "registryDependencies": [
         "utils",
-        "tooltip",
-        "button",
-        "input",
-        "popover",
-        "select",
-        "toggle",
         "https://amplo.ale.design/r/color-picker-radix.json",
-        "https://amplo.ale.design/r/gradient-picker-radix.json"
+        "https://amplo.ale.design/r/gradient-picker-radix.json",
+        "https://amplo.ale.design/r/fill-picker-engine.json"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/ui/fill-picker/fill-picker.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "color-picker-engine",
+      "type": "registry:ui",
+      "title": "Amplo Color Picker Engine",
+      "description": "Dialect-agnostic core of the Amplo color picker: the OKLCH state engine (types, conversions, gamut math, CSS Color 4 chroma reduction, WCAG + APCA contrast), the React context, and the pointer/canvas-driven parts both variants share — Root, Area, Chroma, Preview, EyeDropper, CssInput, Field, and the tooltip-agnostic GamutBadge/ContrastReadout logic. Installed automatically as a dependency of `color-picker` (Base UI) and `color-picker-radix`; you do not normally add it directly.",
+      "version": "1.3.0",
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "culori",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "utils",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/ui/fill-picker/lib/types.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/lib/color.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/lib/channels.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/lib/constants.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/lib/swatch-presets.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/hooks/use-color-picker.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/context.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/root.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/field.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/area.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/chroma.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/css-input.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/preview.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/eye-dropper.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gamut-badge-shared.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/contrast-readout-shared.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/use-live-announce.ts",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "gradient-picker-engine",
+      "type": "registry:ui",
+      "title": "Amplo Gradient Picker Engine",
+      "description": "Dialect-agnostic core of the Amplo gradient picker: CSS gradient parsing/serialization with per-stop format state, the gradient context and hook, and the pointer-driven parts both variants share — Bar (with its stop-editor slot), Overlay, Area, StopList, StopColor, angle/position pads and inputs, ShapeSwitcher, ReverseStops, RepeatingToggle, Presets, CssInput, and the anchor-only stop popover shell. Installed automatically as a dependency of `gradient-picker` (Base UI) and `gradient-picker-radix`; you do not normally add it directly.",
+      "version": "1.3.0",
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [
+        "@base-ui/react",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "utils",
+        "button",
+        "toggle",
+        "https://amplo.ale.design/r/color-picker-engine.json"
+      ],
+      "files": [
+        {
+          "path": "registry/new-york/ui/fill-picker/lib/gradient.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/lib/gradient-options.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/contexts/gradient.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/hooks/use-gradient-picker.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/root.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/bar.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/overlay.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/area.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/pointer-drag.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-list.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-list-shared.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-color.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-popover.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/stop-editor-shared.ts",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/reverse-stops.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/repeating-toggle.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/presets.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/css-input.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/position-pad.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/position-input.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/position-group.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/angle-pad.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/angle-input.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/angle-group.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/shape-switcher.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/radius-input.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/gradient/ellipse-radii-input.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "fill-picker-engine",
+      "type": "registry:ui",
+      "title": "Amplo Fill Picker Engine",
+      "description": "Dialect-agnostic core of the Amplo fill picker: the solid/gradient mode state (fill context + `useFillPicker`) and the FillPicker.Root/Tabs/Tab/Pane parts both variants share. Installed automatically as a dependency of `fill-picker` (Base UI) and `fill-picker-radix`; you do not normally add it directly.",
+      "version": "1.3.0",
+      "categories": [
+        "color",
+        "input",
+        "design",
+        "accessibility"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "utils",
+        "https://amplo.ale.design/r/gradient-picker-engine.json"
       ],
       "files": [
         {
           "path": "registry/new-york/ui/fill-picker/contexts/fill.ts",
-          "type": "registry:lib",
-          "target": "components/ui/fill-picker/contexts/fill.ts"
+          "type": "registry:lib"
         },
         {
           "path": "registry/new-york/ui/fill-picker/hooks/use-fill-picker.ts",
-          "type": "registry:hook",
-          "target": "components/ui/fill-picker/hooks/use-fill-picker.ts"
+          "type": "registry:hook"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/fill/root.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/fill/root.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/fill/tabs.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/fill/tabs.tsx"
+          "type": "registry:ui"
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/fill/pane.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/parts/fill/pane.tsx"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/fill-picker.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/fill-picker/fill-picker.tsx"
+          "type": "registry:ui"
         }
       ]
     }

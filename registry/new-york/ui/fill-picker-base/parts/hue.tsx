@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { Slider } from "@base-ui/react/slider";
-import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
-import { hslHue, hsbHue } from "@/registry/new-york/color-picker/lib/color";
-import { setHueFromSlider } from "@/registry/new-york/color-picker/lib/channels";
+import { useColorPickerContext } from "@/registry/new-york/ui/fill-picker/context";
+import { hslHue, hsbHue } from "@/registry/new-york/ui/fill-picker/lib/color";
+import { setHueFromSlider } from "@/registry/new-york/ui/fill-picker/lib/channels";
 import { cn } from "@/lib/utils";
 
 // `defaultValue` is omitted because Base UI's Slider.Root types it as a number

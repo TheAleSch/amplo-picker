@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Root } from "@/registry/new-york/color-picker/parts/root";
+import { Root } from "@/registry/new-york/ui/fill-picker/parts/root";
 import { FormatSwitcher } from "./format-switcher";
 
 // Drift-2 (2026-07-12 audit): FormatSwitcher hand-rolled its own Base UI

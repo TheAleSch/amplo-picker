@@ -18,7 +18,7 @@ export {
   FieldInputGroup,
   FieldSuffix,
   type FieldInputProps,
-} from "@/registry/new-york/color-picker/parts/field";
+} from "@/registry/new-york/ui/fill-picker/parts/field";
 
 export interface FieldSelectProps {
   /**

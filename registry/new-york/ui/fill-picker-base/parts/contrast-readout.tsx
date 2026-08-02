@@ -12,11 +12,11 @@ import {
   CONTRAST_READOUT_CLASS,
   ContrastPopoverPanel,
   useContrastReadout,
-} from "@/registry/new-york/color-picker/parts/contrast-readout-shared";
+} from "@/registry/new-york/ui/fill-picker/parts/contrast-readout-shared";
 import type {
   ContrastMetric,
   ContrastReadoutProps,
-} from "@/registry/new-york/color-picker/parts/contrast-readout-shared";
+} from "@/registry/new-york/ui/fill-picker/parts/contrast-readout-shared";
 
 export type { ContrastMetric, ContrastReadoutProps };
 

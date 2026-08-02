@@ -1,7 +1,7 @@
 import * as React from "react";
 import { describe, it, expect } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { Root as GradientRoot } from "@/registry/new-york/color-picker/parts/gradient/root";
+import { Root as GradientRoot } from "@/registry/new-york/ui/fill-picker/parts/gradient/root";
 import { TypeSwitcher } from "./type-switcher";
 
 const LINEAR = {

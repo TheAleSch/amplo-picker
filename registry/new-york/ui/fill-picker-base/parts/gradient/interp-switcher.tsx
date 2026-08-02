@@ -4,10 +4,10 @@ import * as React from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@base-ui/react/tooltip";
-import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
-import type { GradientInterp } from "@/registry/new-york/color-picker/lib/gradient";
+import { useGradientPickerContext } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
+import type { GradientInterp } from "@/registry/new-york/ui/fill-picker/lib/gradient";
 import { FieldSelect, FieldSelectItem } from "./field";
-import { GRADIENT_INTERP_OPTIONS } from "@/registry/new-york/color-picker/lib/gradient-options";
+import { GRADIENT_INTERP_OPTIONS } from "@/registry/new-york/ui/fill-picker/lib/gradient-options";
 
 const OPTIONS = GRADIENT_INTERP_OPTIONS;
 

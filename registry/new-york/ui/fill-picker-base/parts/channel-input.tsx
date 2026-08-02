@@ -2,20 +2,20 @@
 
 import * as React from "react";
 import { NumberField } from "@base-ui/react/number-field";
-import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
-import { parseColor } from "@/registry/new-york/color-picker/lib/color";
+import { useColorPickerContext } from "@/registry/new-york/ui/fill-picker/context";
+import { parseColor } from "@/registry/new-york/ui/fill-picker/lib/color";
 import {
   colorChannels,
   setColorChannel,
   type ChannelDescriptor,
-} from "@/registry/new-york/color-picker/lib/channels";
-import type { ColorFormat } from "@/registry/new-york/color-picker/lib/types";
+} from "@/registry/new-york/ui/fill-picker/lib/channels";
+import type { ColorFormat } from "@/registry/new-york/ui/fill-picker/lib/types";
 // FieldShell / FieldDivider are plain, Radix-free markup — shared with the
 // classic tree so the input chrome has one visual source of truth.
 import {
   FieldDivider,
   FieldShell,
-} from "@/registry/new-york/color-picker/parts/field";
+} from "@/registry/new-york/ui/fill-picker/parts/field";
 import { cn } from "@/lib/utils";
 
 export interface ChannelInputProps

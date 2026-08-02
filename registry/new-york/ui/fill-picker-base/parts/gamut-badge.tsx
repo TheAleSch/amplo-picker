@@ -8,12 +8,12 @@
 import * as React from "react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cn } from "@/lib/utils";
-import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
+import { useColorPickerContext } from "@/registry/new-york/ui/fill-picker/context";
 import {
   GAMUT_BADGE_CLASS,
   gamutLabel,
-} from "@/registry/new-york/color-picker/parts/gamut-badge-shared";
-import type { GamutBadgeProps } from "@/registry/new-york/color-picker/parts/gamut-badge-shared";
+} from "@/registry/new-york/ui/fill-picker/parts/gamut-badge-shared";
+import type { GamutBadgeProps } from "@/registry/new-york/ui/fill-picker/parts/gamut-badge-shared";
 
 export type { GamutBadgeProps };
 

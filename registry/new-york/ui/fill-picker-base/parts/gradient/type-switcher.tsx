@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useGradientPickerContext } from "@/registry/new-york/color-picker/contexts/gradient";
-import type { GradientType } from "@/registry/new-york/color-picker/lib/gradient";
+import { useGradientPickerContext } from "@/registry/new-york/ui/fill-picker/contexts/gradient";
+import type { GradientType } from "@/registry/new-york/ui/fill-picker/lib/gradient";
 import { FieldSelect, FieldSelectItem } from "./field";
-import { GRADIENT_TYPE_OPTIONS } from "@/registry/new-york/color-picker/lib/gradient-options";
+import { GRADIENT_TYPE_OPTIONS } from "@/registry/new-york/ui/fill-picker/lib/gradient-options";
 
 const TYPES = GRADIENT_TYPE_OPTIONS;
 

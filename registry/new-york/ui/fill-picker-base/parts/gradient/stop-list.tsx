@@ -20,4 +20,4 @@
 export {
   StopList,
   type StopListProps,
-} from "@/registry/new-york/color-picker/parts/gradient/stop-list";
+} from "@/registry/new-york/ui/fill-picker/parts/gradient/stop-list";

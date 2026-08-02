@@ -4,18 +4,18 @@ import * as React from "react";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
 import { Plus } from "lucide-react";
-import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
-import { formatColor, parseColor } from "@/registry/new-york/color-picker/lib/color";
-import type { OklchColor } from "@/registry/new-york/color-picker/lib/types";
+import { useColorPickerContext } from "@/registry/new-york/ui/fill-picker/context";
+import { formatColor, parseColor } from "@/registry/new-york/ui/fill-picker/lib/color";
+import type { OklchColor } from "@/registry/new-york/ui/fill-picker/lib/types";
 import { cn } from "@/lib/utils";
 import {
   CHECKERBOARD_SM as CHECKERBOARD,
   SAMPLE_EDGE,
-} from "@/registry/new-york/color-picker/lib/constants";
+} from "@/registry/new-york/ui/fill-picker/lib/constants";
 import {
   DEFAULT_SWATCH_PRESETS,
   isSameSwatchColor,
-} from "@/registry/new-york/color-picker/lib/swatch-presets";
+} from "@/registry/new-york/ui/fill-picker/lib/swatch-presets";
 
 export interface SwatchesProps extends React.HTMLAttributes<HTMLDivElement> {
   presets?: string[];

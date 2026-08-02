@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
-import type { ColorFormat } from "@/registry/new-york/color-picker/lib/types";
+import { useColorPickerContext } from "@/registry/new-york/ui/fill-picker/context";
+import type { ColorFormat } from "@/registry/new-york/ui/fill-picker/lib/types";
 import { cn } from "@/lib/utils";
 import { FieldSelect, FieldSelectItem } from "./gradient/field";
 

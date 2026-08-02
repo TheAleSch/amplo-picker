@@ -29,7 +29,7 @@ function PopoverTrigger({
 
 /**
  * Base UI's Popover has no dedicated "anchor without a trigger" part (see
- * `registry/new-york/color-picker/parts/gradient/stop-popover.tsx` for the
+ * `registry/new-york/ui/fill-picker/parts/gradient/stop-popover.tsx` for the
  * from-scratch version built on `Positioner`'s `anchor` prop). Nothing in
  * this repo drives a popover from a non-trigger anchor through the shared
  * shadcn wrapper, so this is kept as a passthrough for source compatibility

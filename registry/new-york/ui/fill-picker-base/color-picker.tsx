@@ -16,12 +16,12 @@
 // from the same source means engine fixes propagate to both variants for
 // free.
 
-import { Root } from "@/registry/new-york/color-picker/parts/root";
-import { Area } from "@/registry/new-york/color-picker/parts/area";
-import { Chroma } from "@/registry/new-york/color-picker/parts/chroma";
-import { CssInput } from "@/registry/new-york/color-picker/parts/css-input";
-import { Preview } from "@/registry/new-york/color-picker/parts/preview";
-import { EyeDropper } from "@/registry/new-york/color-picker/parts/eye-dropper";
+import { Root } from "@/registry/new-york/ui/fill-picker/parts/root";
+import { Area } from "@/registry/new-york/ui/fill-picker/parts/area";
+import { Chroma } from "@/registry/new-york/ui/fill-picker/parts/chroma";
+import { CssInput } from "@/registry/new-york/ui/fill-picker/parts/css-input";
+import { Preview } from "@/registry/new-york/ui/fill-picker/parts/preview";
+import { EyeDropper } from "@/registry/new-york/ui/fill-picker/parts/eye-dropper";
 
 import { Hue } from "./parts/hue";
 import { Lightness } from "./parts/lightness";
@@ -38,12 +38,12 @@ export type {
   GamutInfo,
   ContrastResult,
   Gamut,
-} from "@/registry/new-york/color-picker/lib/types";
+} from "@/registry/new-york/ui/fill-picker/lib/types";
 export type {
   UseColorPickerProps,
   ColorPickerState,
-} from "@/registry/new-york/color-picker/hooks/use-color-picker";
-export { useColorPicker } from "@/registry/new-york/color-picker/hooks/use-color-picker";
+} from "@/registry/new-york/ui/fill-picker/hooks/use-color-picker";
+export { useColorPicker } from "@/registry/new-york/ui/fill-picker/hooks/use-color-picker";
 export {
   parseColor,
   formatColor,
@@ -53,12 +53,12 @@ export {
   contrast,
   apcaContrast,
   isValidColor,
-} from "@/registry/new-york/color-picker/lib/color";
+} from "@/registry/new-york/ui/fill-picker/lib/color";
 export {
   colorChannels,
   setColorChannel,
-} from "@/registry/new-york/color-picker/lib/channels";
-export type { ChannelDescriptor } from "@/registry/new-york/color-picker/lib/channels";
+} from "@/registry/new-york/ui/fill-picker/lib/channels";
+export type { ChannelDescriptor } from "@/registry/new-york/ui/fill-picker/lib/channels";
 
 export const ColorPickerBase = {
   Root,

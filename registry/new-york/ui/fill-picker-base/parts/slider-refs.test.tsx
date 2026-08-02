@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as React from "react";
 import { render } from "@testing-library/react";
 
-import { Root } from "@/registry/new-york/color-picker/parts/root";
+import { Root } from "@/registry/new-york/ui/fill-picker/parts/root";
 import { Hue } from "./hue";
 import { Alpha } from "./alpha";
 import { Lightness } from "./lightness";

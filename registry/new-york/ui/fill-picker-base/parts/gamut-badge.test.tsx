@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Root } from "@/registry/new-york/color-picker/parts/root";
+import { Root } from "@/registry/new-york/ui/fill-picker/parts/root";
 import { GamutBadge } from "./gamut-badge";
 
 // Base UI shell parity check against the Radix gamut badge: the trigger's

@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import { Slider } from "@base-ui/react/slider";
-import { useColorPickerContext } from "@/registry/new-york/color-picker/context";
-import { formatColor } from "@/registry/new-york/color-picker/lib/color";
+import { useColorPickerContext } from "@/registry/new-york/ui/fill-picker/context";
+import { formatColor } from "@/registry/new-york/ui/fill-picker/lib/color";
 import { cn } from "@/lib/utils";
-import { CHECKERBOARD_LG as CHECKERBOARD } from "@/registry/new-york/color-picker/lib/constants";
+import { CHECKERBOARD_LG as CHECKERBOARD } from "@/registry/new-york/ui/fill-picker/lib/constants";
 
 // See Hue: omit `defaultValue` (Slider.Root owns it as a number).
 export interface AlphaProps

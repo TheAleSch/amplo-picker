@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { Root } from "@/registry/new-york/color-picker/parts/root";
+import { Root } from "@/registry/new-york/ui/fill-picker/parts/root";
 import { ContrastReadout } from "./contrast-readout";
 
 // Parity contract with the Radix shell's test (color-picker/parts/

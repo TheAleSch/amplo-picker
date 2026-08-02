@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { Root } from "@/registry/new-york/color-picker/parts/gradient/root";
+import { Root } from "@/registry/new-york/ui/fill-picker/parts/gradient/root";
 import { StopList } from "./stop-list";
 
 // Mirror of the classic StopList keyboard tests — both variants share

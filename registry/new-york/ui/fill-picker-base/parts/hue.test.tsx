@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { Root } from "@/registry/new-york/color-picker/parts/root";
+import { Root } from "@/registry/new-york/ui/fill-picker/parts/root";
 import { Hue } from "./hue";
 
 // thumbAlignment="edge" measures control/thumb rects to inset the thumb and

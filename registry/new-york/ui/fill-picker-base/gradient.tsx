@@ -2,7 +2,7 @@
 
 // Base UI variant of the gradient picker.
 //
-// Mirrors `registry/new-york/color-picker/gradient-picker.tsx`'s public
+// Mirrors `registry/new-york/ui/fill-picker/gradient-picker.tsx`'s public
 // surface. Only the parts that touch Radix/shadcn primitives directly are
 // rewritten on Base UI:
 //   - TypeSwitcher, InterpSwitcher, RadialSizeSelect → Select
@@ -19,23 +19,23 @@
 
 import { ColorPickerBase } from "./color-picker";
 
-import { Root as GradientRoot } from "@/registry/new-york/color-picker/parts/gradient/root";
-import { Bar } from "@/registry/new-york/color-picker/parts/gradient/bar";
-import { Area as GradientArea } from "@/registry/new-york/color-picker/parts/gradient/area";
-import { Overlay as GradientOverlay } from "@/registry/new-york/color-picker/parts/gradient/overlay";
-import { RepeatingToggle } from "@/registry/new-york/color-picker/parts/gradient/repeating-toggle";
-import { AnglePad } from "@/registry/new-york/color-picker/parts/gradient/angle-pad";
-import { AngleInput } from "@/registry/new-york/color-picker/parts/gradient/angle-input";
-import { PositionPad } from "@/registry/new-york/color-picker/parts/gradient/position-pad";
-import { PositionInput } from "@/registry/new-york/color-picker/parts/gradient/position-input";
-import { ShapeSwitcher } from "@/registry/new-york/color-picker/parts/gradient/shape-switcher";
-import { RadiusInput } from "@/registry/new-york/color-picker/parts/gradient/radius-input";
-import { EllipseRadiiInput } from "@/registry/new-york/color-picker/parts/gradient/ellipse-radii-input";
-import { StopColor } from "@/registry/new-york/color-picker/parts/gradient/stop-color";
-import { Presets, BUILTIN_GRADIENT_PRESETS } from "@/registry/new-york/color-picker/parts/gradient/presets";
-import { CssInput as GradientCssInput } from "@/registry/new-york/color-picker/parts/gradient/css-input";
-import { PositionGroup } from "@/registry/new-york/color-picker/parts/gradient/position-group";
-import { AngleGroup } from "@/registry/new-york/color-picker/parts/gradient/angle-group";
+import { Root as GradientRoot } from "@/registry/new-york/ui/fill-picker/parts/gradient/root";
+import { Bar } from "@/registry/new-york/ui/fill-picker/parts/gradient/bar";
+import { Area as GradientArea } from "@/registry/new-york/ui/fill-picker/parts/gradient/area";
+import { Overlay as GradientOverlay } from "@/registry/new-york/ui/fill-picker/parts/gradient/overlay";
+import { RepeatingToggle } from "@/registry/new-york/ui/fill-picker/parts/gradient/repeating-toggle";
+import { AnglePad } from "@/registry/new-york/ui/fill-picker/parts/gradient/angle-pad";
+import { AngleInput } from "@/registry/new-york/ui/fill-picker/parts/gradient/angle-input";
+import { PositionPad } from "@/registry/new-york/ui/fill-picker/parts/gradient/position-pad";
+import { PositionInput } from "@/registry/new-york/ui/fill-picker/parts/gradient/position-input";
+import { ShapeSwitcher } from "@/registry/new-york/ui/fill-picker/parts/gradient/shape-switcher";
+import { RadiusInput } from "@/registry/new-york/ui/fill-picker/parts/gradient/radius-input";
+import { EllipseRadiiInput } from "@/registry/new-york/ui/fill-picker/parts/gradient/ellipse-radii-input";
+import { StopColor } from "@/registry/new-york/ui/fill-picker/parts/gradient/stop-color";
+import { Presets, BUILTIN_GRADIENT_PRESETS } from "@/registry/new-york/ui/fill-picker/parts/gradient/presets";
+import { CssInput as GradientCssInput } from "@/registry/new-york/ui/fill-picker/parts/gradient/css-input";
+import { PositionGroup } from "@/registry/new-york/ui/fill-picker/parts/gradient/position-group";
+import { AngleGroup } from "@/registry/new-york/ui/fill-picker/parts/gradient/angle-group";
 
 import { TypeSwitcher } from "./parts/gradient/type-switcher";
 import { ReverseStops } from "./parts/gradient/reverse-stops";
@@ -52,20 +52,20 @@ export type {
   RadialGradient,
   RadialSizeKeyword,
   ConicGradient,
-} from "@/registry/new-york/color-picker/lib/gradient";
+} from "@/registry/new-york/ui/fill-picker/lib/gradient";
 export {
   formatGradient,
   parseGradient,
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
-} from "@/registry/new-york/color-picker/lib/gradient";
+} from "@/registry/new-york/ui/fill-picker/lib/gradient";
 export { BUILTIN_GRADIENT_PRESETS };
-export { useGradientPicker } from "@/registry/new-york/color-picker/hooks/use-gradient-picker";
+export { useGradientPicker } from "@/registry/new-york/ui/fill-picker/hooks/use-gradient-picker";
 export type {
   UseGradientPickerProps,
   GradientPickerState,
-} from "@/registry/new-york/color-picker/hooks/use-gradient-picker";
+} from "@/registry/new-york/ui/fill-picker/hooks/use-gradient-picker";
 
 export { ColorPickerBase };
 

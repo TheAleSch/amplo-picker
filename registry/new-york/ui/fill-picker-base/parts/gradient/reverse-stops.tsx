@@ -10,4 +10,4 @@
 // The file is kept at this path (rather than dropped in favour of importing
 // the original directly in `gradient.tsx`) so anyone deep-importing
 // `.../fill-picker-base/parts/gradient/reverse-stops` keeps resolving.
-export { ReverseStops } from "@/registry/new-york/color-picker/parts/gradient/reverse-stops";
+export { ReverseStops } from "@/registry/new-york/ui/fill-picker/parts/gradient/reverse-stops";

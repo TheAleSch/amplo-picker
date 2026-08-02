@@ -3,18 +3,25 @@
 import * as React from "react";
 import { Check, Copy, FileText, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AI_PROMPT } from "@/lib/docs-markdown";
+import { buildAiPrompt } from "@/lib/docs-markdown";
 
 export interface CopyForAiProps {
   className?: string;
+  /**
+   * The snippet the user built on this surface (the playground's generated JSX). When
+   * present it is embedded in the prompt, so the agent starts from the user's actual
+   * composition instead of a generic example that discards every knob they just tuned.
+   * Omitted on surfaces with nothing to attach (hero, docs).
+   */
+  composition?: string;
 }
 
-export function CopyForAi({ className }: CopyForAiProps) {
+export function CopyForAi({ className, composition }: CopyForAiProps) {
   const [copied, setCopied] = React.useState(false);
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(AI_PROMPT);
+      await navigator.clipboard.writeText(buildAiPrompt(composition));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

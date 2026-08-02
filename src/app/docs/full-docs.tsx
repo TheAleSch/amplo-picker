@@ -240,6 +240,12 @@ export function FullDocs({ variant }: { variant: Variant }) {
             </>
           )}
           <p className="text-sm text-muted-foreground">
+            Installs need shadcn CLI 4.7.0 or newer — files land relative to
+            your <Code>components.json</Code> aliases, which older CLIs
+            can&apos;t resolve. Running <Code>npx shadcn@latest</Code> (as the
+            commands above do) always satisfies that.
+          </p>
+          <p className="text-sm text-muted-foreground">
             Both variants share one OKLCH engine, so behavior and fixes stay
             in lockstep. Use the toggle above to switch between the Base UI
             docs and the Radix / shadcn-classic docs — every live example and

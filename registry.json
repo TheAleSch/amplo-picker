@@ -7,7 +7,7 @@
       "name": "color-picker",
       "type": "registry:ui",
       "title": "Amplo Color Picker",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "description": "OKLCH-native, Display-P3-aware color picker built on Base UI primitives — Hue/Lightness/Alpha on Slider, FormatSwitcher on Select, ChannelInput on NumberField, Swatches on RadioGroup. Pulls the shared OKLCH engine and pointer-driven parts (Area, Chroma, GamutBadge, ContrastReadout, Preview, EyeDropper, CssInput) as a registry dependency.",
       "categories": [
         "color",
@@ -72,7 +72,7 @@
       "name": "gradient-picker",
       "type": "registry:ui",
       "title": "Amplo Gradient Picker",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "description": "Linear / radial / conic gradient editing on Base UI primitives — TypeSwitcher/InterpSwitcher/RadialSizeSelect on Select, ReverseStops and the StopList editor as semantic buttons, and a StopEditor composed from this variant's own Hue/Alpha/FormatSwitcher/ChannelInput. Pulls the color picker plus the shared gradient engine (Bar, Area, Overlay, pads, Presets, CssInput, stop popover shell) as registry dependencies.",
       "categories": [
         "color",
@@ -130,7 +130,7 @@
       "name": "fill-picker",
       "type": "registry:ui",
       "title": "Amplo Fill Picker",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "description": "Color + gradient + the solid/gradient mode switcher (FillPicker.Root/Tabs/Tab/Pane) — the \"give me everything\" entry point, Base UI variant. Pulls the Base UI color and gradient pickers plus the shared fill switcher parts as registry dependencies.",
       "categories": [
         "color",
@@ -161,7 +161,7 @@
       "type": "registry:ui",
       "title": "Amplo Color Picker (Radix)",
       "description": "Radix/shadcn-classic shells for the Amplo color picker — Hue, Lightness, Alpha, FormatSwitcher, ChannelInput, Swatches, GamutBadge and ContrastReadout built on shadcn's Select and Tooltip. The OKLCH engine, contexts and pointer-driven parts come from the shared color engine, pulled in as a registry dependency.",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "categories": [
         "color",
         "input",
@@ -227,7 +227,7 @@
       "type": "registry:ui",
       "title": "Amplo Gradient Picker (Radix)",
       "description": "Radix/shadcn-classic shells for the Amplo gradient picker — TypeSwitcher, InterpSwitcher and RadialSizeSelect on shadcn's Select, plus the popover stop editor. Gradient parsing, contexts and the pointer-driven parts (Bar, Overlay, Area, StopList, angle/position pads, Presets) come from the shared gradient engine, pulled in as a registry dependency.",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "categories": [
         "color",
         "input",
@@ -274,7 +274,7 @@
       "type": "registry:ui",
       "title": "Amplo Fill Picker (Radix)",
       "description": "Radix/shadcn-classic entry point for the Amplo fill picker — the barrel that composes the Radix color and gradient pickers with the shared solid/gradient mode switcher (FillPicker.Root/Tabs/Tab/Pane), pulled in as registry dependencies.",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "categories": [
         "color",
         "input",
@@ -304,7 +304,7 @@
       "type": "registry:ui",
       "title": "Amplo Color Picker Engine",
       "description": "Dialect-agnostic core of the Amplo color picker: the OKLCH state engine (types, conversions, gamut math, CSS Color 4 chroma reduction, WCAG + APCA contrast), the React context, and the pointer/canvas-driven parts both variants share — Root, Area, Chroma, Preview, EyeDropper, CssInput, Field, and the tooltip-agnostic GamutBadge/ContrastReadout logic. Installed automatically as a dependency of `color-picker` (Base UI) and `color-picker-radix`; you do not normally add it directly.",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "categories": [
         "color",
         "input",
@@ -397,7 +397,7 @@
       "type": "registry:ui",
       "title": "Amplo Gradient Picker Engine",
       "description": "Dialect-agnostic core of the Amplo gradient picker: CSS gradient parsing/serialization with per-stop format state, the gradient context and hook, and the pointer-driven parts both variants share — Bar (with its stop-editor slot), Overlay, Area, StopList, StopColor, angle/position pads and inputs, ShapeSwitcher, ReverseStops, RepeatingToggle, Presets, CssInput, and the anchor-only stop popover shell. Installed automatically as a dependency of `gradient-picker` (Base UI) and `gradient-picker-radix`; you do not normally add it directly.",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "categories": [
         "color",
         "input",
@@ -531,7 +531,7 @@
       "type": "registry:ui",
       "title": "Amplo Fill Picker Engine",
       "description": "Dialect-agnostic core of the Amplo fill picker: the solid/gradient mode state (fill context + `useFillPicker`) and the FillPicker.Root/Tabs/Tab/Pane parts both variants share. Installed automatically as a dependency of `fill-picker` (Base UI) and `fill-picker-radix`; you do not normally add it directly.",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "categories": [
         "color",
         "input",

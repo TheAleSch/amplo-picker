@@ -4,6 +4,11 @@
  * referenced file, and emits a per-component JSON file under public/r/.
  * Those URLs are what the shadcn CLI consumes:
  *   npx shadcn@latest add https://<host>/r/fill-picker.json
+ *
+ * Manifest note: `class-variance-authority` is declared on the two engine
+ * items on purpose — shadcn's own `button`/`toggle` items use `cva` but omit
+ * the package upstream, so a fresh consumer's `tsc` fails without it. Not a
+ * redundant dep; don't "clean it up".
  */
 
 import * as fs from "node:fs";

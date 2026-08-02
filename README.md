@@ -55,9 +55,16 @@ pnpm dlx shadcn@latest add https://amplo.ale.design/r/gradient-picker-radix.json
 pnpm dlx shadcn@latest add https://amplo.ale.design/r/fill-picker-radix.json
 ```
 
+Requires **shadcn CLI ≥ 4.7.0** — install targets are alias-relative
+(`@ui/fill-picker/…`), so the files land wherever your `components.json`
+`aliases.ui` points, including nonstandard layouts like Electron's
+`src/renderer`. `shadcn@latest` is well past that floor; a pinned older CLI
+would install to `src/@/…`.
+
 Everything dedupes by `target`, so reaching for a deeper entry point later is
-idempotent. Base UI parts land in `components/ui/fill-picker-base/`; the shared
-engine and Radix parts in `components/ui/fill-picker/`.
+idempotent. Base UI parts land in `<ui>/fill-picker-base/`; the shared engine
+and Radix parts in `<ui>/fill-picker/` (`components/ui/…` in a default
+project).
 
 ```tsx
 import { ColorPicker } from "@/components/ui/fill-picker-base/color-picker";

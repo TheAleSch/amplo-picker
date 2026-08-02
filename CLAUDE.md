@@ -53,12 +53,21 @@ Everything in `registry/new-york/ui/fill-picker/` follows a Radix-style compound
 
 `registry.json` is the **source of truth** for what gets shipped. When adding or removing a part:
 
-1. Add the file under `registry/new-york/ui/fill-picker/...`.
-2. Add a corresponding entry under `items[0].files` in `registry.json` — both `path` (in-repo) and `target` (where it lands in the consumer project) are required.
-3. Run `pnpm registry:build` to regenerate `public/r/color-picker.json`.
+1. Add the file under `registry/new-york/ui/fill-picker/...` (or `fill-picker-base/...`).
+2. Add a corresponding entry under the relevant item's `files` in `registry.json` — only `path` (in-repo) and `type` are needed. **`target` is derived by `scripts/build-registry.ts`, not written by hand** (see below); spelling one out is a rare override for files that live outside the `registry/new-york/ui/` tree.
+3. Run `pnpm registry:build` to regenerate `public/r/<item>.json`.
 4. The site must be redeployed for consumers to see the change (the JSON is served from `public/r/`).
 
 Note: parts that exist in code but are missing from `registry.json` won't be installed by consumers even though they're importable in the demo site. If you add a file to `parts/` and want it shipped, the manifest entry is mandatory.
+
+### Derived install targets + the CLI version floor (D4)
+
+- **Targets are derived, in alias-NAME form.** `deriveTarget` maps `registry/new-york/ui/<rest>` → **`@ui/<rest>`**, so the CLI resolves the install location through the consumer's own `components.json` `aliases.ui` instead of a project-root + `src/` guess. This is what makes nonstandard layouts (e.g. Electron `src/renderer`) install correctly. The `@/…` form is **not** a valid target: the CLI's alias regex is `^@([^/]+)\/(.+)$` and requires an alias name between `@` and `/`, so `@/components/ui/…` is treated as a literal relative path and lands at `<cwd>/src/@/components/ui/…`.
+- **Consumers need shadcn CLI ≥ 4.7.0** for `@<alias>/<rest>` target resolution. `npx`/`pnpm dlx shadcn@latest` satisfies it; a pinned older CLI would install to `src/@/…`.
+- **`class-variance-authority` is declared on `color-picker-engine` and `gradient-picker-engine` on purpose.** Those items pull shadcn's own `button` / `toggle`, whose upstream registry items use `cva` but omit the package from their `dependencies`. Without our declaration a fresh consumer's `tsc` fails with `Cannot find module 'class-variance-authority'`. Do not "clean it up" as a redundant dep.
+- **Two build-time lints run inside `pnpm registry:build`** (`scripts/build-registry.ts`, tested in `scripts/build-registry.test.ts`):
+  - *Engine dialect-agnosticism* — `*-engine` items may only import `@/components/ui/{button,toggle,input}`, the wrappers whose API is stable across shadcn dialects.
+  - *Basename collisions* — the CLI's post-install import fixup re-points an **aliased** specifier by file basename with `.tsx` preferred over `.ts`, so a `.ts` module shadowed by a same-basename `.tsx` silently loses its aliased importers in consumer projects. Relative specifiers and `export … from` are exempt, as is a shadowing barrel that re-exports the requested symbols. Two live collisions exist today (`gradient`, `fill`) and are safe only because of those mitigations — the lint keeps them that way.
 
 ## Tests
 

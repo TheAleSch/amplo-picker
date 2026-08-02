@@ -86,6 +86,23 @@ export type {
 // gets redirected to this file (`fill-picker-base/gradient.tsx`) in a
 // consumer project. Export-from specifiers are exempt from that pass, so
 // the re-exports below stay pointed at the real module.
+//
+// Cycle invariant: because of that same redirect, an INSTALLED consumer's
+// sibling parts (`./parts/gradient/{type,interp}-switcher`,
+// `radial-size-select`, `stop-editor`, and `./fill`) import their context
+// from *this barrel* rather than from `contexts/gradient` — and this barrel
+// imports those parts back. That module cycle is benign only because every
+// redirected binding is referenced inside a component body / hook call at
+// render time, never at module-eval time: by the time anything reads
+// `useGradientPickerContext`, both halves of the cycle have finished
+// evaluating. Keep new module-scope evaluation out of the base gradient
+// parts — a top-level `const x = useGradientPickerContext` or a
+// `Context.Provider` captured into a module constant would read a
+// still-uninitialized binding and blow up in consumer projects while
+// staying green in this repo (where TypeScript resolves the honest path
+// and there is no cycle at all). The build's basename-collision lint
+// guards the export side of this; nothing can guard the eval side but
+// this comment.
 export {
   GradientPickerContext,
   GradientStopEditorContext,

@@ -235,13 +235,22 @@ describe("buildRegistry — emit (T-7)", () => {
 // from the path. `deriveTarget` is the pure mapping; the emit sites (bundle
 // + catalog) fall back to it via `f.target ?? deriveTarget(f.path)`.
 describe("deriveTarget — ui-tree path derivation (D4)", () => {
-  it("derives @/components/ui/<dir>/<rest> from registry/new-york/ui/<dir>/<rest>", () => {
+  it("derives @ui/<dir>/<rest> from registry/new-york/ui/<dir>/<rest>", () => {
     expect(deriveTarget("registry/new-york/ui/button/button.tsx")).toBe(
-      "@/components/ui/button/button.tsx",
+      "@ui/button/button.tsx",
     );
     expect(
       deriveTarget("registry/new-york/ui/color-picker/parts/root.tsx"),
-    ).toBe("@/components/ui/color-picker/parts/root.tsx");
+    ).toBe("@ui/color-picker/parts/root.tsx");
+  });
+
+  // The alias-NAME form is load-bearing: the CLI resolves `@<alias>/<rest>`
+  // against components.json (shadcn >= 4.7.0) but treats `@/…` as a literal
+  // relative path, installing to `<cwd>/src/@/components/ui/…`.
+  it("never emits the unresolvable @/-prefixed form", () => {
+    expect(deriveTarget("registry/new-york/ui/button/button.tsx")).not.toMatch(
+      /^@\//,
+    );
   });
 
   it("throws for paths outside the ui tree", () => {
@@ -304,14 +313,12 @@ describe("buildRegistry — derived target emission (D4)", () => {
 
   it("derives the target in the per-item bundle when none is given", () => {
     const bundle = read("button.json");
-    expect(bundle.files[0].target).toBe("@/components/ui/button/button.tsx");
+    expect(bundle.files[0].target).toBe("@ui/button/button.tsx");
   });
 
   it("derives the target in the public catalog index when none is given", () => {
     const catalog = read("registry.json");
-    expect(catalog.items[0].files[0].target).toBe(
-      "@/components/ui/button/button.tsx",
-    );
+    expect(catalog.items[0].files[0].target).toBe("@ui/button/button.tsx");
   });
 });
 

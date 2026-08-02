@@ -58,7 +58,11 @@ export function deriveTarget(filePath: string): string {
       `cannot derive target: ${filePath} is not under the ui tree (${UI_TREE_PREFIX})`,
     );
   }
-  return `@/components/ui/${filePath.slice(UI_TREE_PREFIX.length)}`;
+  // Alias-NAME prefix (`@ui/…`), not `@/…`: the CLI only alias-resolves
+  // targets matching `@<alias>/<rest>` (shadcn >= 4.7.0, resolved against
+  // `components.json`'s `aliases.ui`). `@/`-prefixed forms fail that regex
+  // and are installed literally, landing at `<cwd>/src/@/components/ui/…`.
+  return `@ui/${filePath.slice(UI_TREE_PREFIX.length)}`;
 }
 
 /**

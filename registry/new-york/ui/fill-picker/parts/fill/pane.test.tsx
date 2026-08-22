@@ -6,7 +6,7 @@ import { Tabs as FillTabs, Tab as FillTab } from "./tabs";
 import { Pane as FillPane } from "./pane";
 import { StopColor } from "../gradient/stop-color";
 import { Area } from "../area";
-import { DEFAULT_LINEAR, type Fill } from "../../lib/gradient";
+import type { Fill } from "../../lib/gradient";
 import { parseColor } from "../../lib/color";
 
 // Regression test for the Maximum-update-depth loop that fired when

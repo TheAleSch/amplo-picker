@@ -550,7 +550,8 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     );
   };
 
-  const beginDrag = (kind: HandleKind) => (
+  const beginDrag = (
+    kind: HandleKind,
     e: React.PointerEvent<HTMLButtonElement>,
   ) => {
     e.preventDefault();
@@ -654,7 +655,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
                     : "Gradient start"
                 }
                 position={handles.a}
-                onPointerDown={beginDrag("linear-a")}
+                onPointerDown={(event) => beginDrag("linear-a", event)}
                 onKeyDown={(e) => onKeyDownLinearEndpoint("linear-a", e)}
                 {...(gradient.start
                   ? {
@@ -682,7 +683,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
                       : "Gradient end"
                   }
                   position={handles.b}
-                  onPointerDown={beginDrag("linear-b")}
+                  onPointerDown={(event) => beginDrag("linear-b", event)}
                   onKeyDown={(e) => onKeyDownLinearEndpoint("linear-b", e)}
                   {...(gradient.end
                     ? {
@@ -712,7 +713,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
               <Handle
                 label={`Gradient center, x ${Math.round(gradient.center.x * 100)}%, y ${Math.round(gradient.center.y * 100)}%`}
                 position={handles.a}
-                onPointerDown={beginDrag("center")}
+                onPointerDown={(event) => beginDrag("center", event)}
                 onKeyDown={onKeyDownCenter}
                 role="application"
                 aria-roledescription="2D pad for gradient center"
@@ -721,7 +722,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
                 <Handle
                   label="Gradient start angle"
                   position={handles.b}
-                  onPointerDown={beginDrag("conic-dial")}
+                  onPointerDown={(event) => beginDrag("conic-dial", event)}
                   onKeyDown={onKeyDownConicDial}
                   role="slider"
                   aria-valuemin={0}
@@ -734,7 +735,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
                 <Handle
                   label="Gradient radius"
                   position={handles.b}
-                  onPointerDown={beginDrag("radial-edge")}
+                  onPointerDown={(event) => beginDrag("radial-edge", event)}
                   onKeyDown={onKeyDownRadii}
                   role="slider"
                   aria-valuemin={0}

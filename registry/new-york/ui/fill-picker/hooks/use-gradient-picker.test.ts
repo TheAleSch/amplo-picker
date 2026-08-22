@@ -4,7 +4,6 @@ import { useGradientPicker } from "./use-gradient-picker";
 import {
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
-  DEFAULT_CONIC,
   type Gradient,
   type LinearGradient,
   type RadialGradient,

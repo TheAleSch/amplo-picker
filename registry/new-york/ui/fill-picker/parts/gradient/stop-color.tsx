@@ -49,11 +49,10 @@ const Bound: React.FC<
     [l, c, h, alpha],
   );
 
-  const setStopColorRef = React.useRef(grad.setStopColor);
-  setStopColorRef.current = grad.setStopColor;
+  const setStopColor = grad.setStopColor;
   const onValueChange = React.useCallback(
-    (color: OklchColor) => setStopColorRef.current(stopId, color),
-    [stopId],
+    (color: OklchColor) => setStopColor(stopId, color),
+    [setStopColor, stopId],
   );
 
   const format = grad.getStopColorFormat(stopId);

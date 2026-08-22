@@ -308,26 +308,7 @@ export function GodRayCanvas({
     haloL,
     haloC,
   });
-  paramsRef.current = {
-    colorSpace,
-    fpsCap,
-    intensity,
-    bloom,
-    blurStride,
-    blurPasses,
-    lodStep,
-    lodCount,
-    whitepoint,
-    hueSpeed,
-    haloHueOffset,
-    swirlL,
-    swirlC,
-    haloL,
-    haloC,
-  };
-
   const onFrameStatsRef = React.useRef(onFrameStats);
-  onFrameStatsRef.current = onFrameStats;
 
   // Mark geometry drives two plain uniforms and allocates nothing, so it
   // rides the same per-frame ref as the tunables. Keeping it out of the
@@ -336,7 +317,46 @@ export function GodRayCanvas({
   // re-run the effect — tearing down every GL resource and flashing the
   // canvas black for a frame or two while it rebuilt.
   const geomRef = React.useRef({ markCenterFraction, markWidthFraction });
-  geomRef.current = { markCenterFraction, markWidthFraction };
+  React.useLayoutEffect(() => {
+    paramsRef.current = {
+      colorSpace,
+      fpsCap,
+      intensity,
+      bloom,
+      blurStride,
+      blurPasses,
+      lodStep,
+      lodCount,
+      whitepoint,
+      hueSpeed,
+      haloHueOffset,
+      swirlL,
+      swirlC,
+      haloL,
+      haloC,
+    };
+    onFrameStatsRef.current = onFrameStats;
+    geomRef.current = { markCenterFraction, markWidthFraction };
+  }, [
+    bloom,
+    blurPasses,
+    blurStride,
+    colorSpace,
+    fpsCap,
+    haloC,
+    haloHueOffset,
+    haloL,
+    hueSpeed,
+    intensity,
+    lodCount,
+    lodStep,
+    markCenterFraction,
+    markWidthFraction,
+    onFrameStats,
+    swirlC,
+    swirlL,
+    whitepoint,
+  ]);
   // Set once GL is live. Under `prefers-reduced-motion` there is no loop to
   // pick up a geometry change, so the effect below repaints the one frame.
   const renderFrameRef = React.useRef<(() => void) | null>(null);

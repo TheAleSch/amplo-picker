@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useColorPicker } from "./use-color-picker";
-import type { OklchColor } from "../lib/types";
+import type { ColorFormat, OklchColor } from "../lib/types";
 
 describe("useColorPicker", () => {
   it("initializes from defaultValue string", () => {
@@ -90,7 +90,11 @@ describe("useColorPicker", () => {
   });
 
   it("onValueChange receives canonical color, active formatted, and full formats record", () => {
-    let captured: { color: any; formatted: string; formats: Record<string, string> } | null = null;
+    let captured: {
+      color: OklchColor;
+      formatted: string;
+      formats: Record<ColorFormat, string>;
+    } | null = null;
     const { result } = renderHook(() =>
       useColorPicker({
         defaultValue: "#000",
@@ -132,18 +136,20 @@ describe("useColorPicker", () => {
   });
 
   it("object-controlled mode: setColor with achromatic OklchColor preserves the hue caller passes", () => {
-    let captured: any = null;
+    const captured: OklchColor[] = [];
     const { result, rerender } = renderHook(
-      ({ value }: { value: any }) =>
-        useColorPicker({ value, onValueChange: (c) => (captured = c) }),
+      ({ value }: { value: OklchColor }) =>
+        useColorPicker({ value, onValueChange: (c) => captured.push(c) }),
       { initialProps: { value: { l: 0.7, c: 0.18, h: 240, alpha: 1 } } },
     );
     // Simulate the area-drag pattern: spread color, change l/c only.
     act(() => {
       result.current.setColor({ ...result.current.color, c: 0.001, l: 0.5 });
     });
-    expect(captured.h).toBeCloseTo(240, 1); // hue from spread, untouched
-    rerender({ value: captured });
+    const emitted = captured.at(-1);
+    expect(emitted?.h).toBeCloseTo(240, 1); // hue from spread, untouched
+    expect(emitted).toBeDefined();
+    rerender({ value: emitted! });
     expect(result.current.color.h).toBeCloseTo(240, 1);
   });
 

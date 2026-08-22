@@ -17,8 +17,11 @@ export default defineConfig({
       // "@/registry/new-york/ui/fill-picker/parts/root" incorrectly resolve
       // under src/registry/... (which doesn't exist) instead of the actual
       // registry/ directory at the repo root.
-      { find: "@/registry", replacement: path.resolve(__dirname, "./registry") },
-      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      {
+        find: "@/registry",
+        replacement: path.resolve(import.meta.dirname, "./registry"),
+      },
+      { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
     ],
   },
 });

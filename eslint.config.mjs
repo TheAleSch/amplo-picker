@@ -1,7 +1,7 @@
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
 
-export default [
+const eslintConfig = [
   {
     ignores: [
       ".next/**",
@@ -25,7 +25,7 @@ export default [
       // Registry parts use `_`-prefixed args/vars by convention to mark
       // intentionally-unused params (e.g. destructure-and-spread).
       "@typescript-eslint/no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
@@ -33,22 +33,19 @@ export default [
         },
       ],
 
-      // react-hooks v7 added two strict new rules that this codebase
-      // pre-dates. The findings are real but require codebase-wide
-      // refactors that are out of scope here; surface as warnings so
-      // CI doesn't block but the issues stay visible.
-      "react-hooks/refs": "warn",
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/exhaustive-deps": "warn",
+      // Keep render paths compatible with React's ref and effect semantics.
+      // These are errors now that the pre-v7 patterns have been removed.
+      "react-hooks/refs": "error",
+      "react-hooks/set-state-in-effect": "error",
+      "react-hooks/exhaustive-deps": "error",
 
-      // Apostrophes and quotes in JSX copy are intentional in the docs
-      // and hero strings — escaping them hurts readability with no
-      // functional gain. Surface as warning.
-      "react/no-unescaped-entities": "warn",
+      // Use typographic punctuation in visible JSX copy.
+      "react/no-unescaped-entities": "error",
 
-      // Allow `any` in the registry where conversions cross typed
-      // boundaries (culori interop, etc.). Warn rather than error.
-      "@typescript-eslint/no-explicit-any": "warn",
+      // Keep registry boundaries explicitly typed.
+      "@typescript-eslint/no-explicit-any": "error",
     },
   },
 ];
+
+export default eslintConfig;

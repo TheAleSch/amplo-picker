@@ -56,9 +56,9 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
   const fill: Fill = isControlled ? value : internalFill;
   const mode: FillMode = isControlledMode ? modeProp : internalMode;
 
-  // Track the last fill we saw for each kind so setMode can restore the cached
-  // side. Mutating refs during render is allowed (refs are not state) and
-  // avoids the parent → effect → setState round-trip.
+  // Track the last committed fill for each kind so setMode can restore the
+  // cached side. A layout effect updates the cache before input can arrive
+  // without mutating refs during render.
   const lastColorRef = React.useRef<ColorFill>(
     initialFill.kind === "color"
       ? initialFill
@@ -69,32 +69,29 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
       ? initialFill
       : { kind: "gradient", gradient: DEFAULT_LINEAR },
   );
-  if (fill.kind === "color") lastColorRef.current = fill;
-  else lastGradientRef.current = fill;
-
-  const isControlledRef = React.useRef(isControlled);
-  isControlledRef.current = isControlled;
-  const isControlledModeRef = React.useRef(isControlledMode);
-  isControlledModeRef.current = isControlledMode;
+  React.useLayoutEffect(() => {
+    if (fill.kind === "color") lastColorRef.current = fill;
+    else lastGradientRef.current = fill;
+  }, [fill]);
 
   const setFill = React.useCallback(
     (next: Fill) => {
-      if (!isControlledRef.current) setInternalFill(next);
+      if (!isControlled) setInternalFill(next);
       onValueChange?.(next, formatFill(next));
     },
-    [onValueChange],
+    [isControlled, onValueChange],
   );
 
   const setMode = React.useCallback(
     (next: FillMode) => {
-      if (!isControlledModeRef.current) setInternalMode(next);
+      if (!isControlledMode) setInternalMode(next);
       onModeChange?.(next);
       const restored: Fill =
         next === "color" ? lastColorRef.current : lastGradientRef.current;
-      if (!isControlledRef.current) setInternalFill(restored);
+      if (!isControlled) setInternalFill(restored);
       onValueChange?.(restored, formatFill(restored));
     },
-    [onValueChange, onModeChange],
+    [isControlled, isControlledMode, onModeChange, onValueChange],
   );
 
   return { fill, mode, setFill, setMode };

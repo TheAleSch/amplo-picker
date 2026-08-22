@@ -220,14 +220,13 @@ export function useGradientPicker(
     attachIds(value ?? defaultValue ?? DEFAULT_LINEAR),
   );
 
-  // Whether the caller opted into id tracking. Seeded from whatever gradient
-  // we started with and re-derived whenever they hand us a new one wholesale;
-  // it has to be a ref rather than derived state because the emit path inside
-  // `apply` needs it for mutations (addStop, moveStop, …) that happen between
-  // controlled syncs.
-  const idTrackedRef = React.useRef(
-    hasStopIds(value ?? defaultValue ?? DEFAULT_LINEAR),
+  // Whether the caller opted into id tracking. State drives render output;
+  // the mirrored ref lets `apply` handle chained mutations synchronously.
+  const initialIdTracking = hasStopIds(
+    value ?? defaultValue ?? DEFAULT_LINEAR,
   );
+  const [idTracked, setIdTracked] = React.useState(initialIdTracking);
+  const idTrackedRef = React.useRef(initialIdTracking);
   const [selectedStopId, setSelectedStopId] = React.useState<string>(
     () => internal.stops[0]?.id ?? "",
   );
@@ -235,19 +234,17 @@ export function useGradientPicker(
   // Track the last gradient we emitted upward so the controlled-sync path can
   // ignore echoes. Seed with the initial controlled value so the *first* sync
   // is treated as an echo of our own initial state.
-  const lastEmittedRef = React.useRef<Gradient | null>(value ?? null);
+  const [lastEmitted, setLastEmitted] = React.useState<Gradient | null>(
+    value ?? null,
+  );
 
-  // stateRef mirrors `internal` so setters can compute the next state +
-  // synchronously emit the cleaned gradient without going through an effect.
-  // Assigned during render (refs are not state; idempotent under Strict Mode)
-  // and re-assigned inside `apply` so chained setters in one event handler each
-  // see the previous result.
+  // stateRef mirrors the last committed `internal` value so setters can
+  // compute and emit synchronously. `apply` also advances it immediately so
+  // chained setters in one event handler each see the previous result.
   const stateRef = React.useRef(internal);
-  stateRef.current = internal;
 
   // Latest-callback ref so a fresh arrow each render doesn't re-create setters.
   const onValueChangeRef = React.useRef(onValueChange);
-  onValueChangeRef.current = onValueChange;
 
   // Per-shape override stashes. The radial gradient can carry either an
   // ellipse override (`radii`) or a circle override (`radiusPx`), never
@@ -262,6 +259,19 @@ export function useGradientPicker(
     undefined,
   );
   const radiusPxStashRef = React.useRef<number | undefined>(undefined);
+  const [stashResetVersion, setStashResetVersion] = React.useState(0);
+
+  React.useLayoutEffect(() => {
+    stateRef.current = internal;
+    idTrackedRef.current = idTracked;
+    onValueChangeRef.current = onValueChange;
+  }, [idTracked, internal, onValueChange]);
+
+  React.useLayoutEffect(() => {
+    if (stashResetVersion === 0) return;
+    radiiStashRef.current = undefined;
+    radiusPxStashRef.current = undefined;
+  }, [stashResetVersion]);
 
   // Sync controlled value during render (the "adjusting state during render"
   // pattern from React docs) instead of an effect. An effect would commit a
@@ -274,8 +284,8 @@ export function useGradientPicker(
   >(value);
   if (isControlled && value !== prevControlledValue) {
     setPrevControlledValue(value);
-    if (value !== lastEmittedRef.current) {
-      const prev = stateRef.current;
+    if (value !== lastEmitted) {
+      const prev = internal;
       // `prev.stops` is always position-sorted (attachIds and every mutating
       // setter sort), so the incoming array must be sorted the same way
       // before the element-wise compare. Without this, a controlled consumer
@@ -314,7 +324,7 @@ export function useGradientPicker(
         ? byId
         : sameLength &&
           prev.stops.every((s, i) => s.position === incoming[i].position);
-      idTrackedRef.current = uniqueIds;
+      setIdTracked(uniqueIds);
       const structuralMatch = prev.gradient.type === value.type && sameShape;
       const next: InternalState = structuralMatch
         ? {
@@ -325,10 +335,8 @@ export function useGradientPicker(
           }
         : attachIds(value);
       if (!structuralMatch) {
-        radiiStashRef.current = undefined;
-        radiusPxStashRef.current = undefined;
+        setStashResetVersion((version) => version + 1);
       }
-      stateRef.current = next;
       setInternal(next);
     }
   }
@@ -344,7 +352,7 @@ export function useGradientPicker(
       stateRef.current = next;
       setInternal(next);
       const clean = toPublicGradient(next, idTrackedRef.current);
-      lastEmittedRef.current = clean;
+      setLastEmitted(clean);
       onValueChangeRef.current?.(clean, formatGradient(clean));
     },
     [],
@@ -358,7 +366,9 @@ export function useGradientPicker(
       // user is handing us a brand-new gradient, not toggling the current one.
       radiiStashRef.current = undefined;
       radiusPxStashRef.current = undefined;
-      idTrackedRef.current = hasStopIds(next);
+      const tracksIds = hasStopIds(next);
+      idTrackedRef.current = tracksIds;
+      setIdTracked(tracksIds);
       apply(() => attachIds(next));
       setSelectedStopId((prev) => stateRef.current.stops[0]?.id ?? prev);
     },
@@ -737,8 +747,8 @@ export function useGradientPicker(
   );
 
   const cleanGradient = React.useMemo(
-    () => toPublicGradient(internal, idTrackedRef.current),
-    [internal],
+    () => toPublicGradient(internal, idTracked),
+    [idTracked, internal],
   );
 
   return {

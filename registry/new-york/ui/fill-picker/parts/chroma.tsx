@@ -88,7 +88,7 @@ export const Chroma = React.forwardRef<HTMLDivElement, ChromaProps>(
       const arr: string[] = [];
       for (let i = 0; i <= samples; i++) {
         const c = (i / samples) * CHROMA_MAX;
-        arr.push(formatColor({ ...color, c, alpha: 1 }, "oklch"));
+        arr.push(formatColor({ l: color.l, c, h: color.h, alpha: 1 }, "oklch"));
       }
       return arr.join(", ");
     }, [color.h, color.l]);

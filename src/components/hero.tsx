@@ -582,20 +582,37 @@ function Toolbar() {
   );
 }
 
-function ThemeToggle() {
-  const [theme, setTheme] = React.useState<"light" | "dark" | null>(null);
+type Theme = "light" | "dark";
 
-  React.useEffect(() => {
-    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
-  }, []);
+function getThemeSnapshot(): Theme | null {
+  return document.documentElement.classList.contains("dark")
+    ? "dark"
+    : "light";
+}
+
+function subscribeToTheme(onStoreChange: () => void) {
+  const observer = new MutationObserver(onStoreChange);
+  observer.observe(document.documentElement, {
+    attributeFilter: ["class"],
+    attributes: true,
+  });
+  return () => observer.disconnect();
+}
+
+function ThemeToggle() {
+  const theme = React.useSyncExternalStore(
+    subscribeToTheme,
+    getThemeSnapshot,
+    () => null,
+  );
 
   const toggle = () => {
-    const next = theme === "dark" ? "light" : "dark";
+    const current = theme ?? getThemeSnapshot();
+    const next = current === "dark" ? "light" : "dark";
     document.documentElement.classList.toggle("dark", next === "dark");
     try {
       localStorage.setItem("theme", next);
     } catch {}
-    setTheme(next);
   };
 
   const isDark = theme === "dark";

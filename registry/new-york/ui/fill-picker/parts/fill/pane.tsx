@@ -80,11 +80,11 @@ const ColorPaneInner = React.forwardRef<
       ? fill.fill.color
       : { l: 0, c: 0, h: 0, alpha: 1 };
 
-  const setFillRef = React.useRef(fill.setFill);
-  setFillRef.current = fill.setFill;
-  const onValueChange = React.useCallback((color: OklchColor) => {
-    setFillRef.current({ kind: "color", color });
-  }, []);
+  const setFill = fill.setFill;
+  const onValueChange = React.useCallback(
+    (color: OklchColor) => setFill({ kind: "color", color }),
+    [setFill],
+  );
 
   const state = useColorPicker({ value: colorValue, onValueChange });
   const visible = useMountFade();
@@ -116,11 +116,11 @@ const GradientPaneInner = React.forwardRef<
   const gradientValue: Gradient =
     fill.fill.kind === "gradient" ? fill.fill.gradient : DEFAULT_LINEAR;
 
-  const setFillRef = React.useRef(fill.setFill);
-  setFillRef.current = fill.setFill;
-  const onValueChange = React.useCallback((gradient: Gradient) => {
-    setFillRef.current({ kind: "gradient", gradient });
-  }, []);
+  const setFill = fill.setFill;
+  const onValueChange = React.useCallback(
+    (gradient: Gradient) => setFill({ kind: "gradient", gradient }),
+    [setFill],
+  );
 
   const state = useGradientPicker({ value: gradientValue, onValueChange });
   const visible = useMountFade();

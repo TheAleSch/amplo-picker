@@ -445,7 +445,7 @@ export function FullDocs({ variant }: { variant: Variant }) {
             The host container must establish a positioning context (e.g.{" "}
             <Code>position: relative</Code>) and represent the same
             coordinate space the gradient will be applied to. The
-            overlay's root is <Code>pointer-events-none</Code> so empty
+            overlay’s root is <Code>pointer-events-none</Code> so empty
             regions pass clicks through to the canvas object beneath;
             the handle buttons themselves are{" "}
             <Code>pointer-events-auto</Code> so they always receive input.
@@ -514,7 +514,7 @@ export function FullDocs({ variant }: { variant: Variant }) {
           <H2 id="gradient-stop-list">Stop editor (<Code>StopList</Code>)</H2>
           <p>
             <Code>{"<GradientPicker.StopList>"}</Code> is a keyboard-driven
-            listbox of the gradient's stops. Each row has four parts: a{" "}
+            listbox of the gradient’s stops. Each row has four parts: a{" "}
             <strong className="text-foreground">swatch</strong> (click → full{" "}
             <Code>ColorPicker</Code> popover bound to that stop), a numeric
             <strong className="text-foreground"> % position</strong> input, an
@@ -529,8 +529,8 @@ export function FullDocs({ variant }: { variant: Variant }) {
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Per-stop format.</strong>{" "}
             Each row tracks its own display format. Changing format in a
-            stop's popover (or in a sibling{" "}
-            <Code>{"<GradientPicker.StopColor>"}</Code>'s{" "}
+            stop’s popover (or in a sibling{" "}
+            <Code>{"<GradientPicker.StopColor>"}</Code>’s{" "}
             <Code>FormatSwitcher</Code>, which is bound to the selected
             stop) only updates that one row — the others stay on
             whatever format they had. New stops mount on{" "}
@@ -603,7 +603,7 @@ export function FullDocs({ variant }: { variant: Variant }) {
             (the display format only affects what you <em>read</em> in
             the StopList; CSS emit stays canonical so wide-gamut chroma
             survives). <Code>start</Code>/<Code>end</Code> endpoints on
-            positioned linears are dropped (CSS can't represent an
+            positioned linears are dropped (CSS can’t represent an
             offset line; the angle + projected stop positions preserve
             the visual offset). Hue, lightness, and stop positions
             round-trip exactly.
@@ -1105,10 +1105,13 @@ function SavedSwatchesExample() {
   const [saved, setSaved] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("amplo-saved-swatches");
-      if (raw) setSaved(JSON.parse(raw));
-    } catch {}
+    const frame = requestAnimationFrame(() => {
+      try {
+        const raw = window.localStorage.getItem("amplo-saved-swatches");
+        if (raw) setSaved(JSON.parse(raw));
+      } catch {}
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const presets = React.useMemo(

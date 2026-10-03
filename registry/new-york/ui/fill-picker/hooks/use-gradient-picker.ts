@@ -284,6 +284,9 @@ export function useGradientPicker(
   >(value);
   if (isControlled && value !== prevControlledValue) {
     setPrevControlledValue(value);
+    // An echo is consumed exactly once: a parent that later hands back the
+    // same retained object (undo/redo) is describing a real change.
+    if (lastEmitted !== null) setLastEmitted(null);
     if (value !== lastEmitted) {
       const prev = internal;
       // `prev.stops` is always position-sorted (attachIds and every mutating
@@ -336,6 +339,13 @@ export function useGradientPicker(
         : attachIds(value);
       if (!structuralMatch) {
         setStashResetVersion((version) => version + 1);
+        // Fresh ids orphan the selection; keep the same slot selected.
+        if (!next.stops.some((s) => s.id === selectedStopId)) {
+          const index = prev.stops.findIndex((s) => s.id === selectedStopId);
+          const fallback =
+            next.stops[Math.min(Math.max(index, 0), next.stops.length - 1)];
+          if (fallback) setSelectedStopId(fallback.id);
+        }
       }
       setInternal(next);
     }

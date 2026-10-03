@@ -48,6 +48,24 @@ describe("slider drags via trackPointerDrag", () => {
     expect(slider).toHaveAttribute("aria-valuenow", "50");
   });
 
+  it("a second press supersedes the active drag", () => {
+    render(
+      <Root defaultValue="oklch(0.7 0.18 120)">
+        <Alpha />
+      </Root>,
+    );
+    const slider = screen.getByRole("slider", { name: "Opacity" });
+    setup(slider);
+    fireEvent.pointerDown(slider, { clientX: 20, pointerId: 1, buttons: 1 });
+    fireEvent.pointerDown(slider, { clientX: 100, pointerId: 2, buttons: 1 });
+    // The first finger no longer steers…
+    fireEvent.pointerMove(slider, { clientX: 180, pointerId: 1, buttons: 1 });
+    expect(slider).toHaveAttribute("aria-valuenow", "50");
+    // …the second one does.
+    fireEvent.pointerMove(slider, { clientX: 150, pointerId: 2, buttons: 1 });
+    expect(slider).toHaveAttribute("aria-valuenow", "75");
+  });
+
   it("ends the drag when pointer capture is lost", () => {
     render(
       <Root defaultValue="oklch(0.7 0.18 120)">

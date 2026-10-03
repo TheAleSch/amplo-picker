@@ -13,12 +13,15 @@ import * as React from "react";
  *    during an OS gesture) ends the drag instead of dragging on;
  *  - `lostpointercapture` (window blur / cmd-tab mid-drag revokes capture
  *    without any pointerup) tears the listeners down immediately.
+ *
+ * Returns a teardown that ends the drag early (releasing capture), so a
+ * caller can let a newer pointer supersede this one.
  */
 export function trackPointerDrag(
   target: HTMLElement,
   pointerId: number,
   onMove: (ev: PointerEvent) => void,
-): void {
+): () => void {
   try {
     target.setPointerCapture(pointerId);
   } catch {
@@ -37,23 +40,27 @@ export function trackPointerDrag(
   };
   const end = (ev?: Event) => {
     if (ev instanceof PointerEvent && ev.pointerId !== pointerId) return;
-    if (ev instanceof PointerEvent) {
-      try {
-        target.releasePointerCapture(ev.pointerId);
-      } catch {
-        // pointer may already be released on cancel
-      }
-    }
     target.removeEventListener("pointermove", move);
     target.removeEventListener("pointerup", end);
     target.removeEventListener("pointercancel", end);
     target.removeEventListener("lostpointercapture", end);
+    try {
+      if (target.hasPointerCapture?.(pointerId)) target.releasePointerCapture(pointerId);
+    } catch {
+      // pointer may already be released on cancel
+    }
   };
   target.addEventListener("pointermove", move);
   target.addEventListener("pointerup", end);
   target.addEventListener("pointercancel", end);
   target.addEventListener("lostpointercapture", end);
+  return () => end();
 }
+
+// useLayoutEffect warns during SSR on React 18; registry consumers may
+// still be there. Nothing to sync on the server anyway.
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
 /**
  * Ref that always holds the latest committed `value`. `trackPointerDrag`
@@ -64,7 +71,7 @@ export function trackPointerDrag(
  */
 export function useLatest<T>(value: T): React.RefObject<T> {
   const ref = React.useRef(value);
-  React.useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     ref.current = value;
   });
   return ref;
@@ -73,19 +80,23 @@ export function useLatest<T>(value: T): React.RefObject<T> {
 /**
  * `onPointerDown` for a capture-based surface: applies the press position
  * immediately, then follows the drag with `trackPointerDrag`. `onPoint`
- * may change every render; moves always reach the latest one.
+ * may change every render; moves always reach the latest one. A new press
+ * (e.g. a second finger) supersedes the active drag rather than letting
+ * two pointers steer the value at once.
  */
 export function usePointerDrag(
   onPoint: (clientX: number, clientY: number) => void,
 ): (e: React.PointerEvent<HTMLElement>) => void {
   const latest = useLatest(onPoint);
+  const stopActive = React.useRef<(() => void) | null>(null);
   return React.useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
       // Primary button only: a right-press must not drag (or fight the
       // context menu). Touch and pen report button 0 for contact.
       if (e.button !== 0) return;
+      stopActive.current?.();
       latest.current(e.clientX, e.clientY);
-      trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
+      stopActive.current = trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
         latest.current(ev.clientX, ev.clientY),
       );
     },

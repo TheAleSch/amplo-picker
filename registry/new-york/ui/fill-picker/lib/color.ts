@@ -4,7 +4,6 @@ import {
   formatHex,
   formatHex8,
   formatRgb,
-  formatCss,
   toGamut as culoriToGamut,
   wcagContrast,
   type Color,
@@ -19,6 +18,8 @@ const toOklab = converter("oklab");
 const toP3 = converter("p3");
 
 const GAMUT_EPSILON = 1e-4;
+/** Chroma / lightness-edge threshold below which hue is meaningless. */
+const ACHROMATIC_EPS = 1e-4;
 
 function channelsInRange(c: { r?: number; g?: number; b?: number } | undefined): boolean {
   if (!c) return false;
@@ -48,8 +49,9 @@ export interface ParsedColor {
   color: OklchColor;
   /**
    * True when the source string carried no OKLCH-scale hue — an achromatic
-   * hex/rgb/hsl where the round-trip loses hue and `color.h` is a defaulted 0.
-   * False whenever the hue is meaningful: chromatic colors, and OKLCH/OKLab
+   * hex/rgb/hsl/p3 where the round-trip loses hue and `color.h` is a
+   * defaulted 0 or conversion noise (a p3 gray lands on c ≈ 1e-16, h 180).
+   * False whenever the hue is meaningful: chromatic colors, and OKLCH
    * strings that author a hue even at zero chroma.
    */
   hueMissing: boolean;
@@ -66,12 +68,16 @@ export function parseColorDetailed(input: string): ParsedColor | null {
   if (!parsed) return null;
   const oklch = toOklch(parsed);
   if (!oklch) return null;
-  const hueMissing = !Number.isFinite(oklch.h);
+  // Only OKLCH strings can author a hue at zero chroma; any other space's
+  // near-zero chroma is a neutral whose finite hue is float noise.
+  const hueMissing =
+    !Number.isFinite(oklch.h) ||
+    (parsed.mode !== "oklch" && (oklch.c ?? 0) <= ACHROMATIC_EPS);
   return {
     color: {
       l: clamp(oklch.l ?? 0, 0, 1),
       c: Math.max(oklch.c ?? 0, 0),
-      h: hueMissing ? 0 : (oklch.h as number),
+      h: hueMissing ? 0 : wrapHue(oklch.h as number),
       alpha: oklch.alpha ?? 1,
     },
     hueMissing,
@@ -95,6 +101,11 @@ export function isValidColor(input: string): boolean {
  * For sRGB-targeted formats (hex/rgb/hsl/hsb) the color is gamut-mapped to sRGB first.
  * For P3 the color is gamut-mapped to P3.
  * OKLCH/OKLab outputs are unbounded.
+ *
+ * Numeric output is rounded (hue/percentages to 2 decimals, unit-range
+ * channels to 4) so strings stay readable and a parent echoing `formatted`
+ * back as a controlled `value` settles after one re-parse instead of
+ * carrying float noise like `1.1e-14%`.
  */
 export function formatColor(color: OklchColor, format: ColorFormat): string {
   switch (format) {
@@ -112,34 +123,47 @@ export function formatColor(color: OklchColor, format: ColorFormat): string {
     case "hsl": {
       const mapped = mapToGamutColor(color, "srgb");
       const hsl = toHsl({ mode: "oklch", ...oklchObj(mapped) });
-      return hsl ? formatCss(hsl) : "hsl(0 0% 0%)";
+      if (!hsl) return "hsl(0 0% 0%)";
+      return `hsl(${fmtHue(hsl.h)} ${round(hsl.s * 100, 2)}% ${round(hsl.l * 100, 2)}%${fmtAlpha(color.alpha)})`;
     }
     case "hsb": {
+      // CSS has no hsb()/hsv() function. Emit culori's `color(--hsv h s v)`
+      // (s/v in 0..1): not paintable by browsers, but it is the one HSB
+      // syntax `parseColor` reads back, so the Input field round-trips.
       const mapped = mapToGamutColor(color, "srgb");
       const hsv = toHsv({ mode: "oklch", ...oklchObj(mapped) });
-      if (!hsv) return "hsv(0 0% 0%)";
-      // CSS does not standardize hsb(); emit hsv() (alias) for clarity, but tests just check parseable
-      return formatCss(hsv);
+      if (!hsv) return "color(--hsv 0 0 0)";
+      return `color(--hsv ${fmtHue(hsv.h)} ${round(hsv.s, 4)} ${round(hsv.v, 4)}${fmtAlpha(color.alpha)})`;
     }
     case "oklch": {
       const { l, c, h, alpha } = color;
       const lStr = round(l, 4);
       const cStr = round(c, 4);
       const hStr = round(h, 2);
-      return alpha < 1
-        ? `oklch(${lStr} ${cStr} ${hStr} / ${round(alpha, 3)})`
-        : `oklch(${lStr} ${cStr} ${hStr})`;
+      return `oklch(${lStr} ${cStr} ${hStr}${fmtAlpha(alpha)})`;
     }
     case "oklab": {
       const lab = toOklab({ mode: "oklch", ...oklchObj(color) });
-      return lab ? formatCss(lab) : "oklab(0 0 0)";
+      if (!lab) return "oklab(0 0 0)";
+      return `oklab(${round(lab.l, 4)} ${round(lab.a, 4)} ${round(lab.b, 4)}${fmtAlpha(color.alpha)})`;
     }
     case "p3": {
       const mapped = mapToGamutColor(color, "p3");
       const p3 = toP3({ mode: "oklch", ...oklchObj(mapped) });
-      return p3 ? formatCss(p3) : "color(display-p3 0 0 0)";
+      if (!p3) return "color(display-p3 0 0 0)";
+      return `color(display-p3 ${round(p3.r, 4)} ${round(p3.g, 4)} ${round(p3.b, 4)}${fmtAlpha(color.alpha)})`;
     }
   }
+}
+
+/** Hue for hsl/hsb output: undefined (achromatic) → 0, wrapped after rounding. */
+function fmtHue(h: number | undefined): number {
+  return Number.isFinite(h) ? wrapHue(round(h as number, 2)) : 0;
+}
+
+/** Alpha suffix for space-separated CSS syntax; empty when opaque. */
+function fmtAlpha(alpha: number): string {
+  return alpha < 1 ? ` / ${round(alpha, 3)}` : "";
 }
 
 /** Convenience: pull bare OKLCH numeric fields. */
@@ -304,15 +328,44 @@ export function findMaxChroma(
 }
 
 /**
- * Find the OKLCH "cusp" for a given hue and gamut — the (L, C) point of
- * maximum chroma. Used by the `hsv-sv` Area mode to map (S, V) onto a fully
- * gamut-filling square: V=1, S=1 lands on the cusp; V=1, S=0 is white;
- * V=0 is black.
- *
- * Two-stage search: a 32-step coarse sweep over L, then a 20-step fine sweep
- * around the best candidate. ~52 `findMaxChroma` calls per cusp lookup,
- * which is cheap enough to call once per repaint per active hue.
+ * Mildly saturated OKLCH (l, c) at which an achromatic color's hue is read
+ * on the HSL/HSV scale. A gray's own HSL/HSV hue is undefined or float
+ * noise, so the slider, the channel input's H field (`lib/channels.ts`), and
+ * hue writes all read it off this probe on the stored OKLCH hue instead —
+ * sharing one constant keeps the three in agreement.
  */
+export const ACHROMATIC_HUE_PROBE = { l: 0.6, c: 0.08 } as const;
+
+function isAchromatic(color: OklchColor): boolean {
+  return (
+    color.c <= ACHROMATIC_EPS ||
+    color.l <= ACHROMATIC_EPS ||
+    color.l >= 1 - ACHROMATIC_EPS
+  );
+}
+
+/**
+ * Hue of an OKLCH color in HSL's hue scale (degrees). Used by the Hue slider
+ * when the active format is `hsl` so the slider position matches what the
+ * channel input shows — OKLCH hue and HSL hue diverge for the same color
+ * (red is OKLCH ~29° but HSL 0°). Achromatic colors are read through
+ * `ACHROMATIC_HUE_PROBE` so the slider tracks the stored hue.
+ */
+export function hslHue(color: OklchColor): number {
+  const src = isAchromatic(color) ? { ...color, ...ACHROMATIC_HUE_PROBE } : color;
+  const c = toHsl({ mode: "oklch", l: src.l, c: src.c, h: src.h });
+  return c?.h ?? color.h;
+}
+
+/**
+ * Hue of an OKLCH color in HSB/HSV's hue scale (degrees). See `hslHue`.
+ */
+export function hsbHue(color: OklchColor): number {
+  const src = isAchromatic(color) ? { ...color, ...ACHROMATIC_HUE_PROBE } : color;
+  const c = toHsv({ mode: "oklch", l: src.l, c: src.c, h: src.h });
+  return c?.h ?? color.h;
+}
+
 /**
  * Map an output format to the gamut whose surface fills the picker's area
  * and bounds the lossless saturation-preserving updates from the hue and
@@ -321,26 +374,6 @@ export function findMaxChroma(
  * fits inside `<canvas colorSpace="display-p3">` plus the slice that won't
  * paint accurately on any current monitor.
  */
-/**
- * Hue of an OKLCH color in HSL's hue scale (degrees). Used by the Hue slider
- * when the active format is `hsl` so the slider position matches what the
- * channel input shows — OKLCH hue and HSL hue diverge for the same color
- * (red is OKLCH ~29° but HSL 0°). Returns the OKLCH hue as a fallback when
- * the conversion fails (achromatic colors where culori returns NaN).
- */
-export function hslHue(color: OklchColor): number {
-  const c = toHsl({ mode: "oklch", l: color.l, c: color.c, h: color.h });
-  return c?.h ?? color.h;
-}
-
-/**
- * Hue of an OKLCH color in HSB/HSV's hue scale (degrees). See `hslHue`.
- */
-export function hsbHue(color: OklchColor): number {
-  const c = toHsv({ mode: "oklch", l: color.l, c: color.c, h: color.h });
-  return c?.h ?? color.h;
-}
-
 export function gamutFromFormat(f: ColorFormat): Gamut {
   switch (f) {
     case "hex":
@@ -356,6 +389,16 @@ export function gamutFromFormat(f: ColorFormat): Gamut {
   }
 }
 
+/**
+ * Find the OKLCH "cusp" for a given hue and gamut — the (L, C) point of
+ * maximum chroma. Used by the `hsv-sv` Area mode to map (S, V) onto a fully
+ * gamut-filling square: V=1, S=1 lands on the cusp; V=1, S=0 is white;
+ * V=0 is black.
+ *
+ * Two-stage search: a 32-step coarse sweep over L, then a 20-step fine sweep
+ * around the best candidate. ~52 `findMaxChroma` calls per cusp lookup,
+ * which is cheap enough to call once per repaint per active hue.
+ */
 export function findCusp(
   hDeg: number,
   gamut: Gamut,
@@ -403,6 +446,13 @@ export function toGamut(color: OklchColor, gamut: Gamut): OklchColor {
 
 function mapToGamutColor(color: OklchColor, gamut: Gamut): OklchColor {
   const ok = { mode: "oklch" as const, ...oklchObj(color) };
+  // culori's gamut test is strict, so an in-gamut color whose OKLCH
+  // round-trip leaves a channel at -1e-14 gets chroma-reduced, nudging it
+  // off its own value (#008197 → #018197). Honor the same tolerance as
+  // `gamutInfo` and leave such colors untouched.
+  const inGamut =
+    gamut === "srgb" ? isInSrgb(ok) : gamut === "p3" ? isInP3(ok) : isInRec2020(ok);
+  if (inGamut) return color;
   const targetMode = gamut === "srgb" ? "rgb" : gamut === "p3" ? "p3" : "rec2020";
   const mapper = culoriToGamut(targetMode, "oklch");
   const mapped = mapper(ok) as Color | undefined;
@@ -417,7 +467,11 @@ function mapToGamutColor(color: OklchColor, gamut: Gamut): OklchColor {
   };
 }
 
-/** Composite fg (with alpha) over an opaque bg in linear-light sRGB. */
+/**
+ * Composite fg (with alpha) over an opaque bg in gamma-encoded sRGB — the
+ * same space browsers blend in by default, so the result matches what's
+ * painted.
+ */
 function compositeOnBg(fg: OklchColor, bg: OklchColor): OklchColor {
   if (fg.alpha >= 1) return fg;
   const fgRgb = toRgb({ mode: "oklch", ...oklchObj(fg) });
@@ -535,4 +589,8 @@ function clamp(x: number, lo: number, hi: number) {
 function round(x: number, dp: number) {
   const f = 10 ** dp;
   return Math.round(x * f) / f;
+}
+
+function wrapHue(h: number) {
+  return ((h % 360) + 360) % 360;
 }

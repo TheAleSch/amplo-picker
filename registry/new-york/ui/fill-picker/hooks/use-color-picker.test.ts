@@ -344,3 +344,74 @@ describe("achromatic threshold (HUE_EPS) boundary", () => {
     ).toBeCloseTo(INTERMEDIATE_HUE, 0);
   });
 });
+
+describe("non-finite component values are ignored", () => {
+  it("setComponent / adjustComponent never store NaN or Infinity", () => {
+    const captured: OklchColor[] = [];
+    const { result } = renderHook(() =>
+      useColorPicker({
+        defaultValue: "oklch(0.6 0.12 200 / 0.8)",
+        onValueChange: (c) => captured.push(c),
+      }),
+    );
+    const before = result.current.color;
+    for (const key of ["l", "c", "h", "alpha"] as const) {
+      for (const bad of [NaN, Infinity, -Infinity]) {
+        act(() => result.current.setComponent(key, bad));
+        act(() => result.current.adjustComponent(key, bad));
+      }
+    }
+    expect(result.current.color).toEqual(before);
+    for (const c of captured) expect(c).toEqual(before);
+  });
+});
+
+describe("object values are hue-normalized", () => {
+  it("wraps an out-of-range hue on a controlled object value", () => {
+    const { result } = renderHook(() =>
+      useColorPicker({ value: { l: 0.5, c: 0.1, h: 720, alpha: 1 } }),
+    );
+    expect(result.current.color.h).toBeCloseTo(0, 6);
+  });
+
+  it("wraps an out-of-range hue on an object defaultValue", () => {
+    const { result } = renderHook(() =>
+      useColorPicker({ defaultValue: { l: 0.5, c: 0.1, h: -30, alpha: 1 } }),
+    );
+    expect(result.current.color.h).toBeCloseTo(330, 6);
+  });
+});
+
+describe("string-controlled echo of `formatted`", () => {
+  // The common controlled pattern: the parent stores the `formatted` string
+  // and feeds it straight back as `value`. Each echo must settle — a format
+  // whose output re-parses to a slightly different string would creep.
+  it("settles after one echo in every format and keeps the hue through gray", () => {
+    for (const format of ["hex", "rgb", "hsl", "hsb", "oklch", "oklab", "p3"] as const) {
+      let value = "oklch(0.62 0.11 212.7)";
+      const { result, rerender } = renderHook(() =>
+        useColorPicker({
+          value,
+          format,
+          onValueChange: (_c, formatted) => {
+            value = formatted;
+          },
+        }),
+      );
+      act(() => result.current.setComponent("l", 0.55));
+      rerender();
+      const first = result.current.formatted;
+      expect(value, format).toBe(first);
+      act(() => result.current.setColor(result.current.formatted));
+      rerender();
+      expect(result.current.formatted, format).toBe(first);
+
+      // Desaturate to gray through the echo: the remembered hue must survive.
+      const hueBefore = result.current.color.h;
+      act(() => result.current.setComponent("c", 0));
+      rerender();
+      expect(result.current.color.c, format).toBeLessThan(1e-3);
+      expect(result.current.color.h, format).toBeCloseTo(hueBefore, 0);
+    }
+  });
+});

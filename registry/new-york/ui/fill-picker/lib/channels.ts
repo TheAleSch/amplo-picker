@@ -1,6 +1,11 @@
 import { converter, type Color } from "culori";
 import type { ColorFormat, OklchColor } from "./types";
-import { findMaxChroma, gamutFromFormat, toGamut } from "./color";
+import {
+  ACHROMATIC_HUE_PROBE,
+  findMaxChroma,
+  gamutFromFormat,
+  toGamut,
+} from "./color";
 
 const toOklch = converter("oklch");
 const toRgb = converter("rgb");
@@ -137,6 +142,9 @@ export function setColorChannel(
   key: string,
   value: number,
 ): OklchColor {
+  // A cleared or garbage numeric field can surface as NaN; storing it would
+  // poison every downstream conversion.
+  if (!Number.isFinite(value)) return color;
   if (key === "alpha") {
     return { ...color, alpha: clamp(value / 100, 0, 1) };
   }
@@ -161,6 +169,9 @@ export function setColorChannel(
         mode: "oklch",
         ...oklchObj(toGamut(color, "srgb")),
       }) ?? { h: 0, s: 0, l: 0 };
+      if (key === "h" && isAchromatic(color.l, color.c)) {
+        return { ...color, h: oklchHueForFormatHue("hsl", wrap(value, 360), color.h) };
+      }
       const h = key === "h" ? wrap(value, 360) : stableFormatHue(toHsl, color, hsl.h);
       const s = key === "s" ? clamp(value / 100, 0, 1) : hsl.s;
       const l = key === "l" ? clamp(value / 100, 0, 1) : hsl.l;
@@ -171,6 +182,9 @@ export function setColorChannel(
         mode: "oklch",
         ...oklchObj(toGamut(color, "srgb")),
       }) ?? { h: 0, s: 0, v: 0 };
+      if (key === "h" && isAchromatic(color.l, color.c)) {
+        return { ...color, h: oklchHueForFormatHue("hsv", wrap(value, 360), color.h) };
+      }
       const h = key === "h" ? wrap(value, 360) : stableFormatHue(toHsv, color, hsv.h);
       const s = key === "s" ? clamp(value / 100, 0, 1) : hsv.s;
       const v = key === "b" ? clamp(value / 100, 0, 1) : hsv.v;
@@ -222,7 +236,9 @@ export function setColorChannel(
  *
  * Two paths:
  *   - HSL/HSB — write the hue through the active format so the channel
- *     input's H matches the slider exactly (no OKLCH↔HSL hue drift).
+ *     input's H matches the slider exactly (no OKLCH↔HSL hue drift). On an
+ *     achromatic color this stores the latent OKLCH hue that reads back as
+ *     `newHue` (see `oklchHueForFormatHue`).
  *   - everything else — rescale chroma to preserve "saturation", i.e. the
  *     color's chroma as a fraction of the max chroma available at
  *     (l, hue, gamut). Max chroma moves with hue (green has far less than
@@ -230,13 +246,15 @@ export function setColorChannel(
  *     of the active gamut as the user scrolls. Preserving the ratio keeps
  *     the area bead's X position — and the gamut badge — put.
  *
- * `newHue` may be any real number; it is wrapped into [0, 360).
+ * `newHue` may be any real number; it is wrapped into [0, 360). A
+ * non-finite `newHue` returns `color` unchanged.
  */
 export function setHueFromSlider(
   color: OklchColor,
   newHue: number,
   format: ColorFormat,
 ): OklchColor {
+  if (!Number.isFinite(newHue)) return color;
   const wrapped = wrap(newHue, 360);
   if (format === "hsl" || format === "hsb") {
     return setColorChannel(color, format, "h", wrapped);
@@ -294,8 +312,34 @@ function stableFormatHue(
   if (!isAchromatic(color.l, color.c) && Number.isFinite(raw)) {
     return raw as number;
   }
-  const probe = convert({ mode: "oklch", l: 0.6, c: 0.08, h: color.h });
+  const probe = convert({ mode: "oklch", ...ACHROMATIC_HUE_PROBE, h: color.h });
   return probe?.h ?? color.h;
+}
+
+/**
+ * Inverse of the achromatic probe in `stableFormatHue`: the OKLCH hue whose
+ * probe color reads `target` on the HSL/HSV hue scale. An achromatic color
+ * has no format hue to write through, so an H edit stores this latent OKLCH
+ * hue instead — otherwise the edit is a silent no-op. Fixed-point iteration:
+ * keep the probe's s/l (or s/v) and swap in the target hue; converges to
+ * well under 0.01° in a few steps because s/l barely move with hue.
+ */
+function oklchHueForFormatHue(
+  mode: "hsl" | "hsv",
+  target: number,
+  guess: number,
+): number {
+  let h = guess;
+  for (let i = 0; i < 6; i++) {
+    const probe = { mode: "oklch" as const, ...ACHROMATIC_HUE_PROBE, h };
+    const back =
+      mode === "hsl"
+        ? toOklch({ ...toHsl(probe), h: target })
+        : toOklch({ ...toHsv(probe), h: target });
+    if (!back || !Number.isFinite(back.h)) break;
+    h = wrap(back.h as number, 360);
+  }
+  return h;
 }
 
 function oklchObj(c: OklchColor) {

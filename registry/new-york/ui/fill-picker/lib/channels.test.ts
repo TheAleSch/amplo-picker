@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { colorChannels, setColorChannel, setHueFromSlider } from "./channels";
-import { findMaxChroma, gamutFromFormat, hslHue, parseColor } from "./color";
+import { findMaxChroma, gamutFromFormat, hsbHue, hslHue, parseColor } from "./color";
 import type { OklchColor } from "./types";
 
 const wide: OklchColor = { l: 0.7, c: 0.55, h: 30, alpha: 1 };
@@ -248,5 +248,60 @@ describe("setHueFromSlider", () => {
     expect(Number.isFinite(next.c)).toBe(true);
     expect(next.c).toBe(0);
     expect(next.h).toBeCloseTo(120, 6);
+  });
+});
+
+describe("non-finite channel values are ignored", () => {
+  const base: OklchColor = { l: 0.6, c: 0.15, h: 120, alpha: 0.8 };
+  const formats = ["rgb", "hsl", "hsb", "oklch", "oklab", "p3"] as const;
+
+  it("setColorChannel returns the input unchanged for NaN / ±Infinity", () => {
+    for (const format of formats) {
+      for (const ch of colorChannels(base, format)) {
+        for (const bad of [NaN, Infinity, -Infinity]) {
+          expect(setColorChannel(base, format, ch.key, bad), `${format}.${ch.key}=${bad}`).toEqual(base);
+        }
+      }
+    }
+  });
+
+  it("setHueFromSlider returns the input unchanged for NaN / ±Infinity", () => {
+    for (const format of ["hex", ...formats] as const) {
+      for (const bad of [NaN, Infinity, -Infinity]) {
+        expect(setHueFromSlider(base, bad, format), `${format} ${bad}`).toEqual(base);
+      }
+    }
+  });
+});
+
+describe("hue edits on an achromatic color are kept in every format", () => {
+  const gray: OklchColor = { l: 0.5, c: 0, h: 0, alpha: 1 };
+  const formatHue = { hsl: hslHue, hsb: hsbHue } as const;
+
+  it("setHueFromSlider moves the stored hue, and the slider reads it back", () => {
+    for (const format of ["hex", "rgb", "hsl", "hsb", "oklch", "oklab", "p3"] as const) {
+      const next = setHueFromSlider(gray, 120, format);
+      expect(next.h, format).not.toBeCloseTo(0, 0);
+      // Still gray — only the (latent) hue moved.
+      expect(next.l, format).toBe(gray.l);
+      expect(next.c, format).toBe(gray.c);
+      // The slider's bead reads the same value it was dragged to.
+      const read = format === "hsl" || format === "hsb" ? formatHue[format](next) : next.h;
+      expect(read, format).toBeCloseTo(120, 1);
+    }
+  });
+
+  it("an H-field edit on hsl/hsb reads back as typed", () => {
+    for (const format of ["hsl", "hsb"] as const) {
+      const next = setColorChannel(gray, format, "h", 200);
+      expect(next.c, format).toBe(0);
+      const h = colorChannels(next, format).find((c) => c.key === "h")!;
+      expect(h.value, format).toBe(200);
+    }
+  });
+
+  it("re-saturating after an achromatic hue edit lands on the chosen hue", () => {
+    const next = setColorChannel(setColorChannel(gray, "hsl", "h", 240), "hsl", "s", 50);
+    expect(hslHue(next)).toBeCloseTo(240, 0);
   });
 });

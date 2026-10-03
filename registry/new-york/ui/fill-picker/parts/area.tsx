@@ -13,6 +13,7 @@ import {
   toGamut,
 } from "../lib/color";
 import type { Gamut, OklchColor } from "../lib/types";
+import { clamp01 } from "../lib/math";
 import { usePointerDrag } from "./pointer-drag";
 import { useLiveAnnounce } from "./use-live-announce";
 import { cn } from "@/lib/utils";
@@ -352,10 +353,6 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     </div>
   );
 });
-
-function clamp01(x: number) {
-  return x < 0 ? 0 : x > 1 ? 1 : x;
-}
 
 function positionFor(
   mode: AreaMode,

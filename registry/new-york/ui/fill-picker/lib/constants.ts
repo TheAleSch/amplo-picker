@@ -1,3 +1,16 @@
+import type { ColorFormat } from "./types";
+
+/** Every output format, in display order. */
+export const COLOR_FORMATS: ColorFormat[] = [
+  "hex",
+  "rgb",
+  "hsl",
+  "hsb",
+  "oklch",
+  "oklab",
+  "p3",
+];
+
 /**
  * Shared alpha-transparency checkerboard backgrounds (inline SVG data URIs).
  * Two sizes on purpose: 12px tiles for large surfaces (alpha slider, preview,

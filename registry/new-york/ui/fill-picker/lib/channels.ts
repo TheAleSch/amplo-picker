@@ -1,4 +1,4 @@
-import { converter, type Color } from "culori";
+import type { Color } from "culori";
 import type { ColorFormat, OklchColor } from "./types";
 import {
   ACHROMATIC_HUE_PROBE,
@@ -6,14 +6,14 @@ import {
   gamutFromFormat,
   srgbClamped,
   toGamut,
+  toHsl,
+  toHsv,
+  toOklab,
+  toOklch,
+  toP3,
+  toRgb,
 } from "./color";
-
-const toOklch = converter("oklch");
-const toRgb = converter("rgb");
-const toHsl = converter("hsl");
-const toHsv = converter("hsv");
-const toOklab = converter("oklab");
-const toP3 = converter("p3");
+import { clamp, round, wrap } from "./math";
 
 export interface ChannelDescriptor {
   /** Internal key used by setColorChannel. */
@@ -376,15 +376,3 @@ function floatChannel(
   return { key, label, value, min, max, step, bigStep, precision, suffix };
 }
 
-function clamp(v: number, min: number, max: number) {
-  return v < min ? min : v > max ? max : v;
-}
-
-function wrap(v: number, mod: number) {
-  return ((v % mod) + mod) % mod;
-}
-
-function round(v: number, precision: number) {
-  const m = 10 ** precision;
-  return Math.round(v * m) / m;
-}

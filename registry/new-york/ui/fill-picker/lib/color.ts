@@ -9,13 +9,17 @@ import {
   type Color,
 } from "culori";
 import type { ColorFormat, ContrastResult, Gamut, GamutInfo, OklchColor } from "./types";
+import { COLOR_FORMATS } from "./constants";
+import { clamp, round, wrapHue } from "./math";
 
-const toOklch = converter("oklch");
-const toRgb = converter("rgb");
-const toHsl = converter("hsl");
-const toHsv = converter("hsv");
-const toOklab = converter("oklab");
-const toP3 = converter("p3");
+// Shared culori converters — `channels.ts` imports these rather than
+// building its own. Not re-exported from the public barrel.
+export const toOklch = converter("oklch");
+export const toRgb = converter("rgb");
+export const toHsl = converter("hsl");
+export const toHsv = converter("hsv");
+export const toOklab = converter("oklab");
+export const toP3 = converter("p3");
 
 const GAMUT_EPSILON = 1e-4;
 /** Chroma / lightness-edge threshold below which hue is meaningless. */
@@ -171,16 +175,6 @@ function oklchObj(c: OklchColor) {
   return { l: c.l, c: c.c, h: c.h, alpha: c.alpha };
 }
 
-const ALL_FORMATS: ColorFormat[] = [
-  "hex",
-  "rgb",
-  "hsl",
-  "hsb",
-  "oklch",
-  "oklab",
-  "p3",
-];
-
 /**
  * Serialize an OKLCH color to every supported output format at once.
  * Useful when consumers need both the canonical lossless form (oklch) and
@@ -188,7 +182,7 @@ const ALL_FORMATS: ColorFormat[] = [
  */
 export function formatAll(color: OklchColor): Record<ColorFormat, string> {
   const out = {} as Record<ColorFormat, string>;
-  for (const f of ALL_FORMATS) out[f] = formatColor(color, f);
+  for (const f of COLOR_FORMATS) out[f] = formatColor(color, f);
   return out;
 }
 
@@ -598,15 +592,3 @@ function sapcContrast(Ytxt: number, Ybg: number): number {
   return outputContrast * 100;
 }
 
-function clamp(x: number, lo: number, hi: number) {
-  return Math.min(Math.max(x, lo), hi);
-}
-
-function round(x: number, dp: number) {
-  const f = 10 ** dp;
-  return Math.round(x * f) / f;
-}
-
-function wrapHue(h: number) {
-  return ((h % 360) + 360) % 360;
-}

@@ -339,6 +339,10 @@
           "type": "registry:lib"
         },
         {
+          "path": "registry/new-york/ui/fill-picker/lib/math.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "registry/new-york/ui/fill-picker/lib/swatch-presets.ts",
           "type": "registry:lib"
         },

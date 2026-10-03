@@ -15,6 +15,7 @@ import {
   type LinearGradient,
 } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
+import { clamp01 } from "../../lib/math";
 import { focusNeighborIn } from "./stop-list-shared";
 import { useLiveAnnounce } from "../use-live-announce";
 
@@ -224,7 +225,6 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       const displayed = toDisplay(position);
       // Clamp in displayed space: keyboard nudges stay on the visible track
       // (moveStop itself no longer clamps, to allow extrapolated stops).
-      const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         ctx.moveStop(id, fromDisplay(clamp01(displayed - step)));

@@ -13,6 +13,8 @@ import {
   toGamut,
 } from "../lib/color";
 import type { Gamut, OklchColor } from "../lib/types";
+import { clamp01 } from "../lib/math";
+import { usePointerDrag } from "./pointer-drag";
 import { useLiveAnnounce } from "./use-live-announce";
 import { cn } from "@/lib/utils";
 
@@ -240,18 +242,7 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     [moveTo],
   );
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-    handlePointer(e.clientX, e.clientY);
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.buttons !== 1) return;
-    handlePointer(e.clientX, e.clientY);
-  };
-  const releaseCapture = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = e.currentTarget as HTMLDivElement;
-    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-  };
+  const onPointerDown = usePointerDrag(handlePointer);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const big = e.shiftKey ? 10 : 1;
@@ -302,9 +293,6 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       aria-roledescription="2D color area, use arrow keys to adjust"
       tabIndex={0}
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={releaseCapture}
-      onPointerCancel={releaseCapture}
       onKeyDown={onKeyDown}
       className={cn(
         "relative h-45 w-full cursor-crosshair overflow-hidden rounded-md border border-border outline-none touch-none select-none",
@@ -365,10 +353,6 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     </div>
   );
 });
-
-function clamp01(x: number) {
-  return x < 0 ? 0 : x > 1 ? 1 : x;
-}
 
 function positionFor(
   mode: AreaMode,

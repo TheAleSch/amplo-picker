@@ -1,0 +1,105 @@
+"use client";
+
+import * as React from "react";
+
+/**
+ * Capture-based drag loop shared by every pointer surface: the color area,
+ * the Radix channel sliders, the gradient overlay handles and the angle /
+ * position pads. Besides the usual pointerup/pointercancel cleanup it
+ * defends against the two ways a drag gets "stuck" chasing the cursor:
+ *
+ *  - a move arriving with no buttons pressed (the release happened where
+ *    we couldn't see it — e.g. capture silently dropped, button released
+ *    during an OS gesture) ends the drag instead of dragging on;
+ *  - `lostpointercapture` (window blur / cmd-tab mid-drag revokes capture
+ *    without any pointerup) tears the listeners down immediately.
+ *
+ * Returns a teardown that ends the drag early (releasing capture), so a
+ * caller can let a newer pointer supersede this one.
+ */
+export function trackPointerDrag(
+  target: HTMLElement,
+  pointerId: number,
+  onMove: (ev: PointerEvent) => void,
+): () => void {
+  try {
+    target.setPointerCapture(pointerId);
+  } catch {
+    // inactive pointer id — the drag still works while the pointer stays
+    // over the target; the buttons check below handles missed releases.
+  }
+  const move = (ev: PointerEvent) => {
+    // Only the dragging pointer steers or ends the gesture — a second
+    // touch point wandering over the captured element must not.
+    if (ev.pointerId !== pointerId) return;
+    if (ev.buttons === 0) {
+      end(ev);
+      return;
+    }
+    onMove(ev);
+  };
+  const end = (ev?: Event) => {
+    if (ev instanceof PointerEvent && ev.pointerId !== pointerId) return;
+    target.removeEventListener("pointermove", move);
+    target.removeEventListener("pointerup", end);
+    target.removeEventListener("pointercancel", end);
+    target.removeEventListener("lostpointercapture", end);
+    try {
+      if (target.hasPointerCapture?.(pointerId)) target.releasePointerCapture(pointerId);
+    } catch {
+      // pointer may already be released on cancel
+    }
+  };
+  target.addEventListener("pointermove", move);
+  target.addEventListener("pointerup", end);
+  target.addEventListener("pointercancel", end);
+  target.addEventListener("lostpointercapture", end);
+  return () => end();
+}
+
+// useLayoutEffect warns during SSR on React 18; registry consumers may
+// still be there. Nothing to sync on the server anyway.
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+/**
+ * Ref that always holds the latest committed `value`. `trackPointerDrag`
+ * binds its move listener once at pointerdown, so a handler that closes
+ * over render state (the current color, mode, gamut) must be read through
+ * this ref — otherwise every move of the drag would act on the snapshot
+ * taken when the pointer went down.
+ */
+export function useLatest<T>(value: T): React.RefObject<T> {
+  const ref = React.useRef(value);
+  useIsomorphicLayoutEffect(() => {
+    ref.current = value;
+  });
+  return ref;
+}
+
+/**
+ * `onPointerDown` for a capture-based surface: applies the press position
+ * immediately, then follows the drag with `trackPointerDrag`. `onPoint`
+ * may change every render; moves always reach the latest one. A new press
+ * (e.g. a second finger) supersedes the active drag rather than letting
+ * two pointers steer the value at once.
+ */
+export function usePointerDrag(
+  onPoint: (clientX: number, clientY: number) => void,
+): (e: React.PointerEvent<HTMLElement>) => void {
+  const latest = useLatest(onPoint);
+  const stopActive = React.useRef<(() => void) | null>(null);
+  return React.useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      // Primary button only: a right-press must not drag (or fight the
+      // context menu). Touch and pen report button 0 for contact.
+      if (e.button !== 0) return;
+      stopActive.current?.();
+      latest.current(e.clientX, e.clientY);
+      stopActive.current = trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
+        latest.current(ev.clientX, ev.clientY),
+      );
+    },
+    [latest],
+  );
+}

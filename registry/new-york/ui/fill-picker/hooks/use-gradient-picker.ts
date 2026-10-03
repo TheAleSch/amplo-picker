@@ -17,6 +17,7 @@ import {
   type ConicGradient,
 } from "../lib/gradient";
 import type { ColorFormat, OklchColor } from "../lib/types";
+import { clamp01 } from "../lib/math";
 
 let __idCounter = 0;
 const nextId = () => `s${++__idCounter}`;
@@ -93,8 +94,6 @@ function toPublicGradient(s: InternalState, withIds: boolean): Gradient {
 function sortByPosition(stops: InternalStop[]): InternalStop[] {
   return [...stops].sort((a, b) => a.position - b.position);
 }
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 function defaultsForType(type: GradientType): Gradient {
   if (type === "linear") return DEFAULT_LINEAR;

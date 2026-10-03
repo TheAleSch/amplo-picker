@@ -339,6 +339,10 @@
           "type": "registry:lib"
         },
         {
+          "path": "registry/new-york/ui/fill-picker/lib/math.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "registry/new-york/ui/fill-picker/lib/swatch-presets.ts",
           "type": "registry:lib"
         },
@@ -364,6 +368,10 @@
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/chroma.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/new-york/ui/fill-picker/parts/pointer-drag.ts",
           "type": "registry:ui"
         },
         {
@@ -446,10 +454,6 @@
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/gradient/area.tsx",
-          "type": "registry:ui"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/pointer-drag.ts",
           "type": "registry:ui"
         },
         {

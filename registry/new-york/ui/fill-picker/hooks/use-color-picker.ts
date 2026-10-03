@@ -16,6 +16,8 @@ import type {
   GamutInfo,
   OklchColor,
 } from "../lib/types";
+import { COLOR_FORMATS } from "../lib/constants";
+import { clamp, wrapHue } from "../lib/math";
 
 export type ColorComponent = "l" | "c" | "h" | "alpha";
 
@@ -69,8 +71,6 @@ export interface ColorPickerState {
   background: OklchColor;
 }
 
-const ALL_FORMATS: ColorFormat[] = ["hex", "rgb", "hsl", "hsb", "oklch", "oklab", "p3"];
-
 const BLACK: OklchColor = { l: 0, c: 0, h: 0, alpha: 1 };
 const WHITE: OklchColor = { l: 1, c: 0, h: 0, alpha: 1 };
 
@@ -83,14 +83,6 @@ function coerce(input: string | OklchColor | undefined, fallback: OklchColor): O
   return { ...input, h: wrapHue(input.h) };
 }
 
-function clamp(x: number, lo: number, hi: number) {
-  return Math.min(Math.max(x, lo), hi);
-}
-
-function wrapHue(h: number) {
-  const m = h % 360;
-  return m < 0 ? m + 360 : m;
-}
 
 const HUE_EPS = 1e-4;
 function isAchromatic(c: OklchColor): boolean {
@@ -126,7 +118,7 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
   } = props;
 
   const formats = React.useMemo<ColorFormat[]>(
-    () => (formatsProp && formatsProp.length > 0 ? formatsProp : ALL_FORMATS),
+    () => (formatsProp && formatsProp.length > 0 ? formatsProp : COLOR_FORMATS),
     [formatsProp],
   );
   const initialFormat = formats.includes(defaultFormat) ? defaultFormat : formats[0];

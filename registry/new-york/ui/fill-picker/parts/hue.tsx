@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useColorPickerContext } from "../context";
+import { usePointerDrag } from "./pointer-drag";
 import { hslHue, hsbHue } from "../lib/color";
 import { setHueFromSlider } from "../lib/channels";
 import { cn } from "@/lib/utils";
@@ -63,18 +64,9 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
     commitHue(clamped * 360);
   };
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-    moveTo(orientation === "horizontal" ? e.clientX : e.clientY);
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.buttons !== 1) return;
-    moveTo(orientation === "horizontal" ? e.clientX : e.clientY);
-  };
-  const releaseCapture = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = e.currentTarget as HTMLDivElement;
-    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-  };
+  const onPointerDown = usePointerDrag((x, y) =>
+    moveTo(orientation === "horizontal" ? x : y),
+  );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const big = e.shiftKey ? 10 : 1;
@@ -123,9 +115,6 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       aria-orientation={orientation}
       tabIndex={0}
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={releaseCapture}
-      onPointerCancel={releaseCapture}
       onKeyDown={onKeyDown}
       className={cn(
         "relative cursor-pointer rounded-full outline-none touch-none",

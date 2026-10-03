@@ -21,19 +21,12 @@ import type {
   ColorFormat,
   OklchColor,
 } from "@/registry/new-york/ui/fill-picker/lib/types";
+import { COLOR_FORMATS } from "@/registry/new-york/ui/fill-picker/lib/constants";
 import { CodeBlock } from "@/components/code-block";
 import { CopyForAi } from "@/components/copy-for-ai";
 import { cn } from "@/lib/utils";
 
-const ALL_FORMATS: ColorFormat[] = [
-  "hex",
-  "rgb",
-  "hsl",
-  "hsb",
-  "oklch",
-  "oklab",
-  "p3",
-];
+const ALL_FORMATS = COLOR_FORMATS;
 
 type AreaMode = "oklch-cl" | "hsv-sv" | "oklch-hc";
 

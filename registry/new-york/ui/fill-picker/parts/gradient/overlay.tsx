@@ -7,7 +7,7 @@ import { type RadialSizeKeyword } from "../../lib/gradient";
 import { formatColor } from "../../lib/color";
 import { CHECKERBOARD_LG } from "../../lib/constants";
 import { useLiveAnnounce } from "../use-live-announce";
-import { trackPointerDrag } from "./pointer-drag";
+import { trackPointerDrag } from "../pointer-drag";
 
 export interface OverlayProps extends React.HTMLAttributes<HTMLDivElement> {
   /**

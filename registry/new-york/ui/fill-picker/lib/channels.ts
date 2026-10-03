@@ -4,6 +4,7 @@ import {
   ACHROMATIC_HUE_PROBE,
   findMaxChroma,
   gamutFromFormat,
+  srgbClamped,
   toGamut,
 } from "./color";
 
@@ -74,10 +75,7 @@ export function colorChannels(
       ];
     }
     case "hsl": {
-      const hsl = toHsl({
-        mode: "oklch",
-        ...oklchObj(toGamut(color, "srgb")),
-      });
+      const hsl = toHsl(srgbClamped(color));
       return [
         intChannel("h", "H", round(stableFormatHue(toHsl, color, hsl?.h), 0), 0, 360),
         intChannel("s", "S", round((hsl?.s ?? 0) * 100, 0), 0, 100, "%"),
@@ -86,10 +84,7 @@ export function colorChannels(
       ];
     }
     case "hsb": {
-      const hsv = toHsv({
-        mode: "oklch",
-        ...oklchObj(toGamut(color, "srgb")),
-      });
+      const hsv = toHsv(srgbClamped(color));
       return [
         intChannel("h", "H", round(stableFormatHue(toHsv, color, hsv?.h), 0), 0, 360),
         intChannel("s", "S", round((hsv?.s ?? 0) * 100, 0), 0, 100, "%"),

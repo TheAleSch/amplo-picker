@@ -583,3 +583,20 @@ describe("parseColorDetailed — hueMissing on wide-gamut grays", () => {
     expect(parseColorDetailed("color(display-p3 0.5 0.45 0.45)")!.hueMissing).toBe(false);
   });
 });
+
+// Round-2 review (2026-10-02): the in-gamut early return let near-black
+// colors reach HSL/HSV with channel slack, yielding saturation in the
+// millions, and wrapping after rounding reintroduced float noise in hue.
+describe("formatColor near black", () => {
+  it("keeps hsl/hsb saturation in range and hue free of float noise", () => {
+    const a = formatColor({ l: 0.006054718750540909, c: 0.00399657324828557, h: 188.39, alpha: 1 }, "hsl");
+    const b = formatColor({ l: 0.0001, c: 0.0005, h: 259.8, alpha: 1 }, "hsb");
+    // Hue is the first number; at most 2 decimals.
+    expect(a).toMatch(/^hsl\(\d+(\.\d{1,2})? /);
+    expect(b).toMatch(/^color\(--hsv \d+(\.\d{1,2})? /);
+    const sat = parseFloat(a.split(" ")[1]);
+    expect(sat).toBeLessThanOrEqual(100);
+    const hsvS = parseFloat(b.replace("color(--hsv ", "").split(" ")[1]);
+    expect(hsvS).toBeLessThanOrEqual(1);
+  });
+});

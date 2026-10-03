@@ -121,8 +121,7 @@ export function formatColor(color: OklchColor, format: ColorFormat): string {
       return rgb ? formatRgb(rgb) : "rgb(0 0 0)";
     }
     case "hsl": {
-      const mapped = mapToGamutColor(color, "srgb");
-      const hsl = toHsl({ mode: "oklch", ...oklchObj(mapped) });
+      const hsl = toHsl(srgbClamped(color));
       if (!hsl) return "hsl(0 0% 0%)";
       return `hsl(${fmtHue(hsl.h)} ${round(hsl.s * 100, 2)}% ${round(hsl.l * 100, 2)}%${fmtAlpha(color.alpha)})`;
     }
@@ -130,8 +129,7 @@ export function formatColor(color: OklchColor, format: ColorFormat): string {
       // CSS has no hsb()/hsv() function. Emit culori's `color(--hsv h s v)`
       // (s/v in 0..1): not paintable by browsers, but it is the one HSB
       // syntax `parseColor` reads back, so the Input field round-trips.
-      const mapped = mapToGamutColor(color, "srgb");
-      const hsv = toHsv({ mode: "oklch", ...oklchObj(mapped) });
+      const hsv = toHsv(srgbClamped(color));
       if (!hsv) return "color(--hsv 0 0 0)";
       return `color(--hsv ${fmtHue(hsv.h)} ${round(hsv.s, 4)} ${round(hsv.v, 4)}${fmtAlpha(color.alpha)})`;
     }
@@ -158,7 +156,9 @@ export function formatColor(color: OklchColor, format: ColorFormat): string {
 
 /** Hue for hsl/hsb output: undefined (achromatic) → 0, wrapped after rounding. */
 function fmtHue(h: number | undefined): number {
-  return Number.isFinite(h) ? wrapHue(round(h as number, 2)) : 0;
+  if (!Number.isFinite(h)) return 0;
+  const r = round(wrapHue(h as number), 2);
+  return r >= 360 ? 0 : r;
 }
 
 /** Alpha suffix for space-separated CSS syntax; empty when opaque. */
@@ -444,12 +444,29 @@ export function toGamut(color: OklchColor, gamut: Gamut): OklchColor {
   return mapToGamutColor(color, gamut);
 }
 
+/**
+ * sRGB channels of `color` after gamut mapping, clamped to [0, 1]. The
+ * mapper tolerates `GAMUT_EPSILON` of channel slack, which near black is a
+ * large relative error: fed to HSL/HSV it becomes saturation in the
+ * millions. HSL/HSV output strings and channel readouts read through this.
+ */
+export function srgbClamped(color: OklchColor) {
+  const rgb = toRgb({ mode: "oklch", ...oklchObj(mapToGamutColor(color, "srgb")) });
+  return {
+    mode: "rgb" as const,
+    r: clamp(rgb?.r ?? 0, 0, 1),
+    g: clamp(rgb?.g ?? 0, 0, 1),
+    b: clamp(rgb?.b ?? 0, 0, 1),
+  };
+}
+
 function mapToGamutColor(color: OklchColor, gamut: Gamut): OklchColor {
   const ok = { mode: "oklch" as const, ...oklchObj(color) };
   // culori's gamut test is strict, so an in-gamut color whose OKLCH
   // round-trip leaves a channel at -1e-14 gets chroma-reduced, nudging it
   // off its own value (#008197 → #018197). Honor the same tolerance as
-  // `gamutInfo` and leave such colors untouched.
+  // `gamutInfo` and leave such colors untouched (`srgbClamped` clamps the
+  // leftover slack for HSL/HSV output).
   const inGamut =
     gamut === "srgb" ? isInSrgb(ok) : gamut === "p3" ? isInP3(ok) : isInRec2020(ok);
   if (inGamut) return color;

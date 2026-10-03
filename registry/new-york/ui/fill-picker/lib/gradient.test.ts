@@ -234,6 +234,12 @@ describe("parseGradient", () => {
     expect(parseGradient("not a gradient")).toBeNull();
   });
 
+  it("expands a two-position color stop into two stops", () => {
+    const g = parseGradient("linear-gradient(red 0% 50%, blue 50% 100%)");
+    expect(g?.stops.map((s) => s.position)).toEqual([0, 0.5, 0.5, 1]);
+    expect(g?.stops[0].color).toEqual(g?.stops[1].color);
+  });
+
   it("keeps the first stop of a header-less radial/conic gradient", () => {
     const radial = parseGradient("radial-gradient(red, blue)");
     expect(radial?.type).toBe("radial");
@@ -415,6 +421,27 @@ describe("formatGradient — circle never emits ellipse radii (C-7)", () => {
 });
 
 describe("sampleStopsAt (C-6 / T-1)", () => {
+  it("treats an achromatic stop's hue as missing (CSS Color 4)", () => {
+    const white = { l: 1, c: 0, h: 0, alpha: 1 };
+    const blue = { l: 0.45, c: 0.31, h: 264, alpha: 1 };
+    const mid = sampleStopsAt(
+      [
+        { color: white, position: 0 },
+        { color: blue, position: 1 },
+      ],
+      0.5,
+    );
+    expect(mid.h).toBeCloseTo(264, 6);
+    const back = sampleStopsAt(
+      [
+        { color: blue, position: 0 },
+        { color: { ...white, l: 0 }, position: 1 },
+      ],
+      0.5,
+    );
+    expect(back.h).toBeCloseTo(264, 6);
+  });
+
   const white = { l: 1, c: 0, h: 0, alpha: 1 };
   const black = { l: 0, c: 0, h: 0, alpha: 1 };
 

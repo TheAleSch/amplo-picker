@@ -407,20 +407,22 @@ function parseStops(parts: string[]): GradientStop[] | null {
       pendingHint = parseFloat(hintMatch[1]) / 100;
       continue;
     }
-    // Color + optional position: `oklch(…) 50%` or just `oklch(…)`
-    const m = p.match(/^(.*?)\s+(-?\d+(?:\.\d+)?)%$/);
-    let colorStr = p;
-    let position: number | null = null;
-    if (m) {
-      colorStr = m[1].trim();
-      position = parseFloat(m[2]) / 100;
-    }
+    // Color + up to two positions: `oklch(…)`, `oklch(…) 50%`, or the
+    // hard-stop shorthand `red 0% 50%`, which is two stops of one color.
+    const two = p.match(/^(.*?)\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%$/);
+    const one = two ? null : p.match(/^(.*?)\s+(-?\d+(?:\.\d+)?)%$/);
+    const colorStr = (two ?? one)?.[1].trim() ?? p;
+    const positions: Array<number | null> = two
+      ? [parseFloat(two[2]) / 100, parseFloat(two[3]) / 100]
+      : [one ? parseFloat(one[2]) / 100 : null];
     const color = parseColor(colorStr);
     if (!color) return null;
-    raw.push({
-      color,
-      position,
-      ...(pendingHint !== undefined ? { hint: pendingHint } : {}),
+    positions.forEach((position, k) => {
+      raw.push({
+        color: k === 0 ? color : { ...color },
+        position,
+        ...(k === 0 && pendingHint !== undefined ? { hint: pendingHint } : {}),
+      });
     });
     pendingHint = undefined;
   }
@@ -755,6 +757,8 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 // Shortest-path hue lerp on a 0..360 circle. Matches what users perceive in
 // an OKLCH-rendered gradient between two adjacent stops.
+const ACHROMATIC_C = 1e-4;
+
 function lerpHue(a: number, b: number, t: number): number {
   let d = b - a;
   if (d > 180) d -= 360;
@@ -794,10 +798,14 @@ export function sampleStopsAt(
       t = Math.pow(t, Math.log(0.5) / Math.log(h));
     }
   }
+  // An achromatic stop's hue is powerless; CSS Color 4 treats it as missing
+  // and borrows the other endpoint's hue instead of sweeping through 0°.
+  const ha = a.color.c <= ACHROMATIC_C ? b.color.h : a.color.h;
+  const hb = b.color.c <= ACHROMATIC_C ? a.color.h : b.color.h;
   return {
     l: lerp(a.color.l, b.color.l, t),
     c: lerp(a.color.c, b.color.c, t),
-    h: lerpHue(a.color.h, b.color.h, t),
+    h: lerpHue(ha, hb, t),
     alpha: lerp(a.color.alpha, b.color.alpha, t),
   };
 }

@@ -113,10 +113,8 @@ export function lintEngineFile(
  * Basename-collision lint (T8)
  *
  * The shadcn CLI runs a post-write import-fixup pass over every file it
- * just installed (`Bc`/`Yc` in the 4.16 bundle — see
- * `.superpowers/sdd/2026-08-01-registry-restructure/task-7-report.md` §1b
- * for the disassembly). For each ALIASED import specifier it resolves an
- * extension-less path, then picks a written file by matching the file
+ * just installed (`Bc`/`Yc` in the 4.16 bundle). For each ALIASED import
+ * specifier it resolves an extension-less path, then picks a written file by matching the file
  * BASENAME, sorting candidates by extension index (`.tsx` BEFORE `.ts`)
  * and only then by whether the candidate shares the resolved directory
  * prefix. So a `.ts` module whose basename collides with any `.tsx`

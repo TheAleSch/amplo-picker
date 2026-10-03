@@ -330,7 +330,11 @@ function HaloTuner({
   // violate the Rules of Hooks once `unlocked` flips.
   if (!unlocked) return null;
   const copy = async () => {
-    await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
+    } catch {
+      return; // Clipboard blocked (permissions / cross-origin frame).
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
   };

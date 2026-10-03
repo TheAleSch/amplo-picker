@@ -8,7 +8,7 @@ Package manager is **pnpm**.
 
 - `pnpm dev` — Next.js dev server (Turbopack). Runs the demo/docs site.
 - `pnpm build` — runs `pnpm registry:build` then `next build`. CI builds emit registry artifacts automatically.
-- `pnpm lint` — `next lint`.
+- `pnpm lint` — `eslint .` (flat config in `eslint.config.mjs`).
 - `pnpm typecheck` — `tsc --noEmit` (TS is `noEmit`-only; no separate build step).
 - `pnpm test` — Vitest, single run.
 - `pnpm test:watch` — Vitest watch mode.
@@ -79,6 +79,6 @@ Note: parts that exist in code but are missing from `registry.json` won't be ins
 
 ## Stack notes
 
-- Next.js 15 (App Router, Turbopack dev) on React 19.
-- Tailwind v4 beta via `@tailwindcss/postcss`. Theme tokens live in `src/app/globals.css`; the picker styles via semantic Tailwind classes (`bg-popover`, `border-border`, etc.).
+- Next.js 16 (App Router, Turbopack dev) on React 19.
+- Tailwind v4 via `@tailwindcss/postcss`. Theme tokens live in `src/app/globals.css`; the picker styles via semantic Tailwind classes (`bg-popover`, `border-border`, etc.).
 - Strict TypeScript, `moduleResolution: "bundler"`. The project is ESM (`"type": "module"`).

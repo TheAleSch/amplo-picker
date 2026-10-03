@@ -198,12 +198,14 @@ function formatInterp(interp: GradientInterp): string {
 
 /**
  * Derive a CSS gradient angle (0deg = up, increases clockwise) from two
- * box-normalized points. Returns undefined when the two points coincide.
+ * box-normalized points. Returns undefined when either point is missing or
+ * the two coincide.
  */
-function angleFromPoints(
-  start: { x: number; y: number },
-  end: { x: number; y: number },
+export function angleFromPoints(
+  start: { x: number; y: number } | undefined,
+  end: { x: number; y: number } | undefined,
 ): number | undefined {
+  if (!start || !end) return undefined;
   const dx = end.x - start.x;
   // Box y axis points down in screen coords, but CSS gradient angle is
   // measured with 0deg = up. Flip dy so the formula matches the visual.

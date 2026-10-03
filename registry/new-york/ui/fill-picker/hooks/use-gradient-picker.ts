@@ -5,6 +5,7 @@ import {
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
+  angleFromPoints,
   formatGradient,
   type Gradient,
   type GradientInterp,
@@ -416,19 +417,6 @@ export function useGradientPicker(
     [apply],
   );
 
-  const recomputeAngle = (
-    start: { x: number; y: number } | undefined,
-    end: { x: number; y: number } | undefined,
-    fallback: number,
-  ): number => {
-    if (!start || !end) return fallback;
-    const dx = end.x - start.x;
-    const dy = -(end.y - start.y); // y axis is down in box coords
-    if (dx === 0 && dy === 0) return fallback;
-    const deg = (Math.atan2(dx, dy) * 180) / Math.PI;
-    return ((deg % 360) + 360) % 360;
-  };
-
   const setLinearStart = React.useCallback(
     (xy: { x: number; y: number } | undefined) =>
       apply((prev) => {
@@ -438,11 +426,10 @@ export function useGradientPicker(
           ? {
               ...cur,
               start: { x: clamp01(xy.x), y: clamp01(xy.y) },
-              angle: recomputeAngle(
+              angle: angleFromPoints(
                 { x: clamp01(xy.x), y: clamp01(xy.y) },
                 cur.end,
-                cur.angle,
-              ),
+              ) ?? cur.angle,
             }
           : (() => {
               const { start: _drop, ...rest } = cur;
@@ -462,11 +449,10 @@ export function useGradientPicker(
           ? {
               ...cur,
               end: { x: clamp01(xy.x), y: clamp01(xy.y) },
-              angle: recomputeAngle(
+              angle: angleFromPoints(
                 cur.start,
                 { x: clamp01(xy.x), y: clamp01(xy.y) },
-                cur.angle,
-              ),
+              ) ?? cur.angle,
             }
           : (() => {
               const { end: _drop, ...rest } = cur;

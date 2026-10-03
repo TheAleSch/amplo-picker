@@ -367,6 +367,10 @@
           "type": "registry:ui"
         },
         {
+          "path": "registry/new-york/ui/fill-picker/parts/pointer-drag.ts",
+          "type": "registry:ui"
+        },
+        {
           "path": "registry/new-york/ui/fill-picker/parts/css-input.tsx",
           "type": "registry:ui"
         },
@@ -446,10 +450,6 @@
         },
         {
           "path": "registry/new-york/ui/fill-picker/parts/gradient/area.tsx",
-          "type": "registry:ui"
-        },
-        {
-          "path": "registry/new-york/ui/fill-picker/parts/gradient/pointer-drag.ts",
           "type": "registry:ui"
         },
         {

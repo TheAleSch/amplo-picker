@@ -373,19 +373,20 @@ function splitTopLevel(input: string): string[] {
  * Returns the parsed interp and the string with the `in …` clause removed.
  */
 function extractInterp(s: string): { interp: GradientInterp; rest: string } {
-  const m = s.match(/\bin\s+(hsl)\s+longer\s+hue\b/i);
-  if (m) {
-    return { interp: "hsl-longer", rest: s.replace(m[0], "").trim() };
-  }
-  const m2 = s.match(/\bin\s+([a-z0-9-]+)\b/i);
-  if (!m2) return { interp: "oklch", rest: s };
-  const space = m2[1].toLowerCase();
+  // `in <space> [<hue-method> hue]` — only `hsl longer hue` has a model
+  // value; other hue methods are accepted and dropped rather than left
+  // in `rest` to poison the header parse.
+  const m = s.match(
+    /\bin\s+([a-z0-9-]+)(?:\s+(shorter|longer|increasing|decreasing)\s+hue)?\b/i,
+  );
+  if (!m) return { interp: "oklch", rest: s };
+  const space = m[1].toLowerCase();
+  const longer = m[2]?.toLowerCase() === "longer";
   let interp: GradientInterp = "oklch";
-  if (space === "oklch") interp = "oklch";
+  if (space === "hsl") interp = longer ? "hsl-longer" : "hsl";
   else if (space === "oklab") interp = "oklab";
   else if (space === "srgb") interp = "srgb";
-  else if (space === "hsl") interp = "hsl";
-  return { interp, rest: s.replace(m2[0], "").trim() };
+  return { interp, rest: s.replace(m[0], "").trim() };
 }
 
 function parseStops(parts: string[]): GradientStop[] | null {
@@ -492,6 +493,156 @@ function sideOrCornerAngle(
   return 315; // top left
 }
 
+const NUM_RE_SRC = String.raw`-?\d+(?:\.\d+)?`;
+const PCT_RE = new RegExp(`^(${NUM_RE_SRC})%$`);
+const PX_RE = new RegExp(`^(${NUM_RE_SRC})px$`, "i");
+const ANGLE_RE = new RegExp(`^(${NUM_RE_SRC})(deg|turn|rad|grad)?$`, "i");
+const RADIAL_SIZES: readonly string[] = [
+  "closest-side",
+  "closest-corner",
+  "farthest-side",
+  "farthest-corner",
+] satisfies RadialSizeKeyword[];
+
+const wrapDeg = (d: number) => ((d % 360) + 360) % 360;
+
+/** CSS `<angle>` → degrees in [0, 360). Unitless is accepted only for `0`. */
+function parseAngle(s: string): number | null {
+  const m = s.trim().match(ANGLE_RE);
+  if (!m) return null;
+  const n = parseFloat(m[1]);
+  switch (m[2]?.toLowerCase()) {
+    case "deg":
+      return wrapDeg(n);
+    case "turn":
+      return wrapDeg(n * 360);
+    case "rad":
+      return wrapDeg((n * 180) / Math.PI);
+    case "grad":
+      return wrapDeg(n * 0.9);
+    default:
+      return n === 0 ? 0 : null;
+  }
+}
+
+/**
+ * CSS `<position>` (one or two tokens: percentages and side keywords) →
+ * 0..1 fractions. Pixel offsets aren't representable in the model → null.
+ */
+function parsePosition(s: string): { x: number; y: number } | null {
+  const toks = s.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const X: Record<string, number> = { left: 0, center: 0.5, right: 1 };
+  const Y: Record<string, number> = { top: 0, center: 0.5, bottom: 1 };
+  const pct = (t: string) => {
+    const m = t.match(PCT_RE);
+    return m ? parseFloat(m[1]) / 100 : undefined;
+  };
+  if (toks.length === 1) {
+    const [t] = toks;
+    const p = pct(t);
+    if (p !== undefined) return { x: p, y: 0.5 };
+    if (t in X) return { x: X[t], y: 0.5 };
+    if (t in Y) return { x: 0.5, y: Y[t] };
+    return null;
+  }
+  if (toks.length !== 2) return null;
+  let [a, b] = toks;
+  // Keyword pairs may come vertical-first (`top right`).
+  if ((a in Y && !(a in X)) || (b in X && !(b in Y))) [a, b] = [b, a];
+  const x = pct(a) ?? X[a];
+  const y = pct(b) ?? Y[b];
+  return x === undefined || y === undefined ? null : { x, y };
+}
+
+interface RadialHeader {
+  shape: "circle" | "ellipse";
+  size: RadialSizeKeyword;
+  center: { x: number; y: number };
+  radii?: { x: number; y: number };
+  radiusPx?: number;
+}
+
+/**
+ * Parse a radial header (`circle farthest-corner at 50% 50%`, `48% 30%`,
+ * `268px at top`, …). Returns null on any unrecognized token so invalid
+ * input is rejected instead of silently becoming the default gradient.
+ */
+function parseRadialHeader(head: string): RadialHeader | null {
+  const [beforeAt, afterAt, ...extra] = head.split(/\bat\b/i);
+  if (extra.length > 0) return null;
+  let center = { x: 0.5, y: 0.5 };
+  if (afterAt !== undefined) {
+    const pos = parsePosition(afterAt);
+    if (!pos) return null;
+    center = pos;
+  }
+  let shape: "circle" | "ellipse" | undefined;
+  let size: RadialSizeKeyword | undefined;
+  const lengths: string[] = [];
+  for (const tok of beforeAt.trim().toLowerCase().split(/\s+/).filter(Boolean)) {
+    if (tok === "circle" || tok === "ellipse") {
+      if (shape) return null;
+      shape = tok;
+    } else if (RADIAL_SIZES.includes(tok)) {
+      if (size) return null;
+      size = tok as RadialSizeKeyword;
+    } else if (PX_RE.test(tok) || PCT_RE.test(tok)) {
+      lengths.push(tok);
+    } else {
+      return null;
+    }
+  }
+  if (lengths.length > 2) return null;
+  const header: RadialHeader = {
+    shape: shape ?? "ellipse",
+    size: size ?? "farthest-corner",
+    center,
+  };
+  if (lengths.length === 1) {
+    // A single `<length>` is only valid as a circle radius; a lone
+    // percentage isn't valid CSS.
+    const px = lengths[0].match(PX_RE);
+    if (!px) return null;
+    header.radiusPx = parseFloat(px[1]);
+    header.shape = "circle";
+  } else if (lengths.length === 2) {
+    // Only the percentage pair formatGradient emits maps onto the model;
+    // raw lengths (`100px 80px`) fall through to the keyword defaults
+    // rather than being silently rescaled.
+    const [rx, ry] = lengths.map((t) => t.match(PCT_RE));
+    if (rx && ry) {
+      header.radii = { x: parseFloat(rx[1]) / 100, y: parseFloat(ry[1]) / 100 };
+    }
+  }
+  return header;
+}
+
+interface ConicHeader {
+  startAngle: number;
+  center: { x: number; y: number };
+}
+
+/** Parse a conic header (`from 90deg at 50% 50%`). Null on junk. */
+function parseConicHeader(head: string): ConicHeader | null {
+  const [beforeAt, afterAt, ...extra] = head.split(/\bat\b/i);
+  if (extra.length > 0) return null;
+  let center = { x: 0.5, y: 0.5 };
+  if (afterAt !== undefined) {
+    const pos = parsePosition(afterAt);
+    if (!pos) return null;
+    center = pos;
+  }
+  let startAngle = 0;
+  const from = beforeAt.trim();
+  if (from) {
+    const m = from.match(/^from\s+(\S+)$/i);
+    const angle = m ? parseAngle(m[1]) : null;
+    if (angle === null) return null;
+    startAngle = angle;
+  }
+  return { startAngle, center };
+}
+
 export function parseGradient(input: string): Gradient | null {
   const trimmed = input.trim();
   const m = trimmed.match(FN_RE);
@@ -509,12 +660,12 @@ export function parseGradient(input: string): Gradient | null {
     let angle = 180; // CSS default
     let stopParts = parts.slice(1);
 
-    const angleMatch = rest.match(/^(-?\d+(?:\.\d+)?)deg$/i);
+    const parsedAngle = parseAngle(rest);
     const toMatch = rest.match(
       /^to\s+(top|bottom|left|right)(?:\s+(top|bottom|left|right))?$/i,
     );
-    if (angleMatch) {
-      angle = parseFloat(angleMatch[1]);
+    if (parsedAngle !== null) {
+      angle = parsedAngle;
     } else if (toMatch) {
       const dir = sideOrCornerAngle(toMatch[1], toMatch[2]);
       if (dir === null) return null; // e.g. "to left right"
@@ -535,104 +686,44 @@ export function parseGradient(input: string): Gradient | null {
     };
   }
 
+  // radial / conic: a header-less gradient (`radial-gradient(red, blue)`)
+  // starts straight with its stops, so when parts[0] isn't a valid header
+  // and carried no `in <space>` clause, re-read it as the first stop.
+  const { interp, rest } = extractInterp(parts[0]);
+  const hadInterp = rest !== parts[0];
+  const header =
+    type === "radial" ? parseRadialHeader(rest) : parseConicHeader(rest);
+  if (!header && hadInterp) return null;
+  const stops = parseStops(header ? parts.slice(1) : parts);
+  if (!stops) return null;
+
   if (type === "radial") {
-    // formatGradient output parts[0]: "circle farthest-corner at 50% 50% in oklch"
-    //                            or:  "48% 30% at 50% 50% in oklch"
-    const { interp, rest } = extractInterp(parts[0]);
-    const head = rest;
-    const stopParts = parts.slice(1);
-
-    let shape: "circle" | "ellipse" = "ellipse";
-    let size: RadialSizeKeyword = "farthest-corner";
-    let cx = 0.5;
-    let cy = 0.5;
-    let radii: { x: number; y: number } | undefined;
-    let radiusPx: number | undefined;
-
-    if (/\bcircle\b/i.test(head)) shape = "circle";
-    else if (/\bellipse\b/i.test(head)) shape = "ellipse";
-    // Order matters: `closest-corner` and `farthest-side` must be checked
-    // before the shorter `closest-side` and `farthest-corner` to avoid the
-    // longer keyword being partially matched. Using anchored \b regexes
-    // sidesteps that issue regardless of order.
-    if (/\bclosest-corner\b/i.test(head)) size = "closest-corner";
-    else if (/\bclosest-side\b/i.test(head)) size = "closest-side";
-    else if (/\bfarthest-side\b/i.test(head)) size = "farthest-side";
-    else if (/\bfarthest-corner\b/i.test(head)) size = "farthest-corner";
-
-    const beforeAt = head.split(/\bat\b/i)[0] ?? head;
-
-    // Single `<px>` length form (e.g. "268px") — CSS spec requires this
-    // to be a circle, so set shape too. Check before the `%% %%` pair so a
-    // mixed `circle 100px` doesn't accidentally try to parse a pair.
-    const singleLenMatch = beforeAt.match(/(-?\d+(?:\.\d+)?)px(?!\s*-?\d+(?:\.\d+)?\s*(?:px|%))/);
-    if (singleLenMatch) {
-      radiusPx = parseFloat(singleLenMatch[1]);
-      shape = "circle";
-    }
-
-    // Explicit two-value ending shape (e.g. "48% 30%") — appears before `at`.
-    // We deliberately only match the percentage form formatGradient emits;
-    // raw lengths (`100px 80px`) are intentionally ignored here so they fall
-    // through to the keyword defaults instead of being silently rescaled.
-    if (!radiusPx) {
-      const radiiMatch = beforeAt.match(
-        /(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/,
-      );
-      if (radiiMatch) {
-        radii = {
-          x: parseFloat(radiiMatch[1]) / 100,
-          y: parseFloat(radiiMatch[2]) / 100,
-        };
-      }
-    }
-
-    const atMatch = head.match(/\bat\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/i);
-    if (atMatch) {
-      cx = parseFloat(atMatch[1]) / 100;
-      cy = parseFloat(atMatch[2]) / 100;
-    }
-
-    const stops = parseStops(stopParts);
-    if (!stops) return null;
+    const h = (header as RadialHeader | null) ?? {
+      shape: "ellipse",
+      size: "farthest-corner",
+      center: { x: 0.5, y: 0.5 },
+    };
     return {
       type: "radial",
-      shape,
-      size,
-      center: { x: cx, y: cy },
-      ...(radii ? { radii } : {}),
-      ...(radiusPx !== undefined ? { radiusPx } : {}),
+      shape: h.shape,
+      size: h.size,
+      center: h.center,
+      ...(h.radii ? { radii: h.radii } : {}),
+      ...(h.radiusPx !== undefined ? { radiusPx: h.radiusPx } : {}),
       interp,
       stops,
       ...(repeating ? { repeating: true } : {}),
     };
   }
 
-  // conic
-  // formatGradient output parts[0]: "from 0deg at 50% 50% in oklch"
-  const { interp, rest } = extractInterp(parts[0]);
-  const head = rest;
-  const stopParts = parts.slice(1);
-
-  let startAngle = 0;
-  let cx = 0.5;
-  let cy = 0.5;
-
-  const fromMatch = head.match(/\bfrom\s+(-?\d+(?:\.\d+)?)deg\b/i);
-  if (fromMatch) startAngle = parseFloat(fromMatch[1]);
-
-  const atMatch = head.match(/\bat\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/i);
-  if (atMatch) {
-    cx = parseFloat(atMatch[1]) / 100;
-    cy = parseFloat(atMatch[2]) / 100;
-  }
-
-  const stops = parseStops(stopParts);
-  if (!stops) return null;
+  const h = (header as ConicHeader | null) ?? {
+    startAngle: 0,
+    center: { x: 0.5, y: 0.5 },
+  };
   return {
     type: "conic",
-    startAngle,
-    center: { x: cx, y: cy },
+    startAngle: h.startAngle,
+    center: h.center,
     interp,
     stops,
     ...(repeating ? { repeating: true } : {}),

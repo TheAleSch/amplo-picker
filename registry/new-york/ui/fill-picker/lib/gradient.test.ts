@@ -234,6 +234,52 @@ describe("parseGradient", () => {
     expect(parseGradient("not a gradient")).toBeNull();
   });
 
+  it("keeps the first stop of a header-less radial/conic gradient", () => {
+    const radial = parseGradient("radial-gradient(red, blue)");
+    expect(radial?.type).toBe("radial");
+    expect(radial?.stops).toHaveLength(2);
+    expect(radial?.stops.map((s) => s.position)).toEqual([0, 1]);
+
+    const conic = parseGradient("conic-gradient(red, blue, green)");
+    expect(conic?.type).toBe("conic");
+    expect(conic?.stops).toHaveLength(3);
+  });
+
+  it("rejects unrecognized radial/conic header tokens", () => {
+    expect(
+      parseGradient("radial-gradient(not-a-size at 50% 50%, #fff, #000)"),
+    ).toBeNull();
+    expect(parseGradient("radial-gradient(circle at nowhere, #fff, #000)")).toBeNull();
+    expect(parseGradient("conic-gradient(banana, red, blue)")).toBeNull();
+    expect(parseGradient("conic-gradient(from 10deg wobble, red, blue)")).toBeNull();
+  });
+
+  it("parses keyword positions and non-deg conic angles", () => {
+    const r = parseGradient("radial-gradient(circle at top right, red, blue)");
+    expect(r).toMatchObject({ shape: "circle", center: { x: 1, y: 0 } });
+    const c = parseGradient("conic-gradient(from 0.25turn at left, red, blue)");
+    expect(c).toMatchObject({ startAngle: 90, center: { x: 0, y: 0.5 } });
+  });
+
+  it("accepts any CSS angle unit and normalizes to [0, 360)", () => {
+    expect(parseGradient("linear-gradient(0.5turn, red, blue)")).toMatchObject({ angle: 180 });
+    expect(parseGradient("linear-gradient(450deg, red, blue)")).toMatchObject({ angle: 90 });
+    expect(parseGradient("linear-gradient(-90deg, red, blue)")).toMatchObject({ angle: 270 });
+    expect(parseGradient("conic-gradient(from -90deg, red, blue)")).toMatchObject({ startAngle: 270 });
+  });
+
+  it("tolerates hue-interpolation methods it can't model", () => {
+    expect(
+      parseGradient("linear-gradient(in hsl shorter hue 90deg, red, blue)"),
+    ).toMatchObject({ interp: "hsl", angle: 90 });
+    expect(
+      parseGradient("linear-gradient(in oklch longer hue 90deg, red, blue)"),
+    ).toMatchObject({ interp: "oklch", angle: 90 });
+    expect(
+      parseGradient("linear-gradient(in hsl longer hue 90deg, red, blue)"),
+    ).toMatchObject({ interp: "hsl-longer" });
+  });
+
   it("parses hex stops as OKLCH", () => {
     const parsed = parseGradient("linear-gradient(90deg, #ffffff 0%, #000000 100%)");
     expect(parsed).not.toBeNull();

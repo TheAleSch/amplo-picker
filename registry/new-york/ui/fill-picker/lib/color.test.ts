@@ -600,3 +600,13 @@ describe("formatColor near black", () => {
     expect(hsvS).toBeLessThanOrEqual(1);
   });
 });
+
+// Round-3 review (2026-10-02): near white, HSL saturation divides by
+// 1 - |2L - 1| ≈ 0, so 1e-7 of conversion noise read as 50%.
+describe("formatColor at the white/black poles", () => {
+  it.each(["#fff", "#000", "#808080"])("formats %s as achromatic", (hex) => {
+    const c = parseColor(hex)!;
+    expect(formatColor(c, "hsl")).toMatch(/^hsl\(0 0% /);
+    expect(formatColor(c, "hsb")).toMatch(/^color\(--hsv 0 0 /);
+  });
+});

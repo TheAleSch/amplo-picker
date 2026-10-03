@@ -305,3 +305,13 @@ describe("hue edits on an achromatic color are kept in every format", () => {
     expect(hslHue(next)).toBeCloseTo(240, 0);
   });
 });
+
+describe("hsl/hsb readouts at white", () => {
+  it("reports zero saturation for #fff", () => {
+    const white = parseColor("#fff")!;
+    const s = colorChannels(white, "hsl").find((d) => d.key === "s");
+    expect(s?.value).toBe(0);
+    const hs = colorChannels(white, "hsb").find((d) => d.key === "s");
+    expect(hs?.value).toBe(0);
+  });
+});

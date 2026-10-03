@@ -448,16 +448,15 @@ export function toGamut(color: OklchColor, gamut: Gamut): OklchColor {
  * sRGB channels of `color` after gamut mapping, clamped to [0, 1]. The
  * mapper tolerates `GAMUT_EPSILON` of channel slack, which near black is a
  * large relative error: fed to HSL/HSV it becomes saturation in the
- * millions. HSL/HSV output strings and channel readouts read through this.
+ * millions. Channels are also snapped to 1e-6 (far below 8-bit precision):
+ * near white HSL saturation divides by 1 - |2L - 1| ≈ 0, so 1e-7 of
+ * conversion noise on #fff would otherwise read as 50%. HSL/HSV output
+ * strings and channel readouts read through this.
  */
 export function srgbClamped(color: OklchColor) {
   const rgb = toRgb({ mode: "oklch", ...oklchObj(mapToGamutColor(color, "srgb")) });
-  return {
-    mode: "rgb" as const,
-    r: clamp(rgb?.r ?? 0, 0, 1),
-    g: clamp(rgb?.g ?? 0, 0, 1),
-    b: clamp(rgb?.b ?? 0, 0, 1),
-  };
+  const ch = (v: number | undefined) => round(clamp(v ?? 0, 0, 1), 6);
+  return { mode: "rgb" as const, r: ch(rgb?.r), g: ch(rgb?.g), b: ch(rgb?.b) };
 }
 
 function mapToGamutColor(color: OklchColor, gamut: Gamut): OklchColor {

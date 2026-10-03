@@ -97,6 +97,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       const el = trackRef.current;
       if (!el) return 0;
       const rect = el.getBoundingClientRect();
+      if (rect.width <= 0) return 0;
       return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     },
     [],

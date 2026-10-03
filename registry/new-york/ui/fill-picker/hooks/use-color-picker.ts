@@ -219,6 +219,9 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
 
   const commitColor = React.useCallback(
     (next: OklchColor, formatOverride?: ColorFormat) => {
+      // NaN never equals itself, so storing it would spin the render-time
+      // sync in consumers; drop non-finite colors at the boundary.
+      if (![next.l, next.c, next.h, next.alpha].every(Number.isFinite)) return;
       if (!isControlledColor) setInternalColor(next);
       if (onValueChange) {
         const all = formatAll(next);

@@ -133,3 +133,25 @@ describe("Area bead after a no-op pick", () => {
     expect(bead.style.left).toBe("0%");
   });
 });
+
+// Codex round-2 (2026-10-02): a zero-size rect (collapsed/animating popover)
+// turned pointer math into NaN, and NaN !== NaN made the render-time color
+// sync loop until React threw "Too many re-renders".
+describe("Area with a zero-size rect", () => {
+  it("ignores pointer input instead of committing NaN", () => {
+    const onValueChange = vi.fn();
+    render(
+      <Root defaultValue="oklch(0.7 0.18 120)" onValueChange={onValueChange}>
+        <Area />
+      </Root>,
+    );
+    const area = screen.getByRole("application");
+    vi.spyOn(area, "getBoundingClientRect").mockReturnValue({
+      x: 0, y: 0, left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    area.setPointerCapture = () => {};
+    expect(() => fireEvent.pointerDown(area, { clientX: 5, clientY: 5, pointerId: 1 })).not.toThrow();
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+});

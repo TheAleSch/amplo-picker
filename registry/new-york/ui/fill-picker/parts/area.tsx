@@ -233,6 +233,8 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
       const el = containerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
+      // A collapsed / animating-out container has no pickable surface.
+      if (rect.width <= 0 || rect.height <= 0) return;
       moveTo((clientX - rect.left) / rect.width, (clientY - rect.top) / rect.height);
     },
     [moveTo],

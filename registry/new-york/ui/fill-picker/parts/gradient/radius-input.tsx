@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import {
-  FieldInput,
+  FieldDraftInput,
   FieldInputGroup,
   FieldShell,
   FieldSuffix,
@@ -21,13 +21,15 @@ export const RadiusInput = React.forwardRef<
   const usePercent = !!ctx.containerWidth;
   const display = (() => {
     if (g.radiusPx === undefined) return "";
-    return usePercent
-      ? Math.round((g.radiusPx / (ctx.containerWidth as number)) * 100)
-      : Math.round(g.radiusPx);
+    return String(
+      usePercent
+        ? Math.round((g.radiusPx / (ctx.containerWidth as number)) * 100)
+        : Math.round(g.radiusPx),
+    );
   })();
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
+  const commit = (raw: string) => {
+    const v = raw.trim();
     if (v === "") {
       ctx.setRadiusPx(undefined);
       return;
@@ -50,12 +52,12 @@ export const RadiusInput = React.forwardRef<
     >
       <FieldInputGroup>
         <span className="sr-only">Circle radius</span>
-        <FieldInput
-          inputMode="numeric"
+        <FieldDraftInput
+          inputMode="decimal"
           nudge={1}
           value={display}
           placeholder="auto"
-          onChange={onChange}
+          onCommit={commit}
           aria-label={
             usePercent
               ? "Circle radius as percent of Area width"

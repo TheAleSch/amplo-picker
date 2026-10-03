@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import {
   FieldDivider,
-  FieldInput,
+  FieldDraftInput,
   FieldInputGroup,
   FieldShell,
   FieldSuffix,
 } from "../field";
+import { keywordToRadii } from "./overlay";
 
 export const EllipseRadiiInput = React.forwardRef<
   HTMLDivElement,
@@ -21,13 +22,17 @@ export const EllipseRadiiInput = React.forwardRef<
   const g = ctx.gradient;
 
   const commit = (axis: "x" | "y", raw: string) => {
-    if (raw === "") {
+    if (raw.trim() === "") {
       ctx.setRadii(undefined);
       return;
     }
     const n = parseFloat(raw);
     if (!Number.isFinite(n)) return;
-    const current = g.radii ?? { x: 0, y: 0 };
+    // Keep the untouched axis at its *effective* extent. For an ellipse the
+    // keyword seed is already normalized per axis, so the box size cancels
+    // out (1 × 1) — the same seed the Overlay's edge handle starts from.
+    const current =
+      g.radii ?? keywordToRadii("ellipse", g.size, g.center, 1, 1);
     ctx.setRadii(
       axis === "x"
         ? { x: Math.max(0, n / 100), y: current.y }
@@ -44,12 +49,12 @@ export const EllipseRadiiInput = React.forwardRef<
     >
       <FieldInputGroup>
         <span className="sr-only">Ellipse horizontal radius</span>
-        <FieldInput
-          inputMode="numeric"
+        <FieldDraftInput
+          inputMode="decimal"
           nudge={1}
-          value={g.radii ? Math.round(g.radii.x * 100) : ""}
+          value={g.radii ? String(Math.round(g.radii.x * 100)) : ""}
           placeholder="auto"
-          onChange={(e) => commit("x", e.target.value)}
+          onCommit={(raw) => commit("x", raw)}
           aria-label="Ellipse horizontal radius percent"
           className="w-12"
         />
@@ -57,12 +62,12 @@ export const EllipseRadiiInput = React.forwardRef<
       <FieldDivider />
       <FieldInputGroup>
         <span className="sr-only">Ellipse vertical radius</span>
-        <FieldInput
-          inputMode="numeric"
+        <FieldDraftInput
+          inputMode="decimal"
           nudge={1}
-          value={g.radii ? Math.round(g.radii.y * 100) : ""}
+          value={g.radii ? String(Math.round(g.radii.y * 100)) : ""}
           placeholder="auto"
-          onChange={(e) => commit("y", e.target.value)}
+          onCommit={(raw) => commit("y", raw)}
           aria-label="Ellipse vertical radius percent"
           className="w-12"
         />

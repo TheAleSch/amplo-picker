@@ -21,6 +21,7 @@ import {
 import { formatColor, parseColor } from "../../lib/color";
 import { CHECKERBOARD_SM } from "../../lib/constants";
 import {
+  FieldDraftInput,
   FieldInput,
   FieldInputGroup,
   FieldShell,
@@ -127,6 +128,9 @@ function StopRow({
   const [open, setOpen] = React.useState(false);
   const [draft, setDraft] = React.useState(formatted);
   const focusedRef = React.useRef(false);
+  // Escape reverts by blurring, and that blur would otherwise commit the
+  // still-typed DOM value — the reverted draft hasn't rendered yet.
+  const cancelBlurCommitRef = React.useRef(false);
   React.useEffect(() => {
     if (!focusedRef.current) setDraft(formatted);
   }, [formatted]);
@@ -189,12 +193,12 @@ function StopRow({
       <FieldShell className="h-7 w-fit">
         <FieldInputGroup>
           <span className="sr-only">Stop position</span>
-          <FieldInput
-            inputMode="numeric"
+          <FieldDraftInput
+            inputMode="decimal"
             nudge={1}
-            value={Math.round(toDisplay(s.position) * 100)}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
+            value={String(Math.round(toDisplay(s.position) * 100))}
+            onCommit={(raw) => {
+              const v = parseFloat(raw);
               // Clamp the typed *displayed* percent to the track; moveStop
               // itself no longer clamps (extrapolated stops are legal).
               if (Number.isFinite(v))
@@ -222,6 +226,10 @@ function StopRow({
             onChange={(e) => setDraft(e.target.value)}
             onBlur={(e) => {
               focusedRef.current = false;
+              if (cancelBlurCommitRef.current) {
+                cancelBlurCommitRef.current = false;
+                return;
+              }
               commitDraft(e.target.value);
             }}
             onKeyDown={(e) => {
@@ -232,6 +240,7 @@ function StopRow({
               } else if (e.key === "Escape") {
                 e.preventDefault();
                 setDraft(formatted);
+                cancelBlurCommitRef.current = true;
                 (e.target as HTMLInputElement).blur();
               }
             }}

@@ -905,3 +905,39 @@ describe("stop ids round-trip through onValueChange", () => {
     ).toBeCloseTo(300, 0);
   });
 });
+
+describe("controlled sync edge cases", () => {
+  it("re-syncs when the parent restores a previously emitted object (undo/redo)", () => {
+    let emitted: Gradient | null = null;
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) =>
+        useGradientPicker({ value, onValueChange: (g) => (emitted = g) }),
+      { initialProps: { value: DEFAULT_LINEAR as Gradient } },
+    );
+    act(() => result.current.setAngle(45));
+    const e1 = emitted!;
+    rerender({ value: e1 }); // echo
+    rerender({ value: DEFAULT_LINEAR }); // undo
+    expect((result.current.gradient as LinearGradient).angle).toBe(
+      DEFAULT_LINEAR.angle,
+    );
+    rerender({ value: e1 }); // redo with the same retained object
+    expect((result.current.gradient as LinearGradient).angle).toBe(45);
+  });
+
+  it("keeps a selection when an external update moves stop positions", () => {
+    const base: LinearGradient = { ...DEFAULT_LINEAR };
+    const { result, rerender } = renderHook(
+      ({ value }: { value: Gradient }) => useGradientPicker({ value }),
+      { initialProps: { value: base as Gradient } },
+    );
+    act(() => result.current.selectStop(result.current.stops[1].id));
+    const moved: LinearGradient = {
+      ...base,
+      stops: [base.stops[0], { ...base.stops[1], position: 0.9 }],
+    };
+    rerender({ value: moved });
+    expect(result.current.selectedStop).not.toBeNull();
+    expect(result.current.selectedStop?.position).toBeCloseTo(0.9);
+  });
+});

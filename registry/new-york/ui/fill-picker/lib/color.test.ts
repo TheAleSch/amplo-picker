@@ -16,6 +16,7 @@ import {
   gamutFromFormat,
   hslHue,
   hsbHue,
+  parseColorDetailed,
 } from "./color";
 
 const toOklch = converter("oklch");
@@ -453,5 +454,159 @@ describe("gamut epsilon tolerance", () => {
     expect(gamutInfo(wayOut).inSrgb).toBe(false);
     expect(gamutInfo(wayOut).inP3).toBe(true);
     expect(gamutInfo(parseColor("#f00")!).inSrgb).toBe(true);
+  });
+});
+
+describe("parseColorDetailed — hue is wrapped into [0, 360)", () => {
+  it("wraps an over-360 authored hue", () => {
+    expect(parseColorDetailed("oklch(0.5 0.1 720)")!.color.h).toBeCloseTo(0, 6);
+    expect(parseColorDetailed("oklch(0.5 0.1 400)")!.color.h).toBeCloseTo(40, 6);
+  });
+
+  it("wraps a negative authored hue", () => {
+    expect(parseColorDetailed("oklch(0.5 0.1 -30)")!.color.h).toBeCloseTo(330, 6);
+  });
+});
+
+describe("formatColor — exact, rounded output per format", () => {
+  const red = parseColor("#ff0000")!;
+  const gray = parseColor("#808080")!;
+
+  it("serializes in-gamut sRGB red exactly (no strict-gamut chroma nudge)", () => {
+    // culori's own gamut test is strict, so red's OKLCH round-trip (a
+    // channel at ±1e-14) used to be chroma-reduced to hsl(0.03 99.98% …).
+    expect(formatColor(red, "rgb")).toBe("rgb(255, 0, 0)");
+    expect(formatColor(parseColor("#008197")!, "hex")).toBe("#008197");
+  });
+
+  it("rounds hsl to 2 decimals and never emits exponent notation", () => {
+    expect(formatColor(red, "hsl")).toBe("hsl(0 100% 50%)");
+    expect(formatColor(gray, "hsl")).toBe("hsl(0 0% 50.2%)");
+    expect(formatColor({ ...red, alpha: 0.5 }, "hsl")).toBe(
+      "hsl(0 100% 50% / 0.5)",
+    );
+  });
+
+  it("emits hsb as culori's color(--hsv …) with rounded channels", () => {
+    expect(formatColor(red, "hsb")).toBe("color(--hsv 0 1 1)");
+    expect(formatColor(gray, "hsb")).toBe("color(--hsv 0 0 0.502)");
+    expect(formatColor({ ...red, alpha: 0.5 }, "hsb")).toBe(
+      "color(--hsv 0 1 1 / 0.5)",
+    );
+  });
+
+  it("rounds oklab to 4 decimals", () => {
+    expect(formatColor(red, "oklab")).toBe("oklab(0.628 0.2249 0.1258)");
+    expect(formatColor(gray, "oklab")).toBe("oklab(0.5999 0 0)");
+    expect(formatColor({ ...red, alpha: 0.5 }, "oklab")).toBe(
+      "oklab(0.628 0.2249 0.1258 / 0.5)",
+    );
+  });
+
+  it("rounds display-p3 to 4 decimals", () => {
+    expect(formatColor(red, "p3")).toBe("color(display-p3 0.9175 0.2003 0.1386)");
+    expect(formatColor(gray, "p3")).toBe("color(display-p3 0.502 0.502 0.502)");
+    expect(formatColor({ ...red, alpha: 0.5 }, "p3")).toBe(
+      "color(display-p3 0.9175 0.2003 0.1386 / 0.5)",
+    );
+  });
+
+  // A string-controlled parent echoes `formatted` straight back into
+  // `value`. Rounding must be a projection: one re-parse may quantize, but
+  // a second format → parse → format cycle has to be a fixed point, or the
+  // echo would creep on every re-render / blur-commit.
+  it("is stable under a format → parse → format echo in every format", () => {
+    const samples: OklchColor[] = [
+      red,
+      gray,
+      { l: 0.62, c: 0.11, h: 212.7, alpha: 1 },
+      { l: 0.83, c: 0.04, h: 95.3, alpha: 0.42 },
+      { l: 0.31, c: 0.002, h: 300, alpha: 1 },
+    ];
+    for (const sample of samples) {
+      for (const f of ["hex", "rgb", "hsl", "hsb", "oklch", "oklab", "p3"] as const) {
+        const once = formatColor(parseColor(formatColor(sample, f))!, f);
+        const twice = formatColor(parseColor(once)!, f);
+        expect(twice, `${f} ${JSON.stringify(sample)}`).toBe(once);
+      }
+    }
+  });
+
+  it("round-trips every format through parseColor", () => {
+    const c: OklchColor = { l: 0.62, c: 0.11, h: 212.7, alpha: 0.5 };
+    for (const f of ["hex", "rgb", "hsl", "hsb", "oklch", "oklab", "p3"] as const) {
+      const back = parseColor(formatColor(c, f));
+      expect(back, f).not.toBeNull();
+      expect(back!.l, f).toBeCloseTo(c.l, 2);
+      expect(back!.h, f).toBeCloseTo(c.h, 0);
+    }
+  });
+});
+
+describe("hslHue / hsbHue — achromatic colors", () => {
+  // An achromatic color has no HSL/HSV hue of its own; culori returns float
+  // noise (e.g. 330 for any mid-gray). The slider must instead track the
+  // stored OKLCH hue, read on the format's own scale.
+  it("tracks the stored OKLCH hue instead of float noise", () => {
+    const at = (h: number): OklchColor => ({ l: 0.5, c: 0, h, alpha: 1 });
+    expect(hslHue(at(120))).not.toBeCloseTo(hslHue(at(250)), 0);
+    expect(hsbHue(at(120))).not.toBeCloseTo(hsbHue(at(250)), 0);
+    // Same reading as a mildly saturated color on that OKLCH hue.
+    const probe: OklchColor = { l: 0.6, c: 0.08, h: 120, alpha: 1 };
+    expect(hslHue(at(120))).toBeCloseTo(hslHue(probe), 6);
+    expect(hsbHue(at(120))).toBeCloseTo(hsbHue(probe), 6);
+  });
+});
+
+describe("parseColorDetailed — hueMissing on wide-gamut grays", () => {
+  // A neutral display-p3 color converts to OKLCH with float-noise chroma
+  // (~1e-16) and a garbage finite hue (180). That hue must be reported as
+  // missing, or a string-controlled p3 echo of a gray drops the remembered
+  // hue and snaps the picker to 180°.
+  it("flags a p3 gray's noise hue as missing", () => {
+    for (const s of [
+      "color(display-p3 0.4447 0.4447 0.4447)",
+      "color(display-p3 0.4446959407612438 0.4446959407612437 0.44469594076124364)",
+      "color(display-p3 1 1 1)",
+    ]) {
+      expect(parseColorDetailed(s)!.hueMissing, s).toBe(true);
+    }
+  });
+
+  it("still treats an OKLCH-authored hue at zero chroma as present", () => {
+    const p = parseColorDetailed("oklch(0.5 0 90)")!;
+    expect(p.hueMissing).toBe(false);
+    expect(p.color.h).toBe(90);
+  });
+
+  it("keeps a chromatic p3 color's hue", () => {
+    expect(parseColorDetailed("color(display-p3 0.5 0.45 0.45)")!.hueMissing).toBe(false);
+  });
+});
+
+// Round-2 review (2026-10-02): the in-gamut early return let near-black
+// colors reach HSL/HSV with channel slack, yielding saturation in the
+// millions, and wrapping after rounding reintroduced float noise in hue.
+describe("formatColor near black", () => {
+  it("keeps hsl/hsb saturation in range and hue free of float noise", () => {
+    const a = formatColor({ l: 0.006054718750540909, c: 0.00399657324828557, h: 188.39, alpha: 1 }, "hsl");
+    const b = formatColor({ l: 0.0001, c: 0.0005, h: 259.8, alpha: 1 }, "hsb");
+    // Hue is the first number; at most 2 decimals.
+    expect(a).toMatch(/^hsl\(\d+(\.\d{1,2})? /);
+    expect(b).toMatch(/^color\(--hsv \d+(\.\d{1,2})? /);
+    const sat = parseFloat(a.split(" ")[1]);
+    expect(sat).toBeLessThanOrEqual(100);
+    const hsvS = parseFloat(b.replace("color(--hsv ", "").split(" ")[1]);
+    expect(hsvS).toBeLessThanOrEqual(1);
+  });
+});
+
+// Round-3 review (2026-10-02): near white, HSL saturation divides by
+// 1 - |2L - 1| ≈ 0, so 1e-7 of conversion noise read as 50%.
+describe("formatColor at the white/black poles", () => {
+  it.each(["#fff", "#000", "#808080"])("formats %s as achromatic", (hex) => {
+    const c = parseColor(hex)!;
+    expect(formatColor(c, "hsl")).toMatch(/^hsl\(0 0% /);
+    expect(formatColor(c, "hsb")).toMatch(/^color\(--hsv 0 0 /);
   });
 });

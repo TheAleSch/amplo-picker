@@ -97,6 +97,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       const el = trackRef.current;
       if (!el) return 0;
       const rect = el.getBoundingClientRect();
+      if (rect.width <= 0) return 0;
       return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     },
     [],
@@ -260,7 +261,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       <div
         ref={trackRef}
         onPointerDown={onTrackPointerDown}
-        className="absolute inset-0 rounded-full border border-border"
+        className="absolute inset-0 touch-none rounded-full border border-border"
         style={{
           background: `${buildPreviewGradient(ctx.gradient)}, repeating-conic-gradient(#bbb 0 25%, #fff 0 50%) 0 0/8px 8px`,
         }}
@@ -293,7 +294,7 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
               background: formatColor(s.color, "oklch"),
             }}
             className={cn(
-              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]",
+              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]",
               // WCAG 2.5.8: small visual dot, ≥24px pointer target.
               "before:absolute before:-inset-1.5 before:content-['']",
               selected && "outline-2 outline-offset-1 outline-ring",

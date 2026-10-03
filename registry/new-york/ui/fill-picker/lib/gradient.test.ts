@@ -234,6 +234,58 @@ describe("parseGradient", () => {
     expect(parseGradient("not a gradient")).toBeNull();
   });
 
+  it("expands a two-position color stop into two stops", () => {
+    const g = parseGradient("linear-gradient(red 0% 50%, blue 50% 100%)");
+    expect(g?.stops.map((s) => s.position)).toEqual([0, 0.5, 0.5, 1]);
+    expect(g?.stops[0].color).toEqual(g?.stops[1].color);
+  });
+
+  it("keeps the first stop of a header-less radial/conic gradient", () => {
+    const radial = parseGradient("radial-gradient(red, blue)");
+    expect(radial?.type).toBe("radial");
+    expect(radial?.stops).toHaveLength(2);
+    expect(radial?.stops.map((s) => s.position)).toEqual([0, 1]);
+
+    const conic = parseGradient("conic-gradient(red, blue, green)");
+    expect(conic?.type).toBe("conic");
+    expect(conic?.stops).toHaveLength(3);
+  });
+
+  it("rejects unrecognized radial/conic header tokens", () => {
+    expect(
+      parseGradient("radial-gradient(not-a-size at 50% 50%, #fff, #000)"),
+    ).toBeNull();
+    expect(parseGradient("radial-gradient(circle at nowhere, #fff, #000)")).toBeNull();
+    expect(parseGradient("conic-gradient(banana, red, blue)")).toBeNull();
+    expect(parseGradient("conic-gradient(from 10deg wobble, red, blue)")).toBeNull();
+  });
+
+  it("parses keyword positions and non-deg conic angles", () => {
+    const r = parseGradient("radial-gradient(circle at top right, red, blue)");
+    expect(r).toMatchObject({ shape: "circle", center: { x: 1, y: 0 } });
+    const c = parseGradient("conic-gradient(from 0.25turn at left, red, blue)");
+    expect(c).toMatchObject({ startAngle: 90, center: { x: 0, y: 0.5 } });
+  });
+
+  it("accepts any CSS angle unit and normalizes to [0, 360)", () => {
+    expect(parseGradient("linear-gradient(0.5turn, red, blue)")).toMatchObject({ angle: 180 });
+    expect(parseGradient("linear-gradient(450deg, red, blue)")).toMatchObject({ angle: 90 });
+    expect(parseGradient("linear-gradient(-90deg, red, blue)")).toMatchObject({ angle: 270 });
+    expect(parseGradient("conic-gradient(from -90deg, red, blue)")).toMatchObject({ startAngle: 270 });
+  });
+
+  it("tolerates hue-interpolation methods it can't model", () => {
+    expect(
+      parseGradient("linear-gradient(in hsl shorter hue 90deg, red, blue)"),
+    ).toMatchObject({ interp: "hsl", angle: 90 });
+    expect(
+      parseGradient("linear-gradient(in oklch longer hue 90deg, red, blue)"),
+    ).toMatchObject({ interp: "oklch", angle: 90 });
+    expect(
+      parseGradient("linear-gradient(in hsl longer hue 90deg, red, blue)"),
+    ).toMatchObject({ interp: "hsl-longer" });
+  });
+
   it("parses hex stops as OKLCH", () => {
     const parsed = parseGradient("linear-gradient(90deg, #ffffff 0%, #000000 100%)");
     expect(parsed).not.toBeNull();
@@ -369,6 +421,27 @@ describe("formatGradient — circle never emits ellipse radii (C-7)", () => {
 });
 
 describe("sampleStopsAt (C-6 / T-1)", () => {
+  it("treats an achromatic stop's hue as missing (CSS Color 4)", () => {
+    const white = { l: 1, c: 0, h: 0, alpha: 1 };
+    const blue = { l: 0.45, c: 0.31, h: 264, alpha: 1 };
+    const mid = sampleStopsAt(
+      [
+        { color: white, position: 0 },
+        { color: blue, position: 1 },
+      ],
+      0.5,
+    );
+    expect(mid.h).toBeCloseTo(264, 6);
+    const back = sampleStopsAt(
+      [
+        { color: blue, position: 0 },
+        { color: { ...white, l: 0 }, position: 1 },
+      ],
+      0.5,
+    );
+    expect(back.h).toBeCloseTo(264, 6);
+  });
+
   const white = { l: 1, c: 0, h: 0, alpha: 1 };
   const black = { l: 0, c: 0, h: 0, alpha: 1 };
 

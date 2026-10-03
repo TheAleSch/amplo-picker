@@ -74,7 +74,7 @@ function snapDeg(deg: number, step: number): number {
  * stretching each axis to the appropriate side rather than implementing the
  * exact CSS spec — once the user drags, they own the radii anyway.
  */
-function keywordToRadii(
+export function keywordToRadii(
   shape: "circle" | "ellipse",
   size: RadialSizeKeyword,
   center: { x: number; y: number },
@@ -562,6 +562,37 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
     );
   };
 
+  // Radius handle ARIA. The pixel radius of a circle is unbounded (it can
+  // exceed the box), and keyword circles normalized to width can pass 200%
+  // on tall boxes — so the max grows with the value instead of letting
+  // aria-valuenow overshoot a fixed aria-valuemax.
+  const radiusAria = (() => {
+    if (gradient.type !== "radial" || dims.w === 0 || dims.h === 0) return null;
+    if (gradient.shape === "circle" && gradient.radiusPx !== undefined) {
+      const now = Math.round(gradient.radiusPx);
+      return {
+        now,
+        max: Math.max(now, Math.round(Math.hypot(dims.w, dims.h))),
+        text: `circle radius ${now} pixels`,
+      };
+    }
+    const r =
+      gradient.radii ??
+      keywordToRadii(
+        gradient.shape,
+        gradient.size,
+        gradient.center,
+        dims.w,
+        dims.h,
+      );
+    const now = Math.round(r.x * 100);
+    return {
+      now,
+      max: Math.max(200, now),
+      text: `radius x ${now}%, y ${Math.round(r.y * 100)}%`,
+    };
+  })();
+
   // Render ------------------------------------------------------------------
 
   return (
@@ -731,7 +762,7 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
                   aria-valuetext={`${Math.round(gradient.startAngle)} degrees`}
                 />
               )}
-              {handles.b && gradient.type === "radial" && (
+              {handles.b && radiusAria && (
                 <Handle
                   label="Gradient radius"
                   position={handles.b}
@@ -739,39 +770,9 @@ export const Overlay = React.forwardRef<HTMLDivElement, OverlayProps>(
                   onKeyDown={onKeyDownRadii}
                   role="slider"
                   aria-valuemin={0}
-                  aria-valuemax={200}
-                  aria-valuenow={
-                    gradient.shape === "circle" &&
-                    gradient.radiusPx !== undefined
-                      ? Math.round(gradient.radiusPx)
-                      : Math.round(
-                          (gradient.radii?.x ??
-                            keywordToRadii(
-                              gradient.shape,
-                              gradient.size,
-                              gradient.center,
-                              dims.w,
-                              dims.h,
-                            ).x) * 100,
-                        )
-                  }
-                  aria-valuetext={
-                    gradient.shape === "circle" &&
-                    gradient.radiusPx !== undefined
-                      ? `circle radius ${Math.round(gradient.radiusPx)} pixels`
-                      : (() => {
-                          const r =
-                            gradient.radii ??
-                            keywordToRadii(
-                              gradient.shape,
-                              gradient.size,
-                              gradient.center,
-                              dims.w,
-                              dims.h,
-                            );
-                          return `radius x ${Math.round(r.x * 100)}%, y ${Math.round(r.y * 100)}%`;
-                        })()
-                  }
+                  aria-valuemax={radiusAria.max}
+                  aria-valuenow={radiusAria.now}
+                  aria-valuetext={radiusAria.text}
                 />
               )}
             </>
@@ -802,7 +803,7 @@ function Handle({ label, position, className, style, ...rest }: HandleProps) {
         ...style,
       }}
       className={cn(
-        "absolute -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full",
+        "absolute -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none rounded-full",
         // WCAG 2.5.8: 14px visual dot, ≥24px pointer target.
         "before:absolute before:-inset-1.5 before:content-['']",
         // Solid background so the dashed gradient line behind the dot is

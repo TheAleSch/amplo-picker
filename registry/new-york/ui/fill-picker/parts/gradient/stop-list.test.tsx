@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { Root } from "./root";
 import { StopList } from "./stop-list";
@@ -42,5 +42,42 @@ describe("StopList keyboard navigation", () => {
     const remaining = screen.getAllByRole("option");
     expect(remaining.length).toBe(1);
     expect(document.activeElement).toBe(remaining[0]);
+  });
+});
+
+describe("StopList inputs", () => {
+  it("Escape in the stop color field reverts instead of committing the typed value", () => {
+    const onValueChange = vi.fn();
+    render(
+      <Root onValueChange={onValueChange}>
+        <StopList showAddStop={false} />
+      </Root>,
+    );
+    const field = screen.getAllByLabelText("Stop color value")[0];
+    const before = (field as HTMLInputElement).value;
+    act(() => field.focus());
+    fireEvent.change(field, { target: { value: "#ff0000" } });
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(field).toHaveValue(before);
+  });
+
+  it("stop position keeps a draft until Enter, then commits", () => {
+    const onValueChange = vi.fn();
+    render(
+      <Root onValueChange={onValueChange}>
+        <StopList showAddStop={false} />
+      </Root>,
+    );
+    const pos = screen.getAllByLabelText("Stop position")
+      .filter((el) => el.tagName === "INPUT")[1];
+    fireEvent.change(pos, { target: { value: "" } });
+    expect(pos).toHaveValue("");
+    fireEvent.change(pos, { target: { value: "62.5" } });
+    expect(onValueChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(pos, { key: "Enter" });
+    expect(onValueChange).toHaveBeenCalledTimes(1);
+    const g = onValueChange.mock.calls[0][0];
+    expect(g.stops.map((st: { position: number }) => st.position)).toContain(0.625);
   });
 });

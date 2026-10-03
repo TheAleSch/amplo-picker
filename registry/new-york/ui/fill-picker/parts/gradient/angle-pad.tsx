@@ -69,7 +69,7 @@ export const AnglePad = React.forwardRef<HTMLDivElement, AnglePadProps>(
         tabIndex={0}
         data-slot="gradient-angle-pad"
         className={cn(
-          "relative shrink-0 cursor-grab rounded-full border border-border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "relative shrink-0 cursor-grab touch-none rounded-full border border-border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
         style={{ width: size, height: size }}

@@ -27,8 +27,30 @@ describe("<GradientPicker.EllipseRadiiInput>", () => {
     expect(rx).toHaveValue("30");
     expect(ry).toHaveValue("60");
     fireEvent.change(rx, { target: { value: "50" } });
+    fireEvent.keyDown(rx, { key: "Enter" });
     expect(onValueChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ radii: { x: 0.5, y: 0.6 } }),
+      expect.any(String),
+    );
+  });
+
+  // With no explicit radii (keyword size), typing one axis used to coerce the
+  // other to 0, collapsing the ellipse to a line.
+  it("seeds the untouched axis from the keyword extent, not 0", () => {
+    const onValueChange = vi.fn();
+    render(
+      <GradientPicker.Root
+        defaultValue={{ type: "radial", shape: "ellipse", center: { x: 0.5, y: 0.25 }, size: "farthest-side", interp: "oklch", stops: [{ color: { l: 0, c: 0, h: 0, alpha: 1 }, position: 0 }, { color: { l: 1, c: 0, h: 0, alpha: 1 }, position: 1 }] }}
+        onValueChange={onValueChange}
+      >
+        <GradientPicker.EllipseRadiiInput />
+      </GradientPicker.Root>,
+    );
+    const rx = screen.getByLabelText(/ellipse horizontal radius/i);
+    fireEvent.change(rx, { target: { value: "40" } });
+    fireEvent.keyDown(rx, { key: "Enter" });
+    expect(onValueChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ radii: { x: 0.4, y: 0.75 } }),
       expect.any(String),
     );
   });

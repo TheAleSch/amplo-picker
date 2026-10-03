@@ -40,9 +40,16 @@ export function useFillPicker(props: UseFillPickerProps = {}): FillPickerState {
     onModeChange,
   } = props;
 
+  // With no seed fill, the default fill follows the requested mode so
+  // `defaultMode: "gradient"` doesn't start on a color fill.
+  const seedFill = value ?? defaultValue;
+  const initialMode: FillMode =
+    modeProp ?? defaultMode ?? seedFill?.kind ?? "color";
   const initialFill: Fill =
-    value ?? defaultValue ?? { kind: "color", color: DEFAULT_COLOR };
-  const initialMode: FillMode = modeProp ?? defaultMode ?? initialFill.kind;
+    seedFill ??
+    (initialMode === "gradient"
+      ? { kind: "gradient", gradient: DEFAULT_LINEAR }
+      : { kind: "color", color: DEFAULT_COLOR });
 
   const [internalFill, setInternalFill] = React.useState<Fill>(initialFill);
   const [internalMode, setInternalMode] = React.useState<FillMode>(initialMode);

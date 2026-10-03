@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
             value:
               "frame-ancestors 'self' https://buildhop.io https://*.buildhop.io;",
           },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         ],
       },
     ];

@@ -94,6 +94,82 @@ export const FieldInput = React.forwardRef<HTMLInputElement, FieldInputProps>(
   },
 );
 
+export interface FieldDraftInputProps
+  extends Omit<FieldInputProps, "value" | "defaultValue" | "onChange"> {
+  /** Canonical display string; re-seeds the draft whenever it changes. */
+  value: string;
+  /**
+   * Called with the raw draft on Enter, on blur after an edit, and on each
+   * ↑/↓ nudge. The consumer parses, clamps and writes; an unparseable or
+   * clamped commit just snaps the draft back to `value`.
+   */
+  onCommit: (raw: string) => void;
+}
+
+/**
+ * `FieldInput` with a local draft: keystrokes only edit the text, and the
+ * value is committed on Enter / blur (Escape reverts). Committing on every
+ * keystroke makes multi-digit and decimal entry impossible when the parsed
+ * prefix gets clamped or normalized ("4" of "400" wraps, "" can't be typed).
+ * ↑/↓ nudges (via `nudge`) still commit immediately.
+ */
+export const FieldDraftInput = React.forwardRef<
+  HTMLInputElement,
+  FieldDraftInputProps
+>(function FieldDraftInput(
+  { value, onCommit, onBlur, onKeyDown, nudge, ...rest },
+  ref,
+) {
+  const [draft, setDraft] = React.useState(value);
+  const [dirty, setDirty] = React.useState(false);
+  // Same in-render re-seed as `ChannelField` / `HexField`.
+  const [prevValue, setPrevValue] = React.useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setDraft(value);
+    setDirty(false);
+  }
+
+  const commit = (raw: string) => {
+    onCommit(raw);
+    // Snap back to the canonical string. If the commit changed it, the
+    // re-seed above overwrites this on the next render anyway; if it didn't
+    // (clamped to the same value, unparseable), this is what clears "999".
+    setDraft(value);
+    setDirty(false);
+  };
+
+  return (
+    <FieldInput
+      ref={ref}
+      nudge={nudge}
+      value={draft}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        setDirty(true);
+      }}
+      onBlur={(e) => {
+        if (dirty) commit(e.currentTarget.value);
+        onBlur?.(e);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (dirty) commit(e.currentTarget.value);
+        } else if (e.key === "Escape") {
+          setDraft(value);
+          setDirty(false);
+        } else if (nudge && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+          // FieldInput already wrote the nudged number into the input.
+          commit(e.currentTarget.value);
+        }
+        onKeyDown?.(e);
+      }}
+      {...rest}
+    />
+  );
+});
+
 /**
  * Flex slot that pairs a `FieldInput` with an optional `FieldSuffix`
  * (the muted `°`, `%`, `px`, `×` glyph). Renders as a `<label>` so the

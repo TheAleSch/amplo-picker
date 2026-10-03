@@ -7,6 +7,12 @@ import { hslHue, hsbHue } from "@/registry/new-york/ui/fill-picker/lib/color";
 import { setHueFromSlider } from "@/registry/new-york/ui/fill-picker/lib/channels";
 import { cn } from "@/lib/utils";
 
+// Slider-sourced hue never reaches 360: `setHueFromSlider` wraps 360 → 0, so
+// End / a drag past the right edge would snap the thumb back to the start
+// (End == Home). Clamping to just below the seam keeps the thumb at the end
+// and the rounded aria value at 360.
+const HUE_SLIDER_MAX = 359.99;
+
 // `defaultValue` is omitted because Base UI's Slider.Root types it as a number
 // (its own controlled/uncontrolled value), which conflicts with the string-ish
 // `defaultValue` on React.HTMLAttributes.
@@ -43,7 +49,14 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   // Chroma rescaling and the HSL/HSB write path live in `setHueFromSlider`
   // so this and the classic variant share one implementation.
   const commitHue = React.useCallback(
-    (newH: number) => setColor(setHueFromSlider(color, newH, format)),
+    (newH: number) =>
+      setColor(
+        setHueFromSlider(
+          color,
+          Math.max(0, Math.min(HUE_SLIDER_MAX, newH)),
+          format,
+        ),
+      ),
     [color, format, setColor],
   );
 

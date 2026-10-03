@@ -73,7 +73,7 @@ export const PositionPad = React.forwardRef<HTMLDivElement, PositionPadProps>(
         tabIndex={0}
         style={{ width: size, height: size }}
         className={cn(
-          "relative shrink-0 cursor-crosshair rounded-md border border-border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "relative shrink-0 cursor-crosshair touch-none rounded-md border border-border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
         {...rest}

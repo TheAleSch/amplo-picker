@@ -86,4 +86,21 @@ describe("fill-picker-base Hue", () => {
     });
     expect(slider).toHaveAttribute("aria-valuenow", "119");
   });
+
+  // End commits 360, which the shared hue writer wraps to 0 — the thumb
+  // jumped back to the start and End behaved like Home.
+  it("End keeps the thumb at the end of the track instead of wrapping to 0", async () => {
+    render(
+      <Root defaultValue="oklch(0.7 0.18 120)">
+        <Hue />
+      </Root>,
+    );
+    await act(async () => {});
+    const slider = screen.getByRole("slider", { name: "Hue" });
+    act(() => {
+      slider.focus();
+      fireEvent.keyDown(slider, { key: "End" });
+    });
+    expect(Number(slider.getAttribute("aria-valuenow"))).toBeGreaterThan(359);
+  });
 });

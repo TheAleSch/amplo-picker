@@ -284,7 +284,7 @@ from it. Use pnpm here even if your own apps use something else.
 pnpm install         # install deps
 pnpm dev             # run the site → http://localhost:3000
 pnpm build           # production build (runs registry:build first)
-pnpm lint            # next lint
+pnpm lint            # eslint .
 pnpm typecheck       # tsc --noEmit
 pnpm test            # vitest, single run (test:watch for watch mode)
 pnpm registry:build  # regenerate public/r/<item>.json from registry.json

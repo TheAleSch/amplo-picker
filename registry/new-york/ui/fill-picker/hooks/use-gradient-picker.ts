@@ -5,6 +5,7 @@ import {
   DEFAULT_LINEAR,
   DEFAULT_RADIAL,
   DEFAULT_CONIC,
+  angleFromPoints,
   formatGradient,
   type Gradient,
   type GradientInterp,
@@ -284,6 +285,9 @@ export function useGradientPicker(
   >(value);
   if (isControlled && value !== prevControlledValue) {
     setPrevControlledValue(value);
+    // An echo is consumed exactly once: a parent that later hands back the
+    // same retained object (undo/redo) is describing a real change.
+    if (lastEmitted !== null) setLastEmitted(null);
     if (value !== lastEmitted) {
       const prev = internal;
       // `prev.stops` is always position-sorted (attachIds and every mutating
@@ -336,6 +340,13 @@ export function useGradientPicker(
         : attachIds(value);
       if (!structuralMatch) {
         setStashResetVersion((version) => version + 1);
+        // Fresh ids orphan the selection; keep the same slot selected.
+        if (!next.stops.some((s) => s.id === selectedStopId)) {
+          const index = prev.stops.findIndex((s) => s.id === selectedStopId);
+          const fallback =
+            next.stops[Math.min(Math.max(index, 0), next.stops.length - 1)];
+          if (fallback) setSelectedStopId(fallback.id);
+        }
       }
       setInternal(next);
     }
@@ -406,19 +417,6 @@ export function useGradientPicker(
     [apply],
   );
 
-  const recomputeAngle = (
-    start: { x: number; y: number } | undefined,
-    end: { x: number; y: number } | undefined,
-    fallback: number,
-  ): number => {
-    if (!start || !end) return fallback;
-    const dx = end.x - start.x;
-    const dy = -(end.y - start.y); // y axis is down in box coords
-    if (dx === 0 && dy === 0) return fallback;
-    const deg = (Math.atan2(dx, dy) * 180) / Math.PI;
-    return ((deg % 360) + 360) % 360;
-  };
-
   const setLinearStart = React.useCallback(
     (xy: { x: number; y: number } | undefined) =>
       apply((prev) => {
@@ -428,11 +426,10 @@ export function useGradientPicker(
           ? {
               ...cur,
               start: { x: clamp01(xy.x), y: clamp01(xy.y) },
-              angle: recomputeAngle(
+              angle: angleFromPoints(
                 { x: clamp01(xy.x), y: clamp01(xy.y) },
                 cur.end,
-                cur.angle,
-              ),
+              ) ?? cur.angle,
             }
           : (() => {
               const { start: _drop, ...rest } = cur;
@@ -452,11 +449,10 @@ export function useGradientPicker(
           ? {
               ...cur,
               end: { x: clamp01(xy.x), y: clamp01(xy.y) },
-              angle: recomputeAngle(
+              angle: angleFromPoints(
                 cur.start,
                 { x: clamp01(xy.x), y: clamp01(xy.y) },
-                cur.angle,
-              ),
+              ) ?? cur.angle,
             }
           : (() => {
               const { end: _drop, ...rest } = cur;

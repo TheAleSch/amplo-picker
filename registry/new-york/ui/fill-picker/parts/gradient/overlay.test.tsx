@@ -120,9 +120,9 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
     );
     // Type 55 in the radius input — mimics the playground flow.
     const rInput = screen.getByLabelText(/circle radius/i) as HTMLInputElement;
-    act(() => {
-      fireEvent.change(rInput, { target: { value: "55" } });
-    });
+    // Field commits on Enter / blur (local draft while typing).
+    fireEvent.change(rInput, { target: { value: "55" } });
+    fireEvent.keyDown(rInput, { key: "Enter" });
     expect((latest as RadialGradient).radiusPx).toBeCloseTo(
       (55 / 100) * 400,
       0,
@@ -221,10 +221,10 @@ describe("Area + radius inputs center-drag preserves explicit radius", () => {
     const yInput = screen.getByLabelText(
       /ellipse vertical/i,
     ) as HTMLInputElement;
-    act(() => {
-      fireEvent.change(xInput, { target: { value: "50" } });
-      fireEvent.change(yInput, { target: { value: "30" } });
-    });
+    fireEvent.change(xInput, { target: { value: "50" } });
+    fireEvent.keyDown(xInput, { key: "Enter" });
+    fireEvent.change(yInput, { target: { value: "30" } });
+    fireEvent.keyDown(yInput, { key: "Enter" });
     const before = latest as RadialGradient;
     expect(before.radii).toEqual({ x: 0.5, y: 0.3 });
     const center = screen.getByLabelText(/^Gradient center/);
@@ -416,5 +416,29 @@ describe("linear overlay shows endpoints only", () => {
     expect(screen.queryByLabelText(/^Gradient stop at/)).toBeNull();
     expect(screen.getByLabelText(/^Gradient start/)).toBeTruthy();
     expect(screen.getByLabelText(/^Gradient end/)).toBeTruthy();
+  });
+});
+
+describe("Overlay radius handle ARIA range", () => {
+  it("never reports aria-valuenow above aria-valuemax for a px circle radius", () => {
+    render(
+      <div style={{ position: "relative" }}>
+        <Root
+          defaultValue={{
+            ...DEFAULT_RADIAL,
+            shape: "circle",
+            radiusPx: 500,
+          }}
+        >
+          <Overlay />
+        </Root>
+      </div>,
+    );
+    const handle = screen.getByRole("slider", { name: "Gradient radius" });
+    const now = Number(handle.getAttribute("aria-valuenow"));
+    const max = Number(handle.getAttribute("aria-valuemax"));
+    expect(now).toBe(500);
+    expect(now).toBeLessThanOrEqual(max);
+    expect(handle).toHaveAttribute("aria-valuetext", "circle radius 500 pixels");
   });
 });

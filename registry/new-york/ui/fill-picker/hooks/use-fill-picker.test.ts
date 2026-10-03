@@ -80,3 +80,11 @@ describe("useFillPicker (2026-07-12 audit T-7)", () => {
     expect(result.current.fill).toEqual(blue);
   });
 });
+
+describe("useFillPicker initial mode", () => {
+  it("seeds a gradient fill when defaultMode is gradient and no value is given", () => {
+    const { result } = renderHook(() => useFillPicker({ defaultMode: "gradient" }));
+    expect(result.current.mode).toBe("gradient");
+    expect(result.current.fill.kind).toBe("gradient");
+  });
+});

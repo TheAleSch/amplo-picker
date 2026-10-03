@@ -79,7 +79,8 @@ function coerce(input: string | OklchColor | undefined, fallback: OklchColor): O
   if (typeof input === "string") {
     return parseColor(input) ?? fallback;
   }
-  return input;
+  // Strings are hue-wrapped by the parser; normalize objects the same way.
+  return { ...input, h: wrapHue(input.h) };
 }
 
 function clamp(x: number, lo: number, hi: number) {
@@ -97,6 +98,9 @@ function isAchromatic(c: OklchColor): boolean {
 }
 
 function applyComponent(c: OklchColor, key: ColorComponent, raw: number): OklchColor {
+  // NaN/Infinity (e.g. a cleared number field) would poison every derived
+  // conversion; ignore the write instead.
+  if (!Number.isFinite(raw)) return c;
   switch (key) {
     case "l":
       return { ...c, l: clamp(raw, 0, 1) };
@@ -140,8 +144,9 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
   // observed on a chromatic, mid-lightness color and substitute it back when
   // the resolved color lands on an achromatic edge — keeps the area picker
   // from snapping the hue to 0 when the user drags toward gray/black/white.
-  const initialHue = coerce(defaultValue, BLACK).h || 0;
-  const lastGoodHueRef = React.useRef<number>(initialHue);
+  // Seeded from the initial color state rather than re-parsing
+  // `defaultValue` on every render (every drag frame).
+  const lastGoodHueRef = React.useRef<number>(internalColor.h || 0);
 
   const isControlledStringInput =
     isControlledColor && typeof controlledValue === "string";
@@ -214,6 +219,9 @@ export function useColorPicker(props: UseColorPickerProps = {}): ColorPickerStat
 
   const commitColor = React.useCallback(
     (next: OklchColor, formatOverride?: ColorFormat) => {
+      // NaN never equals itself, so storing it would spin the render-time
+      // sync in consumers; drop non-finite colors at the boundary.
+      if (![next.l, next.c, next.h, next.alpha].every(Number.isFinite)) return;
       if (!isControlledColor) setInternalColor(next);
       if (onValueChange) {
         const all = formatAll(next);

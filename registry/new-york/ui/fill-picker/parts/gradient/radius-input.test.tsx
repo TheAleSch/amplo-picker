@@ -25,7 +25,11 @@ describe("<GradientPicker.RadiusInput>", () => {
     // Without an Area mounted, containerWidth is null, so display is in px.
     const input = screen.getByLabelText(/circle radius/i);
     expect(input).toHaveValue("100");
+    fireEvent.change(input, { target: { value: "1" } });
+    fireEvent.change(input, { target: { value: "15" } });
     fireEvent.change(input, { target: { value: "150" } });
+    expect(onValueChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(input, { key: "Enter" });
     expect(onValueChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ radiusPx: 150 }),
       expect.any(String),

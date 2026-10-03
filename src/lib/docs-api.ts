@@ -14,7 +14,11 @@ export interface PropRow {
   desc: string;
 }
 
-/** Radix snippet paths → Base UI paths (snippets are authored against Radix). */
+/**
+ * Code snippets are authored against the Radix install paths; for Base UI
+ * only the import path changes — the exported names are identical thanks
+ * to the plain-name aliases in the Base UI barrels.
+ */
 export const SNIPPET_PATH_SWAPS: [string, string][] = [
   ["@/components/ui/fill-picker/fill-picker", "@/components/ui/fill-picker-base/fill"],
   ["@/components/ui/fill-picker/color-picker", "@/components/ui/fill-picker-base/color-picker"],
@@ -247,7 +251,7 @@ export function propsTableMarkdown(rows: PropRow[], first = "Prop", second = "Ty
     "|------|------|---------|-------------|",
   ];
   for (const r of rows) {
-    const def = r.default === undefined ? "—" : /\s/.test(r.default) ? r.default : mdCode(r.default);
+    const def = r.default === undefined ? "—" : /\s/.test(r.default) ? mdCell(r.default) : mdCode(r.default);
     lines.push(`| ${mdCode(r.name)} | ${mdCode(r.type)} | ${def} | ${mdCell(r.desc)} |`);
   }
   return lines.join("\n");

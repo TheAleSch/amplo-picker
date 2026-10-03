@@ -81,6 +81,9 @@ export function usePointerDrag(
   const latest = useLatest(onPoint);
   return React.useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
+      // Primary button only: a right-press must not drag (or fight the
+      // context menu). Touch and pen report button 0 for contact.
+      if (e.button !== 0) return;
       latest.current(e.clientX, e.clientY);
       trackPointerDrag(e.currentTarget, e.pointerId, (ev) =>
         latest.current(ev.clientX, ev.clientY),

@@ -35,6 +35,19 @@ describe("slider drags via trackPointerDrag", () => {
     expect(slider).toHaveAttribute("aria-valuenow", "50");
   });
 
+  it("ignores non-primary presses", () => {
+    render(
+      <Root defaultValue="oklch(0.7 0.18 120 / 0.5)">
+        <Alpha />
+      </Root>,
+    );
+    const slider = screen.getByRole("slider", { name: "Opacity" });
+    setup(slider);
+    fireEvent.pointerDown(slider, { clientX: 20, pointerId: 1, button: 2, buttons: 2 });
+    fireEvent.pointerMove(slider, { clientX: 180, pointerId: 1, buttons: 2 });
+    expect(slider).toHaveAttribute("aria-valuenow", "50");
+  });
+
   it("ends the drag when pointer capture is lost", () => {
     render(
       <Root defaultValue="oklch(0.7 0.18 120)">

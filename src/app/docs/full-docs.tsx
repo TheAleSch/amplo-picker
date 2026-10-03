@@ -61,10 +61,6 @@ function usePickers(): Pickers {
   return p;
 }
 
-// Code snippets are authored against the Radix install paths; for Base UI we
-// swap only the import path — the exported names are identical thanks to the
-// plain-name aliases in the Base UI barrels.
-
 const TOC = [
   ["installation", "Installation"],
   ["usage", "Usage"],
@@ -862,7 +858,6 @@ function Code({ children }: { children: React.ReactNode }) {
   );
 }
 
-
 function PropsTable({ rows }: { rows: PropRow[] }) {
   return (
     <div className="overflow-x-auto rounded-md border border-border">
@@ -1538,7 +1533,6 @@ export function GradientFullDemo() {
   );
 }`;
 
-
 const GRADIENT_OVERLAY_CODE = `"use client";
 
 import * as React from "react";
@@ -1815,10 +1809,7 @@ const ANATOMY_CODE = `<ColorPicker.Root>
   <ColorPicker.Swatches />
 </ColorPicker.Root>`;
 
-
-
 /* ─────────────────────────── API tables ─────────────────────────── */
-
 
 const EXTENT_KEYWORD_ROWS: PropRow[] = [
   {

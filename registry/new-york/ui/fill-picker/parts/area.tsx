@@ -149,12 +149,15 @@ export const Area = React.forwardRef<HTMLDivElement, AreaProps>(function Area(
     prevColor.alpha !== color.alpha
   ) {
     setPrevColor(color);
-    if (selfSetRef.current) {
-      selfSetRef.current = false;
-    } else if (pickPos !== null) {
-      setPickPos(null);
-    }
+    if (!selfSetRef.current && pickPos !== null) setPickPos(null);
   }
+  // Disarm after every commit rather than on the echo: a pick that leaves
+  // the color unchanged (e.g. any X at the white pole) never produces an
+  // echo, and a still-armed flag would swallow the next *external* change.
+  // Our own pick's color update lands in the same render as `setPickPos`.
+  React.useEffect(() => {
+    selfSetRef.current = false;
+  });
 
   // The gradient and warning lines depend only on the axis the mode keeps
   // *fixed* (hue for oklch-cl/hsv-sv, lightness for oklch-hc). Depending on

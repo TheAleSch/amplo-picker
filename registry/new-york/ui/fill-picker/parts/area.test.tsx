@@ -95,3 +95,41 @@ describe("Area hue pinning after gamut clamp", () => {
     expect(hues.at(-1)!).toBeCloseTo(hueAtBoundary, 6);
   });
 });
+
+// A pick that doesn't change the color (e.g. at the white pole every X maps
+// to the same color) left the "this change is ours" flag armed, so the next
+// *external* color change was mistaken for the pick's echo and the bead kept
+// rendering at the stale pick position.
+describe("Area bead after a no-op pick", () => {
+  function SetExternal() {
+    const { setColor } = useColorPickerContext();
+    return (
+      <button
+        type="button"
+        onClick={() => setColor({ l: 0.5, c: 0, h: 0, alpha: 1 })}
+      >
+        external
+      </button>
+    );
+  }
+
+  it("clears the pick override on the next external change", () => {
+    render(
+      <Root defaultValue="oklch(1 0 0)">
+        <Area />
+        <SetExternal />
+      </Root>,
+    );
+    const area = screen.getByRole("application");
+    const bead = area.lastElementChild as HTMLElement;
+    act(() => {
+      area.focus();
+      // At l=1 every X collapses to chroma 0 — the color stays white.
+      fireEvent.keyDown(area, { key: "End" });
+    });
+    expect(bead.style.left).toBe("100%");
+    fireEvent.click(screen.getByRole("button", { name: "external" }));
+    // Gray (c=0) derives back to the left edge, half-way down.
+    expect(bead.style.left).toBe("0%");
+  });
+});

@@ -196,6 +196,11 @@ function ChannelField({
       return;
     }
     onChange(parsed);
+    // A clamped / rounded commit can leave `display` unchanged ("999" → 255
+    // when R is already 255), which the in-render sync never sees — snap the
+    // draft back here. If the commit did change `display`, the sync above
+    // overwrites this on the next render.
+    setDraft(display);
   };
 
   const step = (delta: number) => {

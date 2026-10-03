@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import {
   FieldDivider,
-  FieldInput,
+  FieldDraftInput,
   FieldInputGroup,
   FieldShell,
   FieldSuffix,
@@ -40,11 +40,11 @@ export const PositionInput = React.forwardRef<
     >
       <FieldInputGroup>
         <span className="sr-only">Gradient center x</span>
-        <FieldInput
-          inputMode="numeric"
+        <FieldDraftInput
+          inputMode="decimal"
           nudge={1}
-          value={Math.round(center.x * 100)}
-          onChange={(e) => commit("x", e.target.value)}
+          value={String(Math.round(center.x * 100))}
+          onCommit={(raw) => commit("x", raw)}
           aria-label="Gradient center x percent"
           className="w-10"
         />
@@ -53,11 +53,11 @@ export const PositionInput = React.forwardRef<
       <FieldDivider />
       <FieldInputGroup>
         <span className="sr-only">Gradient center y</span>
-        <FieldInput
-          inputMode="numeric"
+        <FieldDraftInput
+          inputMode="decimal"
           nudge={1}
-          value={Math.round(center.y * 100)}
-          onChange={(e) => commit("y", e.target.value)}
+          value={String(Math.round(center.y * 100))}
+          onCommit={(raw) => commit("y", raw)}
           aria-label="Gradient center y percent"
           className="w-10"
         />

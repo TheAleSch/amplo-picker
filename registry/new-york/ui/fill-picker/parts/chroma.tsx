@@ -30,7 +30,9 @@ export const Chroma = React.forwardRef<HTMLDivElement, ChromaProps>(
       const ratio =
         orientation === "horizontal"
           ? (clientCoord - rect.left) / rect.width
-          : (clientCoord - rect.top) / rect.height;
+          : // Vertical is bottom-anchored (min at the bottom), matching the
+            // Base UI variant and ArrowUp = increase.
+            1 - (clientCoord - rect.top) / rect.height;
       const clamped = Math.max(0, Math.min(1, ratio));
       setComponent("c", clamped * CHROMA_MAX);
     };
@@ -120,7 +122,7 @@ export const Chroma = React.forwardRef<HTMLDivElement, ChromaProps>(
         )}
         style={{
           background: isVertical
-            ? `linear-gradient(to bottom, ${stops})`
+            ? `linear-gradient(to top, ${stops})`
             : `linear-gradient(to right, ${stops})`,
         }}
         {...rest}
@@ -131,7 +133,7 @@ export const Chroma = React.forwardRef<HTMLDivElement, ChromaProps>(
             isVertical
               ? {
                   left: "50%",
-                  top: `calc(${ratio} * (100% - 16px) + 8px)`,
+                  top: `calc((1 - ${ratio}) * (100% - 16px) + 8px)`,
                   background: formatColor({ ...color, alpha: 1 }, "oklch"),
                 }
               : {

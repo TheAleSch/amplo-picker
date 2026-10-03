@@ -6,6 +6,12 @@ import { hslHue, hsbHue } from "../lib/color";
 import { setHueFromSlider } from "../lib/channels";
 import { cn } from "@/lib/utils";
 
+// Slider-sourced hue never reaches 360: `setHueFromSlider` wraps 360 → 0, so
+// End / a drag past the right edge would snap the thumb back to the start
+// (End == Home). Clamping to just below the seam keeps the thumb at the end
+// and the rounded aria value at 360.
+const HUE_SLIDER_MAX = 359.99;
+
 export interface HueProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onKeyDown"> {
   orientation?: "horizontal" | "vertical";
 }
@@ -32,7 +38,14 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
   // Chroma rescaling and the HSL/HSB write path live in `setHueFromSlider`
   // so this and the Base UI variant share one implementation.
   const commitHue = React.useCallback(
-    (newH: number) => setColor(setHueFromSlider(color, newH, format)),
+    (newH: number) =>
+      setColor(
+        setHueFromSlider(
+          color,
+          Math.max(0, Math.min(HUE_SLIDER_MAX, newH)),
+          format,
+        ),
+      ),
     [color, format, setColor],
   );
 
@@ -43,7 +56,9 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
     const ratio =
       orientation === "horizontal"
         ? (clientCoord - rect.left) / rect.width
-        : (clientCoord - rect.top) / rect.height;
+        : // Vertical is bottom-anchored (min at the bottom), matching the
+          // Base UI variant and ArrowUp = increase.
+          1 - (clientCoord - rect.top) / rect.height;
     const clamped = Math.max(0, Math.min(1, ratio));
     commitHue(clamped * 360);
   };
@@ -124,7 +139,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
       )}
       style={{
         background: isVertical
-          ? "linear-gradient(to bottom, oklch(0.7 0.25 0), oklch(0.7 0.25 60), oklch(0.7 0.25 120), oklch(0.7 0.25 180), oklch(0.7 0.25 240), oklch(0.7 0.25 300), oklch(0.7 0.25 360))"
+          ? "linear-gradient(to top, oklch(0.7 0.25 0), oklch(0.7 0.25 60), oklch(0.7 0.25 120), oklch(0.7 0.25 180), oklch(0.7 0.25 240), oklch(0.7 0.25 300), oklch(0.7 0.25 360))"
           : "linear-gradient(to right, oklch(0.7 0.25 0), oklch(0.7 0.25 60), oklch(0.7 0.25 120), oklch(0.7 0.25 180), oklch(0.7 0.25 240), oklch(0.7 0.25 300), oklch(0.7 0.25 360))",
       }}
       {...rest}
@@ -133,7 +148,7 @@ export const Hue = React.forwardRef<HTMLDivElement, HueProps>(function Hue(
         className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(0,0,0,0.6)]"
         style={
           isVertical
-            ? { left: "50%", top: `calc(${pos} * (100% - 16px) + 8px)`, background: `oklch(0.7 0.25 ${displayedHue})` }
+            ? { left: "50%", top: `calc((1 - ${pos}) * (100% - 16px) + 8px)`, background: `oklch(0.7 0.25 ${displayedHue})` }
             : { left: `calc(${pos} * (100% - 16px) + 8px)`, top: "50%", background: `oklch(0.7 0.25 ${displayedHue})` }
         }
       />

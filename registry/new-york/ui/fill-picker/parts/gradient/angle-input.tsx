@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useGradientPickerContext } from "../../contexts/gradient";
 import {
-  FieldInput,
+  FieldDraftInput,
   FieldInputGroup,
   FieldShell,
   FieldSuffix,
@@ -24,8 +24,8 @@ export const AngleInput = React.forwardRef<
   const setAngle =
     ctx.gradient.type === "linear" ? ctx.setAngle : ctx.setStartAngle;
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const n = parseFloat(e.target.value);
+  const commit = (raw: string) => {
+    const n = parseFloat(raw);
     if (Number.isFinite(n)) setAngle(((n % 360) + 360) % 360);
   };
 
@@ -38,11 +38,11 @@ export const AngleInput = React.forwardRef<
     >
       <FieldInputGroup>
         <span className="sr-only">Gradient angle</span>
-        <FieldInput
-          inputMode="numeric"
+        <FieldDraftInput
+          inputMode="decimal"
           nudge={1}
-          value={Math.round(angle)}
-          onChange={onChange}
+          value={String(Math.round(angle))}
+          onCommit={commit}
           aria-label="Gradient angle in degrees"
           className="w-10"
         />

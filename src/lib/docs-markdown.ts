@@ -2,9 +2,12 @@
  * Single source of truth for the agent-readable docs.
  * Served by /docs.md, /llms-full.txt, and consumed by the "Copy for AI" button.
  *
- * Keep this in lockstep with src/app/docs/page.tsx — when the human-facing
- * docs change, mirror the change here so agents see the same surface.
+ * The Root props table and the hook / utility snippets come from
+ * ./docs-api, shared with src/app/docs/full-docs.tsx. The prose is still
+ * mirrored by hand; docs-sync.test.ts catches API drift between the two.
  */
+
+import { GRADIENT_PART_ROWS, HOOK_CODE, ROOT_PROPS, UTILS_CODE, propsTableMarkdown, toBasePaths } from "./docs-api";
 
 export const SITE_URL = "https://amplo.ale.design";
 // Plain item names are the Base UI variant (matching shadcn's Base-UI-first
@@ -254,16 +257,7 @@ React.useEffect(() => {
 
 \`ColorFormat = "hex" | "rgb" | "hsl" | "hsb" | "oklch" | "oklab" | "p3"\`
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| \`value\` | \`string \\| OklchColor\` | — | Controlled value. Pass an OklchColor object for lossless control (recommended); strings work too but lose hue when gamut-clipped to gray/black/white. The picker keeps a sticky-hue fallback for string inputs to mitigate that. |
-| \`defaultValue\` | \`string \\| OklchColor\` | — | Uncontrolled initial value. |
-| \`onValueChange\` | \`(color, formatted, formats) => void\` | — | Fires on every change. \`color\` is the canonical OklchColor. \`formatted\` is the active format's string. \`formats\` is a \`Record<ColorFormat, string>\` with every supported format pre-serialized. |
-| \`format\` | \`ColorFormat\` | — | Controlled output format. |
-| \`defaultFormat\` | \`ColorFormat\` | \`"p3"\` | Uncontrolled initial format. |
-| \`onFormatChange\` | \`(format) => void\` | — | Fires on format toggle. |
-| \`formats\` | \`ColorFormat[]\` | all 7 | Restricts which output formats the picker exposes — both the FormatSwitcher options and the resolved default. |
-| \`backgroundColor\` | \`string \\| OklchColor\` | \`"#fff"\` | Background used for contrast metrics and Preview compositing. |
+${propsTableMarkdown(ROOT_PROPS)}
 
 ## API: Parts
 
@@ -286,6 +280,11 @@ Hue slider. Pair with Area mode \`oklch-cl\` or \`hsv-sv\`. Mode-aware: when for
 **Props:** \`orientation\`.
 
 Lightness slider (OKLCH \`l\` 0→1). Gradient is sampled at the current hue+chroma. Pair with Area mode \`oklch-hc\`.
+
+### \`<ColorPicker.Chroma>\`
+**Props:** \`orientation\`.
+
+Chroma slider (OKLCH \`c\` 0→0.4). The track is painted at the current hue × lightness, so the ramp shows how chroma changes the user's color. Keyboard: arrows ±0.005, Shift ±0.05, Home/End, PageUp/Down ±0.05.
 
 ### \`<ColorPicker.Alpha>\`
 Opacity slider with checkerboard background.
@@ -329,25 +328,7 @@ Native EyeDropper API. Renders nothing on unsupported browsers.
 Headless layer powering every part. Use it directly when you want a totally custom UI but the same state machine.
 
 \`\`\`tsx
-const {
-  color,           // canonical OklchColor
-  format,
-  formatted,       // string in 'format'
-  formats,         // ColorFormat[] — the list of allowed output formats
-  formatStrings,   // Record<ColorFormat, string> — every format pre-serialized
-  gamut,           // GamutInfo
-  contrast,        // { wcag, wcagLevel, apca }
-  setColor,        // accepts string | OklchColor
-  setComponent,    // ('l'|'c'|'h'|'alpha', value) — clamped
-  adjustComponent, // ('l'|'c'|'h'|'alpha', delta) — wraps for hue
-  setFormat,
-  setFromString,   // (s) => boolean; false on parse failure
-  background,
-} = useColorPicker({
-  defaultValue: "#ff0000",
-  backgroundColor: "#fff",
-  formats: ["hex", "oklch", "p3"], // optional; defaults to all
-});
+${HOOK_CODE}
 \`\`\`
 
 ## API: Color utilities
@@ -355,16 +336,7 @@ const {
 Exported from the same module:
 
 \`\`\`tsx
-import {
-  parseColor,    // (string) => OklchColor | null
-  formatColor,   // (OklchColor, ColorFormat) => string  (sRGB/P3 outputs are gamut-mapped)
-  formatAll,     // (OklchColor) => Record<ColorFormat, string>
-  gamutInfo,     // (OklchColor) => { inSrgb, inP3, inRec2020 }
-  toGamut,       // (OklchColor, "srgb"|"p3"|"rec2020") => OklchColor
-  contrast,      // (fg, bg) => { wcag, wcagLevel, apca }
-  apcaContrast,  // (fg, bg) => Lc number
-  isValidColor,  // (string) => boolean
-} from "@/components/ui/fill-picker-base/color-picker";
+${toBasePaths(UTILS_CODE)}
 \`\`\`
 
 ## API: Types
@@ -503,22 +475,7 @@ Setters enforce shape: \`setRadiusPx(...)\` implies \`shape: "circle"\`, \`setRa
 
 ### Key parts
 
-| Part | Role |
-|------|------|
-| \`Root\` | Controlled/uncontrolled wrapper, owns state. |
-| \`TypeSwitcher\` | Linear / Radial / Conic. |
-| \`Area\` | Live gradient render + handle overlay. |
-| \`Overlay\` | Just the handle layer (overlay on your own canvas). |
-| \`Bar\` | Horizontal stop strip with drag-to-reposition. Pass \`editOnClick\` to open the stop editor on tap. |
-| \`StopList\` | Per-stop rows (swatch popover, % input, color paste, remove). |
-| \`StopColor\` | Single stop editor (use outside StopList). |
-| \`InterpSwitcher\` | Color-space for interpolation. |
-| \`ReverseStops\` / \`RepeatingToggle\` | Quick actions. |
-| \`AnglePad\` / \`AngleInput\` / \`AngleGroup\` | Linear angle controls. |
-| \`PositionPad\` / \`PositionInput\` / \`PositionGroup\` | Radial / conic center controls. |
-| \`ShapeSwitcher\` / \`RadiusInput\` / \`EllipseRadiiInput\` / \`RadialSizeSelect\` | Radial shape controls. |
-| \`Presets\` | Grid of starter ramps. Pass \`presets={[...]}\` to override. |
-| \`CssInput\` | Single text input that parses any CSS \`<gradient>\` value. |
+${propsTableMarkdown(GRADIENT_PART_ROWS, "Part", "Props")}
 
 ## Fill picker (color + gradient switcher)
 
